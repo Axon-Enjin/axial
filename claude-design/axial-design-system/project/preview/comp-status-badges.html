@@ -1,0 +1,28 @@
+<!doctype html><html><head><meta charset="utf-8"><title>Status badges</title><link rel="stylesheet" href="_card.css">
+<style>
+  .badge { display:inline-flex; align-items:center; gap:6px; padding:5px 12px; border-radius:9999px; font:600 11px/1.2 Geist; letter-spacing:0.05em; border:1px solid; }
+  .dot { width:6px; height:6px; border-radius:9999px; }
+</style></head><body>
+<div class="card">
+  <div class="ambient"></div>
+  <div class="eyebrow" style="margin-bottom:14px">Status indicators · ambient, never alarmist</div>
+  <div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:14px">
+    <span class="badge" style="background:rgba(20,26,36,0.6);border-color:rgba(69,70,77,0.4);color:#dde3eb">
+      <span class="dot" style="background:#2DD4BF;box-shadow:0 0 10px rgba(45,212,191,.6)"></span>Network Active</span>
+    <span class="badge" style="background:rgba(45,212,191,0.10);border-color:rgba(45,212,191,0.3);color:#2DD4BF">
+      <span class="dot" style="background:#2DD4BF"></span>Synchronized</span>
+    <span class="badge" style="background:rgba(62,73,93,0.4);border-color:rgba(188,199,222,0.2);color:#bcc7de">
+      <span class="dot" style="background:#bcc7de"></span>Minted</span>
+    <span class="badge" style="background:rgba(47,53,60,0.4);border-color:rgba(144,144,151,0.2);color:#c6c6cd">
+      <span class="dot" style="background:#909097"></span>Scanning</span>
+    <span class="badge" style="background:rgba(47,53,60,0.3);border-color:rgba(144,144,151,0.15);color:#c6c6cd">
+      ✓ Settled</span>
+  </div>
+  <div style="display:flex;flex-wrap:wrap;gap:10px">
+    <span class="badge" style="background:rgba(251,191,36,0.10);border-color:rgba(251,191,36,0.3);color:#FBBF24">
+      <span class="dot" style="background:#FBBF24"></span>T+3 window · 18h left</span>
+    <span class="badge" style="background:rgba(255,180,171,0.10);border-color:rgba(255,180,171,0.3);color:#ffb4ab">
+      <span class="dot" style="background:#ffb4ab"></span>Retrying — no action needed</span>
+  </div>
+</div>
+</body></html>

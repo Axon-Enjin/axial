@@ -1,0 +1,30 @@
+<!doctype html><html><head><meta charset="utf-8"><title>Toggles</title><link rel="stylesheet" href="_card.css">
+<style>
+  .toggle { width:44px; height:24px; border-radius:9999px; padding:3px; position:relative; cursor:pointer; }
+  .toggle.on  { background:#bec6e0; }
+  .toggle.off { background:#2f353c; border:1px solid rgba(144,144,151,0.2); }
+  .knob { width:18px; height:18px; border-radius:9999px; background:#0e141a; position:absolute; top:3px; transition:transform 150ms ease-out; }
+  .toggle.on .knob  { transform:translateX(20px); background:#283044; }
+  .toggle.off .knob { transform:translateX(0); background:#909097; }
+</style></head><body>
+<div class="card">
+  <div class="ambient"></div>
+  <div class="eyebrow" style="margin-bottom:16px">Form controls · toggle · automation logic</div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+    <div style="border:1px solid rgba(69,70,77,0.4);border-radius:8px;padding:16px;display:flex;justify-content:space-between;align-items:flex-start;gap:14px;background:rgba(20,26,36,0.5)">
+      <div>
+        <div style="font:500 14px/1.4 Geist;color:#dde3eb">Auto-Factoring</div>
+        <div style="font:400 12px/1.5 Geist;color:#c6c6cd;margin-top:4px">Route approved invoices to the designated pool without manual intervention.</div>
+      </div>
+      <div class="toggle on"><div class="knob"></div></div>
+    </div>
+    <div style="border:1px solid rgba(69,70,77,0.4);border-radius:8px;padding:16px;display:flex;justify-content:space-between;align-items:flex-start;gap:14px;background:rgba(20,26,36,0.5)">
+      <div>
+        <div style="font:500 14px/1.4 Geist;color:#dde3eb">Auto-Split Statutory</div>
+        <div style="font:400 12px/1.5 Geist;color:#c6c6cd;margin-top:4px">Deduct SSS, PhilHealth, Pag-IBIG to reserve wallets prior to disbursement.</div>
+      </div>
+      <div class="toggle off"><div class="knob"></div></div>
+    </div>
+  </div>
+</div>
+</body></html>

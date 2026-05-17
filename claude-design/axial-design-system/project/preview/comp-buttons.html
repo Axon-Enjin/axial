@@ -1,0 +1,27 @@
+<!doctype html><html><head><meta charset="utf-8"><title>Buttons</title><link rel="stylesheet" href="_card.css">
+<style>
+  .btn { font:600 13px/1 Geist,sans-serif; letter-spacing:0.02em; padding:11px 18px; border-radius:8px; border:0; cursor:pointer; display:inline-flex; align-items:center; gap:8px; transition:opacity 120ms ease-out; }
+  .btn-primary  { background:#bec6e0; color:#283044; box-shadow:0 0 20px rgba(190,198,224,0.15); }
+  .btn-secondary{ background:transparent; color:#dde3eb; border:1px solid rgba(144,144,151,0.4); }
+  .btn-ghost    { background:transparent; color:#c6c6cd; }
+  .btn-teal     { background:rgba(45,212,191,0.16); color:#2DD4BF; border:1px solid rgba(45,212,191,0.4); box-shadow:0 0 15px rgba(45,212,191,0.3); }
+  .btn-destructive { background:transparent; color:#ffb4ab; border:1px solid rgba(255,180,171,0.4); }
+  .row2 { display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+</style>
+</head><body>
+<div class="card">
+  <div class="ambient"></div>
+  <div class="eyebrow" style="margin-bottom:14px">Buttons · slightly rounded rectangles · never pill</div>
+  <div class="row2">
+    <button class="btn btn-primary">Unlock Capital</button>
+    <button class="btn btn-secondary">+ New Transaction</button>
+    <button class="btn btn-ghost">Browse Files</button>
+    <button class="btn btn-teal">Execute Atomic Swap</button>
+    <button class="btn btn-destructive">Revoke key</button>
+  </div>
+  <div class="row2" style="margin-top:14px">
+    <button class="btn btn-primary" disabled style="opacity:0.4;cursor:not-allowed">Disabled</button>
+    <span class="mono muted">8px radius · 11/18 padding · 600/13/0.02em · 40% opacity disabled</span>
+  </div>
+</div>
+</body></html>

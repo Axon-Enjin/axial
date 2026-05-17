@@ -1,0 +1,36 @@
+<!doctype html><html><head><meta charset="utf-8"><title>Inputs</title><link rel="stylesheet" href="_card.css">
+<style>
+  .field { display:flex; flex-direction:column; gap:6px; }
+  .field label { font:600 11px/1.2 Geist; letter-spacing:0.05em; text-transform:uppercase; color:#c6c6cd; }
+  .field input, .field select {
+    background:#1a2026; color:#dde3eb; border:1px solid rgba(69,70,77,0.6);
+    border-radius:8px; padding:10px 12px; font:400 14px/1.4 Geist; outline:none;
+  }
+  .field input:focus { border-color:#bec6e0; box-shadow:0 0 0 2px rgba(190,198,224,0.15); }
+  .field.error input { border-color:#ffb4ab; }
+  .field .err { font:400 11px/1.2 Geist; color:#ffb4ab; }
+</style></head><body>
+<div class="card">
+  <div class="ambient"></div>
+  <div class="eyebrow" style="margin-bottom:14px">Inputs · bottom-anchored borders · focus = soft silver ring</div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+    <div class="field">
+      <label>BIR Tax Identification Number (TIN)</label>
+      <input value="000-123-456-000" />
+    </div>
+    <div class="field">
+      <label>SSS Employer ID</label>
+      <input value="03-9876543-2" />
+    </div>
+    <div class="field">
+      <label>PhilHealth No.</label>
+      <input value="14-000000000-1" />
+    </div>
+    <div class="field error">
+      <label>HDMF (Pag-IBIG)</label>
+      <input value="2000-1234-XXXX" />
+      <span class="err">Format mismatch — expected 12 digits. We'll retry on save.</span>
+    </div>
+  </div>
+</div>
+</body></html>
