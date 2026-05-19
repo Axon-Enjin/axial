@@ -44,12 +44,19 @@ MoSCoW: Must-Have (launch blocker) · Should-Have (next sprint) · Could-Have (n
 
 | Feature | Description | Priority |
 |---|---|---|
-| Tokenized AR (SAC) and funding workflow | Register receivable, mint SAC token representing the right to payment, link to invoice metadata and verified buyer context | Must-Have |
-| Atomic swap liquidity | Lender/pool funding at calculated discount; instant USDC delivery (PHP-denominated in UI); discount terms, repayment schedule, and net proceeds surfaced clearly in UI | Must-Have |
+| Payer onboarding + KYB | Onboard the B2B payer (debtor) into Axial with KYB; payer state gates all downstream funding | Must-Have |
+| Invoice confirmation (payer-facing) | Payer explicitly confirms invoice amount + due date before any tokenization; closes fake/inflated-invoice fraud | Must-Have |
+| Notice of Assignment + e-acknowledgement | Generate NoA, capture payer acknowledgement; legally redirects payment to the lockbox (PH Civil Code 1624–1635) | Must-Have |
+| Tokenized AR (SAC) and funding workflow | Register receivable, mint SAC token **only for payer-confirmed, NoA-acknowledged receivables**, link to invoice metadata | Must-Have |
+| Atomic swap liquidity (reserve + recourse) | Lender/pool funding at calculated discount; instant USDC delivery (PHP-denominated UI); advance ~80–90% with holdback reserve + MSME recourse; terms surfaced clearly | Must-Have |
+| Closed-loop settlement + reconciliation | Payer pays the per-invoice lockbox; contract repays funder, releases reserve, returns margin; reconciliation worker auto-escalates leakage (freeze/notify/recourse/blacklist) | Must-Have |
+| Funder Protection Center | Funder-facing view: payer confirmed ✓, NoA acknowledged ✓, reserve held, recourse status, in-system pledge | Should-Have |
+| Trust & Boundary screen | Per-party T&Cs: in-system settlement mandatory; off-system payment = breach + liability shift + blacklist | Should-Have |
+| Dispute + partial-payment workflow | Structured path for disputed or partial payer settlement instead of assuming one clean payment | Should-Have |
 | Statutory payroll split (contract-backed) | Calculate and route SSS, PhilHealth, Pag-IBIG (employee + employer shares) per current statutory tables; preview before execution | Must-Have |
 | BIR EIS bridge (off-chain oracle) | Map ledger/consensus events to 20-field BIR JSON schema; JWS sign; submit within T+3; surface success reference ID and Stellar memo link; idempotent retry on failure | Must-Have |
 | Overview / health dashboard | Ambient status: liquidity lines, compliance sync state, filing deadlines — passive indicators (glow, checkmark) not alarmist alerts; surfaces exceptions only when action is required | Must-Have |
-| Automated settlement at invoice maturity | Buyer settlement routes to smart contract; contract repays liquidity provider; margin returned to MSME; visible in Liquidity tab timeline | Should-Have |
+| Calm notification system | Ambient, brand-voice nudges (funding, mid-tenor, pre-due, leakage) to MSME and funder; reinforces in-system settlement without alarm | Should-Have |
 | Payroll preview and approval flow | Show itemized statutory breakdown before execution; require explicit approval on high-stakes payroll runs | Should-Have |
 | Compliance submission history and audit log | Paginated history of EIS submissions with BIR reference IDs, Stellar memo links, timestamps, retry states | Should-Have |
 | Lender / liquidity provider portal | Dedicated UI for institutional partners to view pool exposure, yield, and repayment schedules | Could-Have |
@@ -93,6 +100,22 @@ Acceptance Criteria:
 - Given an exception requiring attention (e.g., a submission failed and T+3 window is closing), when I open Overview, then I see exactly one clear, calm action item surfaced
 - Given I navigate to Liquidity or Compliance from Overview, when I land on the tab, then I pick up exactly where the Overview indicator pointed me
 
+**US-05 — Payer confirms invoice and acknowledges assignment**
+> As a **B2B Payer (enterprise client)**, I want to confirm the invoice I owe and acknowledge that it is assigned to Axial so that I know exactly where to pay and the financing is legitimate.
+
+Acceptance Criteria:
+- Given an invoice raised against me, when I open the payer link, then I see the amount and due date and can confirm or dispute — confirmation is required before the receivable is fundable
+- Given I confirm, when the Notice of Assignment is presented, then I can e-acknowledge it and I receive the single designated lockbox payment instruction
+- Given I have acknowledged the NoA, when I later attempt to pay the MSME directly, then the platform and the NoA make clear this does not discharge the debt
+
+**US-06 — Funder protected by structure, not promises**
+> As a **Liquidity Provider**, I want to see the closed-loop guarantees on every deal so that my capital is protected by structure rather than a "this can't happen" claim.
+
+Acceptance Criteria:
+- Given a fundable receivable, when I review it, then I see payer KYB ✓, invoice confirmed ✓, NoA acknowledged ✓, advance %, reserve held, and recourse terms before committing
+- Given a payer settles to the lockbox, when the contract executes, then I am repaid principal + discount and the reserve is released per terms
+- Given a due invoice with no lockbox payment by T+X, when reconciliation runs, then I am notified and recourse + blacklist are triggered automatically — without my intervention
+
 ---
 
 ## 5. UX and Design Intent
@@ -115,9 +138,23 @@ Axial's IA maps four primary tabs at the root of the authenticated app. The orde
 - Five would split statutory payroll from EIS compliance — but they are emotionally one problem ("government obligations") for the MSME; sub-navigation within Compliance handles the separation when needed
 - Matches the four product pillars in the BRD: inbound liquidity / outbound regulatory / central axis status / governance
 
+### Closed-Loop Surfaces
+
+The four-tab IA is locked. The closed-loop additions fit it as follows — they do **not** add a fifth tab:
+
+| Surface | Where it lives | Audience |
+|---|---|---|
+| Payer onboarding + invoice confirmation + NoA acknowledgement | **Separate minimal payer portal** (tokenized link, outside the authenticated four-tab MSME app — the payer is not an Axial seat) | B2B payer |
+| Funder Protection Center | Within **Liquidity** (lender context area) | Liquidity provider |
+| Trust & Boundary screen | First-run + persistent under **Settings**; acknowledgement gate before first funding | MSME + funder |
+| Reconciliation / leakage status | Ambient indicator in **Overview**; detail in **Liquidity** timeline | MSME + funder |
+| Dispute + partial-payment | **Liquidity** (deal detail) and the payer portal | MSME + payer |
+
 ### Key Flows
 
-**Happy path (post-onboarding):** Liquidity request → swap confirmation → (funds available) → Compliance: payroll preview + approval → EIS event auto-submitted → Overview shows all green. Target: ≤5 steps.
+**Closed-loop happy path:** Payer onboarded → invoice confirmed → NoA acknowledged → (receivable now fundable) → Liquidity request → swap confirmation (advance + reserve shown) → (funds available) → Compliance: payroll preview + approval → EIS auto-submitted → on due date payer pays lockbox → settlement repays funder, releases reserve, returns margin → Overview all green.
+
+**Pre-closed-loop happy path (legacy reference):** Liquidity request → swap confirmation → (funds available) → Compliance: payroll preview + approval → EIS event auto-submitted → Overview shows all green. Target: ≤5 steps.
 
 **Monitor without panic:** Overview opens with passive indicators as the default state. Alarmist is never the default.
 
@@ -155,6 +192,9 @@ No AI/LLM-driven user-facing features are in scope for v1. If anomaly explanatio
 - Accurate statutory tables (SSS, PhilHealth, Pag-IBIG) legally reviewed and signed off — TBD
 - Liquidity providers or pool counterparties willing to participate in pilot — TBD
 - BIR EIS staging/sandbox environment availability — TBD
+- KYB provider for payer verification — mocked for hackathon; real vendor TBD post-hackathon
+- Notice of Assignment legal text reviewed by PH counsel before any production funding — tracked in [CLR](clr-axial.md); **launch gate**
+- B2B payers willing to onboard and confirm invoices — closed-loop model assumes payer participation; GTM must account for payer-side activation
 
 **Assumptions:**
 - Target users are English/Filipino bilingual for v1 UI
@@ -165,12 +205,16 @@ No AI/LLM-driven user-facing features are in scope for v1. If anomaly explanatio
 
 ## 9. Milestones
 
-| Milestone | Deliverable | Target |
-|---|---|---|
-| M0 | Repo, environments, Soroban project skeleton, no secrets in repo | Hackathon Day 1 (May 18) |
-| M1 | End-to-end testnet: mock receivable → atomic swap → payroll split stub → EIS payload mock | Hackathon Day 5 (May 22) |
-| M2 | Pilot agency cohort, production-like oracle/EIS path (subject to legal and PTT readiness) | TBD post-hackathon |
-| Launch | GTM Phase 1 wedge launch criteria met per [GTM](gtm-axial.md) | TBD |
+Closed-loop tickets (`CLS-01..12`) are specified in [rfc-axial-closed-loop-settlement.md §7](rfc-axial-closed-loop-settlement.md). Phase mapping is kept consistent here.
+
+| Milestone | Deliverable | Closed-loop tickets | Target |
+|---|---|---|---|
+| M0 | Repo, environments, Soroban project skeleton, no secrets in repo | — | Hackathon Day 1 (May 18) |
+| M1-P1 | Step-0 path: payer onboarding + KYB, invoice confirmation, NoA + e-ack, funding eligibility gate wired (nothing funds without it) | CLS-01..05 | Day 2–3 |
+| M1-P2 | On-chain closed loop: settlement contract reserve release, clawback/AUTH assets, per-invoice lockbox, reserve/recourse ledger, reconciliation worker | CLS-06..09 | Day 3–5 |
+| M1-P3 | Dispute + partial-payment workflow, calm notifications, Funder Protection Center + Trust & Boundary UI; full E2E on Mainnet | CLS-10..12 | Day 5–6 |
+| M2 | Pilot agency cohort, production-like oracle/EIS path, signed-PDF NoA path, real KYB provider (subject to legal, PTT, and [CLR](clr-axial.md) clearance) | — | TBD post-hackathon |
+| Launch | GTM Phase 1 wedge launch criteria met per [GTM](gtm-axial.md); CLR launch gate cleared | — | TBD |
 
 ---
 

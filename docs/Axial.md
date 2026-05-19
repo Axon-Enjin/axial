@@ -14,11 +14,11 @@
 
 ### What we're building (one paragraph)
 
-Axial is a liquidity and compliance engine for Philippine MSMEs, built for the **Build on Stellar Philippines Hackathon 2026 (May 18–24)**. The flow: a B2B MSME tokenizes a verified accounts receivable on Soroban → an atomic swap funds the MSME instantly in USDC on Stellar → a Soroban payroll contract splits the next bi-weekly payroll across SSS, PhilHealth, and Pag-IBIG → an off-chain oracle maps the ledger-final event into BIR EIS JSON, JWS-signs it, and submits to BIR within T+3, writing the success reference back to the Stellar transaction memo. UI is four tabs (Liquidity, Compliance, Overview, Settings), dark-mode-first, glassmorphic, calm. Brand archetype is **The Architect** — never alarmist, never data-soup.
+Axial is a liquidity and compliance engine for Philippine MSMEs, built for the **Build on Stellar Philippines Hackathon 2026 (May 18–24)**. The flow: a B2B payer is onboarded and confirms an invoice (acknowledging a Notice of Assignment) → the MSME tokenizes that confirmed receivable on Soroban → an atomic swap funds the MSME instantly in USDC on Stellar (advance with reserve + recourse) → a Soroban payroll contract splits the next bi-weekly payroll across SSS, PhilHealth, and Pag-IBIG → an off-chain oracle maps the ledger-final event into BIR EIS JSON, JWS-signs it, and submits to BIR within T+3, writing the success reference back to the Stellar transaction memo. UI is four tabs (Liquidity, Compliance, Overview, Settings), dark-mode-first, glassmorphic, calm. Brand archetype is **The Architect** — never alarmist, never data-soup.
 
 ### What changed in this latest review (locked decisions)
 
-After fact-checking against current sources and aligning to PDAX (hackathon main sponsor), several earlier assumptions were retired:
+After fact-checking against current sources and aligning to PDAX (hackathon main sponsor), several earlier assumptions were retired (2026-05-14 review):
 
 | Old assumption | Status | Locked decision |
 |---|---|---|
@@ -29,6 +29,16 @@ After fact-checking against current sources and aligning to PDAX (hackathon main
 | PHP fiat rail unclear | ✅ Resolved | **PDAX as production PHP rail** via PDAX Connect API. PDAX inherits BSP/VASP license; Axial never custodies fiat. |
 | Anchor lock-in risk | ✅ Resolved | **SEP-24 abstraction layer** — PDAX is one driver; Coins.ph and future PHP-Stellar issuers can plug into the same interface without touching contract logic. |
 | User-facing currency | ✅ Resolved | **UI denominates in PHP. Settlement is in USDC.** FX conversion at edges via Reflector oracle (preferred) or hardcoded rate (acceptable for hackathon). Same architectural pattern as Stripe, Wise, dLocal. |
+
+**Settlement-integrity review (2026-05-19).** The original model assumed the B2B payer would voluntarily route payment to the smart contract. That is the single largest risk in the product: a payer who was never onboarded can simply pay the MSME the old way, leaving the funder unpaid (payment-redirection fraud). The following decisions close that hole and are now **locked** — they convert Axial from open factoring into a **closed-loop, confirmed-invoice financing system**. Do not reopen without editing this section first.
+
+| Decision | Status | Locked decision |
+|---|---|---|
+| Funding eligibility | ✅ Locked | **Only payer-confirmed receivables are fundable.** The B2B payer (debtor) is onboarded and KYB'd into Axial and explicitly confirms the invoice and due date *before* any swap. No confirmation → no funding. This eliminates fake/inflated-invoice fraud at the root. |
+| Legal collection mechanism | ✅ Locked | **Notice of Assignment (NoA) with payer e-acknowledgement.** Under PH Civil Code Arts. 1624–1635, once the debtor is notified of the assignment, paying the original MSME does **not** discharge the debt — the payer still owes Axial/the funder. Off-system payment becomes the payer's and MSME's breach, not the funder's loss. *Structural awareness only — NoA text must be reviewed by a licensed Philippine attorney.* |
+| Collection path | ✅ Locked | **Designated lockbox / collection address per invoice.** The payer's only payment instruction points to an Axial-controlled Stellar address (or virtual account at the anchor edge) that routes into the settlement contract. The MSME never re-enters the money path post-funding. |
+| Funder protection | ✅ Locked | **Advance < face value + reserve + recourse.** Advance ~80–90% (not 97%); a holdback reserve is retained; the MSME carries contractual recourse + personal guarantee if the payer does not settle through the system. Funders are protected by structure, never by a "this can't happen" promise. |
+| Leakage handling | ✅ Locked | **Reconciliation + automatic escalation.** Invoice due but no funds in the lockbox by T+X → MSME account auto-frozen, funder notified, recourse + blacklist triggered. Leakage is detected in days, not never. |
 
 ### Locked architecture in one paragraph
 
@@ -82,6 +92,8 @@ Decisions Carlos doesn't have a strong opinion on. Resolve early so they don't b
 | Q8 | **Hosting target** — Vercel, Railway, Render, fly.io? | Affects API latency to Stellar RPC and (eventually) BIR. Asia-Pacific region preferred | Day 5 |
 | Q9 | **Idempotency key strategy** for EIS submissions | `{org_id}:{stellar_tx_hash}:{invoice_id}` is suggested in SDD; team should sanity-check before implementing | Day 3 |
 | Q10 | **How explicit is "demo mode" in the UI?** | Demo-mode banner? Watermark? "Testnet" badge? Affects whether judges think it's real | Day 6 |
+| Q11 | **Lockbox implementation for the demo** — dedicated Soroban collection contract vs per-invoice Stellar address vs anchor virtual account? | Drives the closed-loop demo; contract is most on-chain-native, address is simplest | Day 2 |
+| Q12 | **NoA e-acknowledgement UX** — in-app click-to-accept vs signed PDF vs both? | Legal weight vs demo speed; click-to-accept is fine for demo, signed artifact needed for production. See [`clr-axial.md`](docs/clr-axial.md) | Day 3 |
 
 ### Resources
 
@@ -404,11 +416,14 @@ Axial operates as a seamless, automated pipeline. The founder's experience is a 
 
 ### 7.1 The Core Workflow
 
-**Step 1 — Tokenized Invoicing (Soroban SAC)**
-MSME generates an invoice for a verified B2B client. The platform uses Stellar Asset Contracts (SAC) to mint a token representing the legal right to that receivable. Resource-efficient; minimal network fees.
+**Step 0 — Payer Onboarding & Invoice Confirmation (the closed-loop gate)**
+Before any receivable is fundable, the B2B payer (the enterprise client who owes the money) is onboarded and KYB'd into Axial. The MSME raises an invoice; the payer confirms it inside Axial — "yes, we owe this ₱X, due this date." A **Notice of Assignment** is generated and the payer e-acknowledges that this receivable is assigned to Axial and is payable only to a designated collection address. **No payer confirmation and acknowledged NoA → no tokenization, no funding.** This single gate removes the fake-invoice and payment-redirection failure modes before they can exist.
 
-**Step 2 — Instant Liquidity via Atomic Swap**
-Institutional lenders or liquidity pools evaluate the MSME's on-chain history. The Soroban smart contract funds the tokenized invoice at a calculated discount and executes an `atomic_swap`, instantly delivering **USDC on Stellar** to the MSME. The MSME's UI displays the proceeds in PHP via FX conversion at the edge. The 60-day wait is bypassed entirely. The MSME has working capital now.
+**Step 1 — Tokenized Invoicing (Soroban SAC)**
+With a confirmed, assignment-acknowledged receivable, the platform uses Stellar Asset Contracts (SAC) to mint a token representing the legal right to that receivable. Resource-efficient; minimal network fees.
+
+**Step 2 — Instant Liquidity via Atomic Swap (with recourse + reserve)**
+Institutional lenders or liquidity pools evaluate the confirmed receivable and the MSME's on-chain history. The Soroban contract funds the invoice at a calculated discount and executes an `atomic_swap`, instantly delivering **USDC on Stellar** to the MSME — but the advance is **~80–90% of face value, not 97%**: a holdback reserve is retained and the MSME carries contractual recourse + personal guarantee. The MSME's UI displays proceeds in PHP via FX conversion at the edge. The 60-day wait is bypassed; the funder is protected by structure.
 
 **Step 3 — Programmable Statutory Payroll Splitting**
 As the MSME routes the settlement asset for bi-weekly payroll, a Soroban smart contract replaces manual spreadsheets. It automatically calculates and routes the exact statutory deductions (SSS, PhilHealth, Pag-IBIG — employee and employer shares) to the respective government agency wallets in real-time. Contracts are denomination-agnostic — they take the asset address as a parameter, so any future Stellar-native PHP-pegged asset slots in without changing routing logic.
@@ -416,8 +431,16 @@ As the MSME routes the settlement asset for bi-weekly payroll, a Soroban smart c
 **Step 4 — Automated BIR EIS Bridging**
 The moment the financial transaction achieves Stellar ledger consensus (3–5 seconds), an off-chain oracle service pulls the metadata, maps it to the 20 mandatory BIR EIS fields, applies JWS signing, and transmits to the BIR EIS API within T+3. The BIR success reference ID is written back to the Stellar transaction memo as immutable, auditable proof.
 
-**Step 5 — Automated Settlement and Reconciliation**
-On Day 60, when the B2B client settles the original invoice, funds route directly to the smart contract address. The contract automatically repays the liquidity provider and returns the margin to the MSME's wallet.
+**Step 5 — Closed-Loop Settlement and Reconciliation**
+On Day 60, the confirmed payer settles to the **designated lockbox / collection address** named in the NoA — the only payment instruction it ever received. The settlement contract repays the liquidity provider (principal + discount), releases the holdback reserve, and returns the residual margin to the MSME. A reconciliation worker watches every active invoice: if a due invoice has no funds in the lockbox by T+X, the MSME account is auto-frozen, the funder is notified, and recourse + blacklist are triggered. Because the payer acknowledged the NoA, paying the MSME directly does **not** discharge the debt — leakage is the payer's/MSME's liability, never the funder's loss.
+
+### 7.4 How Axial Makes Money
+
+Two revenue engines. The first scales with volume; the second is the recurring, sticky one.
+
+**1. Liquidity spread (transaction).** Discount fee ≈ **2–3.5% of face value per ~30-day tenor** (so ~6–9% all-in on a Net-90 invoice). Most of that is funder yield for risk capital; **Axial keeps a platform spread of ~0.5–1.5% of face value per funded invoice** (rule of thumb: ≈ 1% of every funded peso), plus a thin PHP↔USDC FX spread at the edge and a small flat origination fee on sub-₱50k tickets so micro-invoices stay economic. Hard ceiling: total all-in cost must stay below traditional PH factoring (1–5%, often 15–30% APR, collateral-required) — undercutting that is the wedge.
+
+**2. Compliance subscription (recurring — the moat).** "Invisible Compliance" is **not** free bait. The BIR EIS Dec-2026 mandate makes the EIS oracle + statutory payroll engine a must-have. Tiered monthly subscription by invoice volume / headcount monetizes MSMEs who are not factoring this month but must still file — smoothing revenue and raising switching cost.
 
 ### 7.2 What Success Looks Like for the Founder
 
@@ -544,6 +567,7 @@ These are things we have decided at a high level but where the implementation de
 | Direct QRPh integration | ❌ Retired | Not buildable as third-party | QRPh requires BSP-licensed PSP/EMI status. Handled at the anchor edge. |
 | FX rate source (PHP/USDC) | 🟡 Open | Reflector preferred, hardcoded acceptable for hackathon | See [Q4 in FOR DEVS § Open questions](#open-questions-for-the-dev-team) |
 | Liquidity provider sourcing | 🟡 Open | Institutional lenders or pools, accessible via PDAX's 20+ LP network | Partner agreements TBD; affects discount rate structure |
+| Settlement model | ✅ Locked | **Closed-loop, confirmed-invoice financing** — payer onboarded + invoice confirmed + NoA acknowledged before funding; lockbox collection; recourse + reserve; reconciliation auto-escalation | Locked 2026-05-19. Detailed in [`rfc-axial-closed-loop-settlement.md`](docs/rfc-axial-closed-loop-settlement.md). NoA text requires PH counsel — tracked in [`clr-axial.md`](docs/clr-axial.md) |
 | API gateway style | 🟡 Open | REST + OpenAPI leans recommended for BIR API parity; tRPC if TS-monorepo cohesion wins | See [Q2 in FOR DEVS § Open questions](#open-questions-for-the-dev-team) |
 | Auth mechanism | 🟡 Open | OIDC + org invites (preferred) | Vendor and session management TBD |
 | Job queue tech | 🟡 Open | BullMQ vs Temporal | See [Q1 in FOR DEVS § Open questions](#open-questions-for-the-dev-team) |
@@ -551,7 +575,7 @@ These are things we have decided at a high level but where the implementation de
 | Statutory tables | 🟡 Open | Encoded as versioned rule packs (not hard-coded in Soroban) | Legal/accounting sign-off on bracket accuracy required before production |
 | Wallet management (demo) | 🟡 Open | Freighter, Albedo, or custodial backend signing | See [Q7 in FOR DEVS § Open questions](#open-questions-for-the-dev-team) |
 | Hosting region | 🟡 Open | Cloud, Asia-Pacific (Singapore/Manila latency) | See [Q8 in FOR DEVS § Open questions](#open-questions-for-the-dev-team) |
-| Pricing model | 🟡 Open | Usage + SaaS hybrid (float unlocked + platform fee) | Final economics depend on liquidity partner agreements |
+| Pricing model | ✅ Locked | **Two engines:** liquidity spread (~0.5–1.5% of face value platform cut, ≈1% of every funded peso) + tiered compliance subscription. All-in factoring cost capped below traditional PH factoring | Locked 2026-05-19. Detailed in §7.4 and `brd-axial.md`. Funder-yield split depends on liquidity partner agreements |
 
 ---
 
@@ -567,7 +591,8 @@ All formal documents derive from this foundation. When this foundation is update
 | **DSD** | `docs/dsd-axial.md` | Design system — tokens, components, a11y, motion |
 | **SDD** | `docs/sdd-axial.md` | System architecture, data model, API design, security |
 | **GTM** | `docs/gtm-axial.md` | Launch strategy, channels, phasing, success metrics |
-| **RFC** | `docs/rfc-axial-*.md` | Per-feature deep dives (Soroban contracts, EIS oracle, etc.) |
+| **RFC** | `docs/rfc-axial-*.md` | Per-feature deep dives (closed-loop settlement, Soroban contracts, EIS oracle, etc.) |
+| **CLR** | `docs/clr-axial.md` | Compliance & legal readiness register — PH Data Privacy Act, KYC/KYB, NoA legal mechanism, launch gate |
 
 ---
 
@@ -592,11 +617,11 @@ Existing accounting tools record the absence of cash; they do not generate it. T
 
 Axial is a Stellar/Soroban-powered **liquidity and compliance engine** that turns the two problems above into a single automated pipeline:
 
-1. The MSME tokenizes a verified accounts receivable as a Stellar Asset on Soroban.
-2. A Soroban contract executes an atomic swap: the receivable token to the liquidity provider, a PHP-pegged settlement asset to the MSME — instantly, without physical collateral.
+1. The B2B payer is onboarded, confirms the invoice, and e-acknowledges a Notice of Assignment — only then is the receivable tokenized as a Stellar Asset on Soroban.
+2. A Soroban contract executes an atomic swap: the receivable token to the liquidity provider, USDC to the MSME — instantly, without physical collateral, advancing ~80–90% with a holdback reserve and MSME recourse.
 3. When the MSME runs payroll, a Soroban contract splits the gross amount into employee net pay, employer share, and the three statutory routes (SSS, PhilHealth, Pag-IBIG) — calculated against versioned, legally-reviewed bracket tables.
 4. Every reportable ledger event triggers an off-chain compliance oracle that maps Stellar transaction metadata to the BIR EIS 20-field schema, signs the payload with JWS, and submits to BIR within T+3. The BIR success reference is written back to the Stellar memo as immutable proof.
-5. On buyer settlement, the contract repays the liquidity provider and returns the margin to the MSME.
+5. The confirmed payer settles to the designated lockbox; the contract repays the liquidity provider, releases the reserve, and returns the margin to the MSME. Reconciliation auto-escalates any leakage — and because the NoA was acknowledged, off-system payment does not discharge the debt.
 
 The brand promise is **"Instant Capital, Invisible Compliance."** Both halves run on the same on-chain event, which is what makes the integration architecturally inseparable rather than two products glued together.
 

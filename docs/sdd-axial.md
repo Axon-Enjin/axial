@@ -113,13 +113,37 @@ Organization
 User
   id, org_id, role (owner | operator | viewer), auth_subject
 
+Payer (B2B debtor — the closed-loop gate; see rfc-axial-closed-loop-settlement.md)
+  id, org_id, legal_name, tin, kyb_status (pending | verified | rejected),
+  contact_email, created_at
+
 Invoice / Receivable
-  id, org_id, buyer_ref TBD, amount_php, currency, due_date,
-  payment_terms_days, status (draft | tokenized | funded | settled), stellar_asset_ref TBD
+  id, org_id, payer_id, amount_php, currency, due_date, payment_terms_days,
+  status (draft | awaiting_payer_confirmation | awaiting_noa_ack | fundable
+          | tokenized | funded | settled | leaked | disputed | recourse),
+  stellar_asset_ref TBD
+
+InvoiceConfirmation
+  id, receivable_id, payer_id, confirmed_amount, due_date,
+  status (pending | confirmed | disputed), confirmed_at
+
+NoticeOfAssignment (legal core — PH Civil Code Arts. 1624–1635)
+  id, receivable_id, payer_id, noa_document_ref, lockbox_address,
+  ack_status (issued | acknowledged | refused), ack_method (in_app | signed_pdf),
+  acknowledged_at
+
+Lockbox (per-invoice collection target; never reused)
+  id, receivable_id, stellar_address, expected_amount, funded_amount,
+  status (open | settled | leaked | disputed)
+
+ReserveLedger (funder protection)
+  id, receivable_id, advance_amount, reserve_held,
+  recourse_status (none | triggered | recovered | written_off), released_at
 
 LiquidityRequest / SwapRecord
   id, org_id, receivable_id, stellar_tx_hash, settlement_amount_usdc,  -- UI converts to PHP at display time
-  discount_rate, repayment_due_date, status (pending | active | repaid | failed)
+  advance_rate, discount_rate, reserve_held, repayment_due_date,
+  status (pending | active | repaid | failed)
 
 PayrollBatch
   id, org_id, period_start, period_end, status (draft | approved | executed),
@@ -140,7 +164,9 @@ AuditLog
 ```
 
 **Key relationships:**
-- Organization 1→N Users, Invoices, PayrollBatches, EisSubmissions
+- Organization 1→N Users, Payers, Invoices, PayrollBatches, EisSubmissions
+- Payer 1→N Invoices; Invoice 1→1 InvoiceConfirmation, 1→1 NoticeOfAssignment, 1→1 Lockbox, 1→1 ReserveLedger
+- **Funding gate:** an Invoice is `fundable` only when its Payer is `kyb_status = verified` AND InvoiceConfirmation is `confirmed` AND NoticeOfAssignment is `acknowledged`. Enforced server-side at the single funding entry point — no bypass path.
 - Invoice 1→1 or 1→N SwapRecord (one receivable can have one active funding at a time; policy TBD)
 - Ledger event 1→N EisSubmission attempts (retries) — unique idempotency key enforced at DB level
 
@@ -154,10 +180,11 @@ AuditLog
 
 | Contract | What it does |
 |---|---|
-| SAC / Receivable Token | Mints a token representing a verified accounts receivable; stores invoice metadata reference |
-| Atomic Swap | Executes collateral-free USDC delivery to MSME against receivable token; asset address is a contract parameter; encodes discount terms and repayment conditions |
-| Statutory Payroll Router | Accepts gross payroll (asset address as parameter, USDC for hackathon demo); calculates statutory splits per encoded bracket tables; routes to employee wallets and government agency addresses |
-| Settlement | On buyer payment, routes repayment to liquidity provider and margin to MSME |
+| SAC / Receivable Token | Mints a token for a **payer-confirmed, NoA-acknowledged** receivable; stores invoice metadata reference. Issued **clawback-enabled** so a token on a later-disproven invoice is revocable |
+| Atomic Swap | Executes collateral-free USDC delivery to MSME against receivable token; asset address is a contract parameter; advances ~80–90% of face, retains a reserve, encodes discount + recourse terms |
+| Statutory Payroll Router | Accepts gross payroll (asset address as parameter, USDC for hackathon demo); calculates statutory splits per encoded bracket tables; routes to employee wallets and government agency addresses. `AUTH_REQUIRED` keeps statutory tokens flowing only to whitelisted government addresses |
+| Settlement | On payer payment **into the per-invoice lockbox**, repays the liquidity provider (principal + discount), releases the holdback reserve, and returns the residual margin to the MSME |
+| Reconciliation (off-chain worker) | Scans open lockboxes; a due invoice with an empty lockbox by T+X flips Invoice→`leaked`, freezes the MSME, notifies the funder, and triggers recourse + blacklist |
 
 **Ledger event flow:**
 1. Transaction achieves consensus on Stellar (3–5 seconds)
@@ -207,8 +234,15 @@ Invoice number, invoice date, seller TIN, seller name, seller address, buyer TIN
 
 | Method | Path | Purpose |
 |---|---|---|
+| `POST` | `/v1/payers` | Onboard B2B payer (MSME-initiated); starts KYB |
+| `GET` | `/v1/payers/:id` | Payer KYB status |
 | `POST` | `/v1/receivables` | Register receivable for tokenization |
-| `POST` | `/v1/liquidity/requests` | Initiate funding / swap orchestration |
+| `POST` | `/v1/receivables/:id/confirm` | Payer confirms invoice + due date (payer-scoped token) |
+| `POST` | `/v1/noa/:receivableId/issue` | Issue Notice of Assignment; returns lockbox address |
+| `POST` | `/v1/noa/:receivableId/ack` | Payer e-acknowledges NoA |
+| `GET` | `/v1/receivables/:id/eligibility` | Funding gate — `{ fundable, blockers[] }` |
+| `POST` | `/v1/disputes` | Payer/MSME raises a dispute |
+| `POST` | `/v1/liquidity/requests` | Initiate funding / swap orchestration (rejects `409 NOT_FUNDABLE` if gate fails) |
 | `GET` | `/v1/liquidity/requests/:id` | Poll swap status (pending → active → repaid) |
 | `GET` | `/v1/overview` | Aggregated health for Overview tab |
 | `POST` | `/v1/payroll/batches` | Create payroll batch |

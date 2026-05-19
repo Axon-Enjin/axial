@@ -17,6 +17,8 @@ Axial is a **liquidity and compliance engine** for Philippine MSMEs. It gives B2
 
 The business case is "Instant Capital, Invisible Compliance." Axial is not another accounting tool that records what happened — it is infrastructure that makes things happen correctly without founder intervention.
 
+Axial operates as a **closed-loop, confirmed-invoice financing system**: the B2B payer is onboarded and confirms the invoice and acknowledges a Notice of Assignment *before* funding, the advance carries a holdback reserve and MSME recourse, and settlement flows through a designated lockbox with automatic leakage reconciliation. This is what makes the funder side investible rather than exposed to payment-redirection fraud — see [rfc-axial-closed-loop-settlement.md](rfc-axial-closed-loop-settlement.md).
+
 ---
 
 ## 2. The Problem and Opportunity
@@ -61,16 +63,28 @@ Full ICP analysis and GTM phasing in [Axial.md §8](../Axial.md) and [GTM](gtm-a
 
 **DTI MSMED Plan 2023–2028:** Government explicitly targets digitalization as a cross-cutting survival strategy. Axial is aligned with, not against, the regulatory direction of travel (Continuous Transaction Control is where BIR is headed — Axial's chain-as-compliance-trigger architecture is CTC-native).
 
+### Revenue Model
+
+Two engines. The first scales with funded volume; the second is recurring and is the durable moat. Locked 2026-05-19; full rationale in [Axial.md §7.4](../Axial.md).
+
+| Engine | Mechanism | Axial's cut |
+|---|---|---|
+| **Liquidity spread** | Discount fee ≈ 2–3.5% of face value per ~30-day tenor (≈ 6–9% all-in on Net-90). Most is funder yield. | **~0.5–1.5% of face value per funded invoice** (≈ 1% of every funded peso) + thin PHP↔USDC FX spread + small flat origination fee on sub-₱50k tickets |
+| **Compliance subscription** | Tiered monthly SaaS for the BIR EIS oracle + statutory payroll engine, by invoice volume / headcount | Recurring; monetizes MSMEs not factoring this month but still bound by the Dec-2026 EIS mandate |
+
+**Pricing guardrail:** total all-in factoring cost must stay **below traditional PH factoring** (1–5%, often 15–30% APR, collateral-required). Undercutting incumbents while bundling compliance is the wedge — the transaction cut stays lean and the subscription carries margin.
+
 ---
 
 ## 4. Scope
 
 **In Scope — v1:**
 
-- Tokenized accounts receivable via Stellar Asset Contracts (SAC) and atomic swaps (USDC on Stellar, with PHP fiat rail via PDAX)
+- Closed-loop gate: payer onboarding + KYB, invoice confirmation, Notice of Assignment + e-acknowledgement (funding eligibility enforced server-side)
+- Tokenized accounts receivable via Stellar Asset Contracts (SAC) and atomic swaps (USDC on Stellar, with PHP fiat rail via PDAX) — advance with holdback reserve + MSME recourse
 - Programmatic statutory payroll allocation and routing (SSS, PhilHealth, Pag-IBIG — employee and employer shares)
 - Off-chain oracle mapping ledger events to BIR EIS JSON (20-field schema), JWS-signed, T+3-aware submission with success references linked to Stellar memos
-- Automated buyer settlement and liquidity provider repayment on invoice maturity
+- Closed-loop settlement via per-invoice lockbox + reconciliation worker with automatic leakage escalation (freeze / notify / recourse / blacklist)
 - Web-first client with glassmorphic dark-mode UI per [DSD](dsd-axial.md); four-tab navigation (Liquidity, Compliance, Overview, Settings)
 
 **Out of Scope — v1:**
@@ -95,6 +109,9 @@ Full decision rationale at [Axial.md §10](../Axial.md).
 | Net working capital accessed via tokenized AR / swaps (pilot cohort) | 0 | TBD PHP volume — set after pilot pricing locked | 12 months |
 | Founder NPS / "would recommend" (agency wedge ICP) | TBD survey | ≥40 | End of Phase 2 |
 | Time-to-liquidity (median, from request to USDC in wallet) | TBD | TBD — establish in M1 testnet | Post-M1 |
+| Payer confirmation rate (invoices confirmed / invoices raised) | 0 | ≥80% on pilot cohort | First 90 days of pilot |
+| Settlement leakage rate (off-lockbox payment on acknowledged NoA) | TBD | <2% of funded volume; 100% detected & escalated | Ongoing post-pilot |
+| Platform take rate realized (Axial cut / funded volume) | 0 | ~1% of funded peso volume | 12 months |
 
 ---
 
@@ -117,6 +134,8 @@ Full decision rationale at [Axial.md §10](../Axial.md).
 - USDC on Stellar is the settlement asset (Circle-issued, Mainnet); PHP fiat rail via PDAX (BSP-licensed VASP); Axial never custodies fiat
 - BIR PTT (Permit to Transmit) certification is required before production EIS submission — timeline TBD
 - Statutory contribution tables must be legally reviewed before encoding in smart contracts
+- Notice of Assignment legal text and recourse/guarantee terms must be reviewed by PH counsel before any production funding — **launch gate**, tracked in [CLR](clr-axial.md)
+- Closed-loop model assumes B2B payer participation (onboarding + confirmation); GTM and pilot selection must account for payer-side activation
 
 **Assumptions:**
 - Target ICP has reliable internet; offline mode is not required
