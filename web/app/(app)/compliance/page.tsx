@@ -1,4 +1,4 @@
-import { ComplianceView } from "@/components/stitch/ComplianceView";
+import { ComplianceView } from "@/components/views/ComplianceView";
 
 export default function CompliancePage() {
   return <ComplianceView />;

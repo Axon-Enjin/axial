@@ -1,4 +1,4 @@
-import { OverviewView } from "@/components/stitch/OverviewView";
+import { OverviewView } from "@/components/views/OverviewView";
 
 export default function OverviewPage() {
   return <OverviewView />;

@@ -105,7 +105,7 @@
   --font-mono: "Geist Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
   --font-display: var(--font-sans);
 
-  /* Type scale — matches prototype/tailwind.config.ts */
+  /* Type scale — matches web/tailwind.config.ts */
   --text-headline-xl-size: 48px;
   --text-headline-xl-lh:   1.1;
   --text-headline-xl-ls:   -0.02em;

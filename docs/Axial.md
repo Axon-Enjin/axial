@@ -138,7 +138,7 @@ Decisions Carlos doesn't have a strong opinion on. Resolve early so they don't b
 | PDAX CAAS / Platform Solutions | https://pdax.ph/caas/ |
 | PDAX main site | https://pdax.ph/ |
 
-**Frontend (already scaffolded in `prototype/`)**
+**Frontend (Next.js app in `web/`)**
 
 | Resource | Link |
 |---|---|
