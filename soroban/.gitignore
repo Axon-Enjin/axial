@@ -1,0 +1,11 @@
+# Rust build output
+target
+
+# Per-developer secrets and local CLI state
+.env
+.soroban
+.stellar
+
+# Deployed IDs (commit testnet.example.json; share real testnet.json via team channel or private repo)
+deployments/testnet.json
+deployments/mainnet.json
