@@ -1,4 +1,4 @@
-import { LiquidityView } from "@/components/stitch/LiquidityView";
+import { LiquidityView } from "@/components/views/LiquidityView";
 
 export default function LiquidityPage() {
   return <LiquidityView />;
