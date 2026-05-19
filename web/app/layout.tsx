@@ -16,7 +16,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "Axial MVP",
-  description: "Liquidity and compliance engine — prototype UI",
+  description: "Liquidity and compliance engine for Philippine MSMEs",
 };
 
 /** Same Material Symbols axes as Stitch code.html exports (variable wght and FILL). */

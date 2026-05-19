@@ -28,7 +28,17 @@
   }
 }
 
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 @layer utilities {
+  .animate-spin {
+    animation: spin 1s linear infinite;
+  }
+
   .bioluminescent-glow {
     box-shadow: 0 0 15px rgba(45, 212, 191, 0.3);
   }

@@ -20,7 +20,7 @@ Settlement asset is **USDC on Stellar**. User-facing denomination is **PHP**. FX
 
 ## Sources
 
-Everything in this system was derived from the upstream repo. If you have access, browse it for deeper context — especially `docs/Axial.md`, `docs/dsd-axial.md`, and `prototype/components/stitch/*`.
+Everything in this system was derived from the upstream repo. If you have access, browse it for deeper context — especially `docs/Axial.md`, `docs/dsd-axial.md`, and `web/components/views/*`.
 
 | Source | Link |
 |---|---|
@@ -28,9 +28,9 @@ Everything in this system was derived from the upstream repo. If you have access
 | Design System Doc (DSD) | [`docs/dsd-axial.md`](https://github.com/Axon-Enjin/axial/blob/main/docs/dsd-axial.md) |
 | Go-To-Market | [`docs/gtm-axial.md`](https://github.com/Axon-Enjin/axial/blob/main/docs/gtm-axial.md) |
 | PRD / SDD / BRD | [`docs/`](https://github.com/Axon-Enjin/axial/tree/main/docs) |
-| Reference Stitch components (Next.js) | [`prototype/components/stitch/`](https://github.com/Axon-Enjin/axial/tree/main/prototype/components/stitch) |
-| Tailwind theme | [`prototype/tailwind.config.ts`](https://github.com/Axon-Enjin/axial/blob/main/prototype/tailwind.config.ts) |
-| Reference screen renders (4 PNGs) | `prototype/public/design-reference/` |
+| Production views (Next.js) | [`web/components/views/`](https://github.com/Axon-Enjin/axial/tree/main/web/components/views) |
+| Tailwind theme | [`web/tailwind.config.ts`](https://github.com/Axon-Enjin/axial/blob/main/web/tailwind.config.ts) |
+| Reference screen renders (4 PNGs) | `web/public/design-reference/` |
 
 A snapshot of the four reference screens lives in [`assets/screens/`](assets/screens). The reference Stitch components live in [`reference/`](reference) — read these to understand intended interaction patterns when extending the kit.
 
@@ -311,13 +311,13 @@ Link `colors_and_type.css`, use the CSS variables and `.axl-*` helper classes. P
 The kit in `ui_kits/axial-app/index.html` is a full click-through. Take it as the starting point — duplicate, rename, and modify. The four screens already wire up routing, the wallet toggle, the swap-execute interaction, and a calm toast on success.
 
 ### Producing production code (Next.js + Tailwind)
-The `reference/` folder holds the original Stitch components from the upstream `prototype/` codebase. Use those — they're the canonical source. The Tailwind theme is in [`prototype/tailwind.config.ts`](https://github.com/Axon-Enjin/japan/blob/main/prototype/tailwind.config.ts) upstream.
+The `reference/` folder holds Stitch-era components for comparison. Production UI lives in [`web/components/views/`](https://github.com/Axon-Enjin/axial/tree/main/web/components/views). The Tailwind theme is in [`web/tailwind.config.ts`](https://github.com/Axon-Enjin/axial/blob/main/web/tailwind.config.ts).
 
 ---
 
 ## Caveats
 
-- **Geist + Material Symbols** are loaded from Google Fonts CDN. The upstream prototype self-hosts Geist via `next/font` — match that pattern when deploying production assets.
-- The brand SVG mark in `assets/logos/axial-mark.svg` is a simplified geometric stand-in built to match the Material Symbol "architecture" glyph used in the prototype's sidebar. **There is no official Axial logo file in the upstream repo** — request one from the team before public launch.
-- The reference screen renders (`assets/screens/`) and Stitch React source (`reference/`) are the source of truth for the four core surfaces. If the prototype gains new surfaces (mobile, onboarding, wallet flow), this design system will need an extension.
+- **Geist + Material Symbols** are loaded from Google Fonts CDN. The upstream `web/` app self-hosts Geist via `next/font` — match that pattern when deploying production assets.
+- The brand SVG mark in `assets/logos/axial-mark.svg` is a simplified geometric stand-in built to match the Material Symbol "architecture" glyph used in the app's sidebar. **There is no official Axial logo file in the upstream repo** — request one from the team before public launch.
+- The reference screen renders (`assets/screens/`) and production views in `web/` are the source of truth for the four core surfaces. If the app gains new surfaces (mobile, onboarding, wallet flow), this design system will need an extension.
 - All Philippine financial nomenclature (TIN, SSS, PhilHealth, Pag-IBIG, BIR EIS, JWS, T+3, PDAX) is real and load-bearing. **Never substitute or "globalize" these terms** — the product positioning depends on Philippines-first specificity.

@@ -40,7 +40,11 @@ function NavLink({
   );
 }
 
-export function AppSidebar() {
+type AppSidebarProps = {
+  onNewTransaction?: () => void;
+};
+
+export function AppSidebar({ onNewTransaction }: AppSidebarProps) {
   const pathname = usePathname();
 
   return (
@@ -64,6 +68,7 @@ export function AppSidebar() {
       <div className="px-6 mb-6">
         <button
           type="button"
+          onClick={onNewTransaction}
           className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary py-3 px-4 font-label-md text-label-md font-semibold text-on-primary shadow-[0_0_15px_rgba(190,198,224,0.2)] transition-opacity hover:opacity-90"
         >
           <span className="material-symbols-outlined text-[18px]">add</span>

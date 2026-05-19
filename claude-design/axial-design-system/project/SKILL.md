@@ -20,7 +20,7 @@ Axial is a liquidity and compliance engine for Philippine MSMEs. The visual iden
 ## What you're making
 
 - **Visual artifacts** (slides, mocks, throwaway prototypes): copy `colors_and_type.css` and the relevant logos/assets out, write static HTML files for the user to view. Link Google Fonts for Geist + Material Symbols Outlined.
-- **Production code**: copy the assets and read the rules to become an expert in designing with this brand. The upstream tailwind config in `prototype/tailwind.config.ts` is the authoritative implementation reference.
+- **Production code**: copy the assets and read the rules to become an expert in designing with this brand. The upstream tailwind config in `web/tailwind.config.ts` is the authoritative implementation reference.
 
 ## Non-negotiables
 

@@ -33,7 +33,7 @@
 
 ## 2. Design Tokens
 
-These are the canonical values. Implement as CSS custom properties or Tailwind theme extensions. The Tailwind config in `prototype/tailwind.config.ts` is the authoritative implementation reference.
+These are the canonical values. Implement as CSS custom properties or Tailwind theme extensions. The Tailwind config in `web/tailwind.config.ts` is the authoritative implementation reference.
 
 ### 2.1 Color Palette
 
@@ -107,7 +107,7 @@ Preload weights 500 and 600 for UI performance.
 
 ### 2.3 Spacing
 
-**Base unit:** 8px. All spacing is a multiple of 8 (not 4 — adjusted from earlier drafts to match `prototype/tailwind.config.ts`).
+**Base unit:** 8px. All spacing is a multiple of 8 (not 4 — adjusted from earlier drafts to match `web/tailwind.config.ts`).
 
 | Token | Value | Usage |
 |---|---|---|
@@ -331,9 +331,9 @@ Run `npx impeccable detect src/` after first UI implementation round.
 ## Self-Check
 
 - [x] Section 2 has concrete hex values and YAML tokens for Tailwind theme alignment
-- [x] Section 2.3 spacing scale matches `prototype/tailwind.config.ts` (8px base unit)
+- [x] Section 2.3 spacing scale matches `web/tailwind.config.ts` (8px base unit)
 - [x] Section 4 includes button, input, card, modal, status, and table specs
 - [x] Section 5 covers tab active/inactive/hover/focus and keyboard behavior
 - [x] Section 9 microcopy has concrete before/after examples
 - [ ] WCAG AA verification pass required on implemented components — especially teal on obsidian for small text
-- [ ] Tokens reflected in CSS custom properties or Tailwind theme extension in code (check `prototype/tailwind.config.ts`)
+- [ ] Tokens reflected in CSS custom properties or Tailwind theme extension in code (check `web/tailwind.config.ts`)
