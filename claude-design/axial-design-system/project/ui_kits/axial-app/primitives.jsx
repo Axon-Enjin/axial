@@ -1,5 +1,5 @@
 // Axial UI Kit — primitive components
-// Buttons, cards, badges, icons. Mirrors prototype's Tailwind utilities using inline styles
+// Buttons, cards, badges, icons. Mirrors web/ Tailwind utilities using inline styles
 // against tokens declared in colors_and_type.css.
 
 const T = {

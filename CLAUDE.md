@@ -12,7 +12,7 @@ All regulatory and legal questions are **Philippines-jurisdiction-first**.
 
 ## Development Commands
 
-Frontend — from `prototype/`:
+Frontend — from `web/`:
 
 ```bash
 npm run dev     # Start dev server with Turbopack (http://localhost:3000)
@@ -37,7 +37,7 @@ make deploy-testnet  # uses STELLAR_SOURCE from soroban/.env
 ```
 axial/
 ├── soroban/            # Soroban workspace (build/deploy from WSL)
-├── prototype/          # Next.js 15 App Router application
+├── web/                # Next.js 15 App Router application
 ├── docs/               # Product docs: Axial.md (canonical), brd, prd, sdd, dsd, gtm
 ├── initial-docs/       # Founding strategy docs (archived — superseded by docs/)
 └── FMD/                # Document templates (BRD, PRD, SDD, RFC, GTM) — no code
@@ -47,7 +47,7 @@ axial/
 
 **Stack:** Next.js 15.5 · React 19 · TypeScript 5 (strict) · Tailwind CSS 4 · Material Symbols Outlined
 
-**App Router structure (`prototype/app/`):**
+**App Router structure (`web/app/`):**
 - `layout.tsx` — Root layout with Geist fonts and Material Symbols
 - `(app)/layout.tsx` — Auth layout containing `AppSidebar`
 - `(app)/page.tsx` — Overview / Command Center
@@ -55,9 +55,9 @@ axial/
 - `(app)/compliance/page.tsx` — Payroll split and BIR EIS status
 - `(app)/settings/page.tsx` — Account and preferences
 
-**Component pattern:** Pages import from `components/stitch/` — one view component per tab (`OverviewView`, `LiquidityView`, `ComplianceView`, `SettingsView`). These are currently scaffolded shells.
+**Component pattern:** Pages import from `components/views/` — one view per tab (`OverviewView`, `LiquidityView`, `ComplianceView`, `SettingsView`). Shared shell in `components/layout/` and primitives in `components/ui/`.
 
-**Path alias:** `@/*` maps to `prototype/src/*` (tsconfig).
+**Path alias:** `@/*` maps to `web/*` (tsconfig).
 
 ### Backend (Planned — not yet implemented)
 
@@ -118,7 +118,7 @@ Full decision list and rationale in `docs/Axial.md` §11 and "Open questions for
 
 ## Design System
 
-Defined in `docs/dsd-axial.md` and wired into `prototype/tailwind.config.ts`.
+Defined in `docs/dsd-axial.md` and wired into `web/tailwind.config.ts`.
 
 - **Color system:** Material Design 3 — custom obsidian/deep-slate primary, muted teal and soft silver accents. Dark-mode first (`class` strategy).
 - **Typography:** Geist sans-serif. Tailwind utilities: `headline-xl/lg/md`, `body-lg/md`, `label-md/sm`.

@@ -5,15 +5,15 @@ Liquidity and compliance engine for Philippine MSMEs — **Build on Stellar Phil
 | Area | Path | Status |
 |------|------|--------|
 | Product docs | [`docs/Axial.md`](docs/Axial.md) | Canonical spec |
-| Web UI (Next.js) | [`prototype/`](prototype/) | Four-tab prototype |
+| Web UI (Next.js) | [`web/`](web/) | Four-tab app |
 | Soroban contracts | [`soroban/`](soroban/) | Workspace scaffold (3 crates) |
 
 ## Quick start
 
-**Frontend** (from `prototype/`):
+**Frontend** (from `web/`):
 
 ```bash
-npm install && npm run dev
+cd web && npm install && npm run dev
 ```
 
 **Soroban** (WSL — see [`soroban/CONTRIBUTING.md`](soroban/CONTRIBUTING.md)):

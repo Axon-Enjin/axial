@@ -169,11 +169,11 @@ See [Circle testnet USDC faucet](https://faucet.circle.com/) for test USDC where
 # Contract metadata
 stellar contract info --id "$CONTRACT_ID" --network testnet
 
-# TypeScript bindings for prototype/ integration (optional)
+# TypeScript bindings for web/ integration (optional)
 stellar contract bindings typescript \
   --id "$CONTRACT_ID" \
   --network testnet \
-  --output-dir ../prototype/src/lib/soroban/axial_swap
+  --output-dir ../web/lib/soroban/axial_swap
 ```
 
 ## Hackathon implementation order
@@ -184,7 +184,7 @@ See **`CONTRACTS.md`** for the full on-chain vs off-chain split.
 2. **`axial_swap`** — USDC swap vs receivable token (fork `soroban-examples/atomic_swap`).
 3. **`payroll_split`** — statutory splits to agency addresses.
 4. **Backend** — EIS oracle + mock BIR + memo (not a Soroban crate).
-5. Wire contract IDs into `prototype/` env — **never commit secret keys**.
+5. Wire contract IDs into `web/` env — **never commit secret keys**.
 
 Deploy all three to testnet: `make deploy-all` (after keys are funded).
 
