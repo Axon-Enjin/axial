@@ -12,7 +12,7 @@ All regulatory and legal questions are **Philippines-jurisdiction-first**.
 
 ## Development Commands
 
-All commands run from `prototype/`:
+Frontend — from `prototype/`:
 
 ```bash
 npm run dev     # Start dev server with Turbopack (http://localhost:3000)
@@ -21,13 +21,23 @@ npm run lint    # Run ESLint
 npm start       # Start production server
 ```
 
+Soroban — from WSL, directory `soroban/` (see `soroban/README.md`, `soroban/CONTRIBUTING.md`, `soroban/CONTRACTS.md`):
+
+```bash
+cd /mnt/c/Users/User/CODERIST/axonjn/axial/soroban
+make setup           # first-time: .env, testnet, fund identity
+make build
+make deploy-testnet  # uses STELLAR_SOURCE from soroban/.env
+```
+
 ## Architecture
 
 ### Repository Layout
 
 ```
 axial/
-├── prototype/          # Next.js 15 App Router application (the only runnable code)
+├── soroban/            # Soroban workspace (build/deploy from WSL)
+├── prototype/          # Next.js 15 App Router application
 ├── docs/               # Product docs: Axial.md (canonical), brd, prd, sdd, dsd, gtm
 ├── initial-docs/       # Founding strategy docs (archived — superseded by docs/)
 └── FMD/                # Document templates (BRD, PRD, SDD, RFC, GTM) — no code

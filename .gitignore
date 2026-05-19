@@ -1,0 +1,15 @@
+# Secrets — never commit
+.env
+.env.local
+**/.env
+!**/.env.example
+
+# Soroban local + deployment overrides (team commits *.example.json only)
+soroban/.env
+soroban/deployments/testnet.json
+soroban/deployments/mainnet.json
+
+# Node
+node_modules/
+.next/
+out/

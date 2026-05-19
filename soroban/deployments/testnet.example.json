@@ -1,0 +1,13 @@
+{
+  "_comment": "Copy to testnet.json after deploy. Commit testnet.json only if your repo is private team-only; otherwise share IDs in chat.",
+  "network": "testnet",
+  "passphrase": "Test SDF Network ; September 2015",
+  "rpc": "https://soroban-testnet.stellar.org:443",
+  "deployed_at": null,
+  "deployer_public": null,
+  "contracts": {
+    "receivable_token": null,
+    "axial_swap": null,
+    "payroll_split": null
+  }
+}
