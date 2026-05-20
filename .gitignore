@@ -1,3 +1,7 @@
+# Cursor / agent skills (local tooling — not product code)
+.agents/
+skills-lock.json
+
 # Secrets — never commit
 .env
 .env.local

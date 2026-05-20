@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { triggerEisFromChain } from "@/lib/eis/trigger";
 import { getSorobanConfig, isSwapChainEnabled } from "@/lib/soroban/config";
 import { executeAdvanceOnChain } from "@/lib/soroban/invoke-swap";
 import { quoteAdvance } from "@/lib/soroban/quote";
@@ -46,6 +47,13 @@ export async function POST(request: Request) {
 
   try {
     const onChain = await executeAdvanceOnChain(cfg, invoiceId, faceAmount!);
+    triggerEisFromChain(
+      "swap_executed",
+      invoiceId,
+      onChain.txHash,
+      faceAmount!,
+      quote.advance,
+    );
     return NextResponse.json({
       mode: "on-chain",
       invoiceId,
