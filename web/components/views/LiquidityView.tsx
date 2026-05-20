@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useApp } from "@/components/providers/AppProvider";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
@@ -25,7 +25,7 @@ const initialInvoices: Invoice[] = [
     party: "Acme Logistics Corp",
     terms: "Net 60",
     face: 125000,
-    immediate: 118500,
+    immediate: null,
     status: "minted",
   },
   {
@@ -41,7 +41,7 @@ const initialInvoices: Invoice[] = [
     party: "Global Freight Systems",
     terms: "Net 30",
     face: 75500,
-    immediate: 73200,
+    immediate: null,
     status: "settled",
   },
 ];
@@ -173,19 +173,126 @@ function Pipeline() {
   );
 }
 
+async function fetchQuote(face: number): Promise<number | null> {
+  try {
+    const res = await fetch(`/api/swap/quote?face=${face}`);
+    if (!res.ok) return null;
+    const data = (await res.json()) as { advanceAmount: number };
+    return data.advanceAmount;
+  } catch {
+    return null;
+  }
+}
+
+type ChainStatus = {
+  network: string;
+  onChainReady: boolean;
+  swapContractId: string | null;
+  configSource: string;
+};
+
 export function LiquidityView() {
   const { dispatch } = useApp();
   const [invoices, setInvoices] = useState(initialInvoices);
+  const [swappingId, setSwappingId] = useState<string | null>(null);
+  const [chain, setChain] = useState<ChainStatus | null>(null);
 
-  function executeSwap(id: string) {
-    setInvoices((rows) =>
-      rows.map((r) => (r.id === id ? { ...r, status: "settled" as const } : r)),
-    );
-    dispatch("swap-executed", id);
-  }
+  useEffect(() => {
+    void fetch("/api/soroban/status")
+      .then((r) => r.json())
+      .then((data: ChainStatus) => setChain(data))
+      .catch(() => setChain(null));
+  }, []);
+
+  useEffect(() => {
+    void (async () => {
+      const quoted = await Promise.all(
+        initialInvoices.map(async (row) => {
+          if (row.immediate != null) return row;
+          const advance = await fetchQuote(row.face);
+          return advance != null ? { ...row, immediate: advance } : row;
+        }),
+      );
+      setInvoices(quoted);
+    })();
+  }, []);
+
+  const executeSwap = useCallback(
+    async (id: string, face: number) => {
+      setSwappingId(id);
+      try {
+        // Unique on-chain id per click (contract allows one swap per invoice_id)
+        const chainInvoiceId = `${id}-${Date.now()}`;
+        const res = await fetch("/api/swap/execute", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ invoiceId: chainInvoiceId, faceAmount: face }),
+        });
+        const data = (await res.json()) as {
+          mode?: string;
+          advanceAmount?: number;
+          txHash?: string;
+          error?: string;
+        };
+
+        if (!res.ok) {
+          dispatch("swap-executed", data.error ?? `Swap failed (${res.status})`);
+          return;
+        }
+
+        setInvoices((rows) =>
+          rows.map((r) =>
+            r.id === id
+              ? {
+                  ...r,
+                  status: "settled" as const,
+                  immediate: data.advanceAmount ?? r.immediate,
+                }
+              : r,
+          ),
+        );
+
+        const payload =
+          data.mode === "on-chain" && data.txHash
+            ? `tx:${id}|${data.txHash}`
+            : id;
+        dispatch("swap-executed", payload);
+      } finally {
+        setSwappingId(null);
+      }
+    },
+    [dispatch],
+  );
 
   return (
     <main className="mx-auto flex max-w-container-max flex-col gap-gutter px-margin-mobile py-7 md:px-margin-desktop">
+      {chain ? (
+        <div
+          className={[
+            "flex flex-wrap items-center gap-2 rounded-xl border px-4 py-2.5 font-label-sm text-label-sm",
+            chain.onChainReady
+              ? "border-[#2DD4BF]/30 bg-[#2DD4BF]/10 text-[#2DD4BF]"
+              : "border-outline-variant/30 bg-surface-container-high/60 text-on-surface-variant",
+          ].join(" ")}
+        >
+          <span className="material-symbols-outlined text-[16px]">hub</span>
+          <span>
+            {chain.onChainReady
+              ? `Stellar ${chain.network} — swaps execute on-chain`
+              : `Stellar ${chain.network} — demo mode (add STELLAR_FUNDER_SECRET to web/.env.local)`}
+          </span>
+          {chain.swapContractId ? (
+            <a
+              href={`https://stellar.expert/explorer/testnet/contract/${chain.swapContractId}`}
+              target="_blank"
+              rel="noreferrer"
+              className="ml-auto font-mono text-xs underline opacity-80 hover:opacity-100"
+            >
+              {chain.swapContractId.slice(0, 8)}…
+            </a>
+          ) : null}
+        </div>
+      ) : null}
       <div className="grid grid-cols-1 gap-gutter md:grid-cols-12">
         <div className="flex flex-col gap-6 md:col-span-8">
           <UploadZone onBrowse={() => dispatch("browse-files")} />
@@ -290,8 +397,13 @@ export function LiquidityView() {
                   </td>
                   <td className="px-6 py-4 text-right">
                     {row.status === "minted" ? (
-                      <Button variant="teal" size="sm" onClick={() => executeSwap(row.id)}>
-                        Execute Atomic Swap
+                      <Button
+                        variant="teal"
+                        size="sm"
+                        disabled={swappingId === row.id}
+                        onClick={() => void executeSwap(row.id, row.face)}
+                      >
+                        {swappingId === row.id ? "Swapping…" : "Execute Atomic Swap"}
                       </Button>
                     ) : null}
                     {row.status === "scanning" ? (

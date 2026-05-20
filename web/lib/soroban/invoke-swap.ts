@@ -1,0 +1,82 @@
+import {
+  Address,
+  Contract,
+  Keypair,
+  nativeToScVal,
+  rpc,
+  TransactionBuilder,
+} from "@stellar/stellar-sdk";
+import type { SorobanConfig } from "./config";
+
+export type ExecuteAdvanceResult = {
+  txHash: string;
+  status: "submitted";
+};
+
+function formatSimulationError(error: string): string {
+  if (error.includes("Error(Contract, #4)")) {
+    return "This invoice is already funded on testnet. Each invoice ID can only be swapped once.";
+  }
+  if (error.includes("Error(Contract, #5)")) {
+    return "Invalid face amount for swap.";
+  }
+  if (error.includes("Error(Contract, #1)")) {
+    return "Swap contract is not initialized on this deployment.";
+  }
+  return error.length > 200 ? `${error.slice(0, 200)}…` : error;
+}
+
+export async function executeAdvanceOnChain(
+  cfg: SorobanConfig,
+  invoiceId: string,
+  faceAmount: number,
+): Promise<ExecuteAdvanceResult> {
+  if (
+    !cfg.swapContractId ||
+    !cfg.funderSecret ||
+    !cfg.funderPublic ||
+    !cfg.msmePublic
+  ) {
+    throw new Error("Soroban swap env is not configured");
+  }
+
+  const server = new rpc.Server(cfg.rpcUrl);
+  const funder = Keypair.fromSecret(cfg.funderSecret);
+  if (funder.publicKey() !== cfg.funderPublic) {
+    throw new Error("STELLAR_FUNDER_PUBLIC does not match STELLAR_FUNDER_SECRET");
+  }
+
+  const account = await server.getAccount(funder.publicKey());
+  const contract = new Contract(cfg.swapContractId);
+
+  const tx = new TransactionBuilder(account, {
+    fee: "100000",
+    networkPassphrase: cfg.networkPassphrase,
+  })
+    .addOperation(
+      contract.call(
+        "execute_advance",
+        new Address(cfg.funderPublic).toScVal(),
+        new Address(cfg.msmePublic).toScVal(),
+        nativeToScVal(invoiceId, { type: "string" }),
+        nativeToScVal(BigInt(Math.trunc(faceAmount)), { type: "i128" }),
+      ),
+    )
+    .setTimeout(180)
+    .build();
+
+  const simulation = await server.simulateTransaction(tx);
+  if (rpc.Api.isSimulationError(simulation)) {
+    throw new Error(formatSimulationError(simulation.error));
+  }
+
+  const prepared = await server.prepareTransaction(tx);
+  prepared.sign(funder);
+
+  const send = await server.sendTransaction(prepared);
+  if (send.status === "ERROR") {
+    throw new Error(send.errorResult?.toXDR("base64") ?? "transaction failed");
+  }
+
+  return { txHash: send.hash, status: "submitted" };
+}
