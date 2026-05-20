@@ -20,6 +20,8 @@ cd web && npm install && npm run dev
 
 ```bash
 cd soroban && make setup && make build && make test
+# Full testnet deploy + web env (WSL, ~3 min):
+cd soroban && make testnet-demo
 ```
 
 ## Team

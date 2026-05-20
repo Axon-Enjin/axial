@@ -124,16 +124,32 @@ stellar contract deploy \
   --source "$SOURCE" \
   --network "$NETWORK"
 
-# Save the returned contract ID, then invoke (scaffold hello)
+# Save the returned contract ID, then initialize (once per deploy)
 CONTRACT_ID=<paste_contract_id>
+USDC_TOKEN_ID=<sac_or_test_token_contract_id>
+ADMIN=$(stellar keys address "$SOURCE")
 
 stellar contract invoke \
   --id "$CONTRACT_ID" \
   --source "$SOURCE" \
   --network "$NETWORK" \
   -- \
-  hello \
-  --to Axial
+  initialize \
+  --admin "$ADMIN" \
+  --usdc "$USDC_TOKEN_ID" \
+  --advance_bps 8500
+
+# Execute advance (funder must hold USDC on the token contract)
+stellar contract invoke \
+  --id "$CONTRACT_ID" \
+  --source "$SOURCE" \
+  --network "$NETWORK" \
+  -- \
+  execute_advance \
+  --funder "$ADMIN" \
+  --msme <msme_stellar_address> \
+  --invoice_id INV-2023-8901 \
+  --face_amount 100000
 ```
 
 ## Deploy (mainnet)
@@ -181,7 +197,7 @@ stellar contract bindings typescript \
 See **`CONTRACTS.md`** for the full on-chain vs off-chain split.
 
 1. **`receivable_token`** — SAC mint after API funding gate (fork `soroban-examples/token`).
-2. **`axial_swap`** — USDC swap vs receivable token (fork `soroban-examples/atomic_swap`).
+2. **`axial_swap`** — USDC advance to MSME at configurable bps (85% default); `execute_advance` + `quote` implemented.
 3. **`payroll_split`** — statutory splits to agency addresses.
 4. **Backend** — EIS oracle + mock BIR + memo (not a Soroban crate).
 5. Wire contract IDs into `web/` env — **never commit secret keys**.

@@ -17,7 +17,7 @@ WASM_DIR := target/wasm32v1-none/release
 CRATES := receivable_token axial_swap payroll_split
 DEPLOY_JSON := deployments/testnet.json
 
-.PHONY: build test fmt clean setup check-testnet deploy-testnet deploy-all $(addprefix deploy-,$(CRATES))
+.PHONY: build test fmt clean setup check-testnet testnet-demo deploy-testnet deploy-all $(addprefix deploy-,$(CRATES))
 
 build:
 	stellar contract build
@@ -37,6 +37,9 @@ setup:
 
 check-testnet:
 	@bash scripts/check-testnet.sh
+
+testnet-demo:
+	@bash scripts/testnet-demo-setup.sh
 
 deploy-testnet: deploy-axial_swap
 
