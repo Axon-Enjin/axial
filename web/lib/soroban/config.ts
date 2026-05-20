@@ -6,11 +6,13 @@ export type SorobanConfig = {
   network: string;
   swapContractId: string | null;
   receivableContractId: string | null;
+  payrollContractId: string | null;
   usdcTokenId: string | null;
   funderSecret: string | null;
   funderPublic: string | null;
   issuerSecret: string | null;
   issuerPublic: string | null;
+  msmeSecret: string | null;
   msmePublic: string | null;
   configSource: "env" | "deployments" | "mixed" | "default";
 };
@@ -26,6 +28,10 @@ export function getSorobanConfig(): SorobanConfig {
   const receivableContractId =
     process.env.RECEIVABLE_TOKEN_CONTRACT_ID ??
     deployment?.contracts?.receivable_token ??
+    null;
+  const payrollContractId =
+    process.env.PAYROLL_SPLIT_CONTRACT_ID ??
+    deployment?.contracts?.payroll_split ??
     null;
   const usdcTokenId =
     process.env.SOROBAN_USDC_TOKEN_ID ??
@@ -44,7 +50,8 @@ export function getSorobanConfig(): SorobanConfig {
 
   const hasEnv =
     Boolean(process.env.AXIAL_SWAP_CONTRACT_ID) ||
-    Boolean(process.env.RECEIVABLE_TOKEN_CONTRACT_ID);
+    Boolean(process.env.RECEIVABLE_TOKEN_CONTRACT_ID) ||
+    Boolean(process.env.PAYROLL_SPLIT_CONTRACT_ID);
   const configSource: SorobanConfig["configSource"] = hasEnv
     ? fromFile
       ? "mixed"
@@ -65,11 +72,13 @@ export function getSorobanConfig(): SorobanConfig {
     network: deployment?.network ?? "testnet",
     swapContractId,
     receivableContractId,
+    payrollContractId,
     usdcTokenId,
     funderSecret: process.env.STELLAR_FUNDER_SECRET ?? null,
     funderPublic,
     issuerSecret: process.env.STELLAR_ISSUER_SECRET ?? null,
     issuerPublic,
+    msmeSecret: process.env.STELLAR_MSME_SECRET ?? null,
     msmePublic,
     configSource,
   };
@@ -93,6 +102,12 @@ export function isReceivableChainEnabled(cfg: SorobanConfig = getSorobanConfig()
   );
 }
 
+export function isPayrollChainEnabled(cfg: SorobanConfig = getSorobanConfig()) {
+  return Boolean(
+    cfg.payrollContractId && cfg.msmeSecret && cfg.msmePublic && cfg.usdcTokenId,
+  );
+}
+
 /** Public-only snapshot for UI (no secrets). */
 export function getPublicChainStatus(cfg: SorobanConfig = getSorobanConfig()) {
   return {
@@ -100,8 +115,10 @@ export function getPublicChainStatus(cfg: SorobanConfig = getSorobanConfig()) {
     configSource: cfg.configSource,
     onChainReady: isSwapChainEnabled(cfg),
     receivableReady: isReceivableChainEnabled(cfg),
+    payrollReady: isPayrollChainEnabled(cfg),
     swapContractId: cfg.swapContractId,
     receivableContractId: cfg.receivableContractId,
+    payrollContractId: cfg.payrollContractId,
     usdcTokenId: cfg.usdcTokenId,
     funderPublic: cfg.funderPublic,
     msmePublic: cfg.msmePublic,

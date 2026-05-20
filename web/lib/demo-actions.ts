@@ -2,7 +2,8 @@ export type DemoActionKind =
   | "unlock"
   | "transfer"
   | "browse-files"
-  | "swap-executed";
+  | "swap-executed"
+  | "payroll-routed";
 
 const MESSAGES: Record<DemoActionKind, string | ((payload?: string) => string)> = {
   unlock: "Capital unlock flow opened — choose a receivable to tokenize.",
@@ -25,6 +26,20 @@ const MESSAGES: Record<DemoActionKind, string | ((payload?: string) => string)> 
       return `${invoiceId} settled on Stellar.`;
     }
     return `Atomic swap executed on ${payload}. USDC settling on Stellar.`;
+  },
+  "payroll-routed": (payload) => {
+    if (!payload) {
+      return "Payroll routed. Statutory slices dispatched on Stellar.";
+    }
+    if (payload.startsWith("tx:")) {
+      const parts = payload.slice(3).split("|");
+      const payrollId = parts[0] ?? "payroll";
+      const hash = parts[1];
+      return hash
+        ? `${payrollId} routed on Stellar. TX ${hash.length > 8 ? `${hash.slice(0, 8)}…` : hash}`
+        : `${payrollId} routed on Stellar.`;
+    }
+    return `Payroll routed for ${payload}.`;
   },
 };
 
