@@ -111,11 +111,20 @@ function SplitTile({
   );
 }
 
-const payloads = [
-  { id: "PLD-8829-A", date: "Oct 24, 14:30", ref: "BIR-2026-991A", status: "Synchronized" as const },
-  { id: "PLD-8830-B", date: "Oct 24, 15:45", ref: "Pending…", status: "Bridging" as const },
-  { id: "PLD-8831-C", date: "Oct 24, 16:10", ref: "Pending…", status: "Bridging" as const },
-];
+type EisRow = {
+  id: string;
+  date: string;
+  ref: string;
+  status: "Synchronized" | "Bridging" | "Failed";
+  memoTxHash?: string | null;
+  stellarTxHash?: string;
+};
+
+type EisStats = {
+  pending: number;
+  synchronized: number;
+  total: number;
+};
 
 type PayrollQuote = {
   gross: number;
@@ -139,15 +148,42 @@ export function ComplianceView() {
   const [routing, setRouting] = useState(false);
   const [routed, setRouted] = useState(false);
   const [txHash, setTxHash] = useState<string | null>(null);
+  const [eisRows, setEisRows] = useState<EisRow[]>([]);
+  const [eisStats, setEisStats] = useState<EisStats>({
+    pending: 0,
+    synchronized: 0,
+    total: 0,
+  });
 
   const gross = DEFAULT_GROSS;
+  const explorerTx =
+    chain?.explorerTxBase ?? "https://stellar.expert/explorer/testnet/tx";
+
+  const loadEis = useCallback(() => {
+    fetch("/api/eis/submissions")
+      .then((r) => r.json())
+      .then((d) => {
+        if (Array.isArray(d.submissions)) {
+          setEisRows(d.submissions as EisRow[]);
+        }
+        if (d.stats) {
+          setEisStats(d.stats as EisStats);
+        }
+      })
+      .catch(() => {
+        setEisRows([]);
+      });
+  }, []);
 
   useEffect(() => {
     fetch("/api/soroban/status")
       .then((r) => r.json())
       .then((d) => setChain(d as ChainStatus))
       .catch(() => setChain(null));
-  }, []);
+    loadEis();
+    const id = window.setInterval(loadEis, 8000);
+    return () => window.clearInterval(id);
+  }, [loadEis]);
 
   useEffect(() => {
     fetch(`/api/payroll/quote?gross=${gross}`)
@@ -207,10 +243,11 @@ export function ComplianceView() {
       } else {
         dispatch("payroll-routed", payrollId);
       }
+      window.setTimeout(loadEis, 4000);
     } finally {
       setRouting(false);
     }
-  }, [dispatch, gross]);
+  }, [dispatch, gross, loadEis]);
 
   const sssAmt = quote?.sss ?? 0;
   const philAmt = quote?.philhealth ?? 0;
@@ -270,11 +307,15 @@ export function ComplianceView() {
             <div className="mb-6 grid grid-cols-1 gap-3.5 sm:grid-cols-3">
               <StatBlock
                 label="Pending Transmissions"
-                value="14"
+                value={String(eisStats.pending)}
                 badge="T+3 Timeline Active"
                 badgeAccent
               />
-              <StatBlock label="JWS Secured Payloads" value="8,241" badge="Last 30 Days" />
+              <StatBlock
+                label="JWS Secured Payloads"
+                value={String(eisStats.total)}
+                badge="Oracle submissions"
+              />
               <div className="rounded-lg border border-outline-variant/10 bg-surface-container-low p-4">
                 <div className="font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant">
                   System Status
@@ -282,7 +323,9 @@ export function ComplianceView() {
                 <div className="mt-3.5 flex items-center gap-2">
                   <Icon name="check_circle" size={20} fill className="text-[#2DD4BF]" />
                   <span className="font-body-md text-body-md font-medium text-on-surface">
-                    Synchronized
+                    {eisStats.synchronized > 0
+                      ? `${eisStats.synchronized} synchronized`
+                      : "Awaiting ledger events"}
                   </span>
                 </div>
               </div>
@@ -306,26 +349,58 @@ export function ComplianceView() {
                   </tr>
                 </thead>
                 <tbody>
-                  {payloads.map((r, i, arr) => (
-                    <tr
-                      key={r.id}
-                      className={i < arr.length - 1 ? "border-b border-outline-variant/10" : ""}
-                    >
-                      <td className="py-3.5 font-mono text-sm font-medium text-on-surface">{r.id}</td>
-                      <td className="py-3.5 font-body-md text-body-md text-on-surface-variant">
-                        {r.date}
-                      </td>
-                      <td className="py-3.5 font-mono text-sm text-on-surface-variant">{r.ref}</td>
+                  {eisRows.length === 0 ? (
+                    <tr>
                       <td
-                        className={[
-                          "py-3.5 text-right font-body-md text-body-md font-medium",
-                          r.status === "Synchronized" ? "text-[#2DD4BF]" : "text-on-surface-variant",
-                        ].join(" ")}
+                        colSpan={4}
+                        className="py-8 text-center font-body-md text-body-md text-on-surface-variant"
                       >
-                        {r.status}
+                        No EIS payloads yet — run Liquidity (mint/swap) or Route Payroll to
+                        trigger the oracle.
                       </td>
                     </tr>
-                  ))}
+                  ) : (
+                    eisRows.map((r, i, arr) => (
+                      <tr
+                        key={r.id}
+                        className={i < arr.length - 1 ? "border-b border-outline-variant/10" : ""}
+                      >
+                        <td className="py-3.5 font-mono text-sm font-medium text-on-surface">
+                          {r.id}
+                        </td>
+                        <td className="py-3.5 font-body-md text-body-md text-on-surface-variant">
+                          {r.date}
+                        </td>
+                        <td className="py-3.5 font-mono text-sm text-on-surface-variant">
+                          {r.memoTxHash ? (
+                            <a
+                              href={`${explorerTx}/${r.memoTxHash}`}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="text-[#2DD4BF] hover:underline"
+                              title="Memo write-back tx"
+                            >
+                              {r.ref}
+                            </a>
+                          ) : (
+                            r.ref
+                          )}
+                        </td>
+                        <td
+                          className={[
+                            "py-3.5 text-right font-body-md text-body-md font-medium",
+                            r.status === "Synchronized"
+                              ? "text-[#2DD4BF]"
+                              : r.status === "Failed"
+                                ? "text-red-400"
+                                : "text-on-surface-variant",
+                          ].join(" ")}
+                        >
+                          {r.status}
+                        </td>
+                      </tr>
+                    ))
+                  )}
                 </tbody>
               </table>
             </div>

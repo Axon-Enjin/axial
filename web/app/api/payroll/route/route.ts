@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { triggerEisFromChain } from "@/lib/eis/trigger";
 import { getSorobanConfig, isPayrollChainEnabled } from "@/lib/soroban/config";
 import { routePayrollOnChain } from "@/lib/soroban/invoke-payroll";
 import { quotePayrollSplit } from "@/lib/soroban/payroll-quote";
@@ -45,6 +46,7 @@ export async function POST(request: Request) {
 
   try {
     const result = await routePayrollOnChain(cfg, payrollId, grossAmount!);
+    triggerEisFromChain("payroll_routed", payrollId, result.txHash, grossAmount!);
     return NextResponse.json({
       mode: "on-chain",
       payrollId,

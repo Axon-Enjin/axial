@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { triggerEisFromChain } from "@/lib/eis/trigger";
 import { getSorobanConfig, isReceivableChainEnabled } from "@/lib/soroban/config";
 import { mintReceivableOnChain } from "@/lib/soroban/invoke-receivable";
 
@@ -42,6 +43,7 @@ export async function POST(request: Request) {
 
   try {
     const result = await mintReceivableOnChain(cfg, invoiceId, faceAmount!);
+    triggerEisFromChain("receivable_minted", invoiceId, result.txHash, faceAmount!);
     return NextResponse.json({
       mode: "on-chain",
       invoiceId,
