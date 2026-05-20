@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { listSubmissions } from "@/lib/eis/store";
+import { getEisStoreBackend, listSubmissions } from "@/lib/eis/store";
 
 export async function GET() {
   const submissions = await listSubmissions(50);
@@ -26,6 +26,7 @@ export async function GET() {
   const synchronized = submissions.filter((s) => s.status === "memo_written").length;
 
   return NextResponse.json({
+    store: getEisStoreBackend(),
     submissions: rows,
     stats: {
       pending,
