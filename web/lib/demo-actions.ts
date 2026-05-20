@@ -8,8 +8,16 @@ const MESSAGES: Record<DemoActionKind, string | ((payload?: string) => string)> 
   unlock: "Capital unlock flow opened — choose a receivable to tokenize.",
   transfer: "Transfer composer opened.",
   "browse-files": "File picker opened. Drop PDF or XML invoices to tokenize.",
-  "swap-executed": (id) =>
-    `Atomic swap executed on ${id ?? "invoice"}. USDC settling on Stellar.`,
+  "swap-executed": (payload) => {
+    if (!payload) {
+      return "Atomic swap executed. USDC settling on Stellar.";
+    }
+    if (payload.startsWith("tx:")) {
+      const [, invoiceId, hash] = payload.split("|");
+      return `Swap on ${invoiceId ?? "invoice"} confirmed. TX ${hash?.slice(0, 8)}…`;
+    }
+    return `Atomic swap executed on ${payload}. USDC settling on Stellar.`;
+  },
 };
 
 export function demoActionMessage(kind: DemoActionKind, payload?: string): string {

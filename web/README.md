@@ -13,4 +13,6 @@ npm run build
 npm run lint
 ```
 
-Path alias `@/*` maps to this folder. Soroban TypeScript bindings (when generated) go under `lib/soroban/` — see [`soroban/README.md`](../soroban/README.md).
+Path alias `@/*` maps to this folder.
+
+**Chain config:** reads [`soroban/deployments/testnet.json`](../soroban/deployments/testnet.json) automatically. Override via `.env.local`. On-chain UI swaps need `STELLAR_FUNDER_SECRET` — run `cd soroban && ./scripts/write-web-env.sh`.
