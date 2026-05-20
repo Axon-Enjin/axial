@@ -1,11 +1,13 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { Fragment, useCallback, useEffect, useState } from "react";
+import { EisPayloadPanel } from "@/components/compliance/EisPayloadPanel";
 import { useApp } from "@/components/providers/AppProvider";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { Icon } from "@/components/ui/Icon";
 import { StatusBadge } from "@/components/ui/StatusBadge";
+import type { BirEisPayload } from "@/lib/eis/types";
 
 const DEFAULT_GROSS = 1_250_000;
 
@@ -117,7 +119,13 @@ type EisRow = {
   ref: string;
   status: "Synchronized" | "Bridging" | "Failed";
   memoTxHash?: string | null;
+  memoText?: string | null;
   stellarTxHash?: string;
+  eventKind?: string;
+  referenceId?: string;
+  payload?: BirEisPayload;
+  jwsPreview?: string;
+  error?: string;
 };
 
 type EisStats = {
@@ -149,6 +157,7 @@ export function ComplianceView() {
   const [routed, setRouted] = useState(false);
   const [txHash, setTxHash] = useState<string | null>(null);
   const [eisRows, setEisRows] = useState<EisRow[]>([]);
+  const [expandedPayloadId, setExpandedPayloadId] = useState<string | null>(null);
   const [eisStats, setEisStats] = useState<EisStats>({
     pending: 0,
     synchronized: 0,
@@ -335,6 +344,7 @@ export function ComplianceView() {
               <table className="w-full border-collapse">
                 <thead>
                   <tr>
+                    <th className="w-8 border-b border-outline-variant/20 py-2.5" aria-label="Expand" />
                     {["Payload ID", "Date", "BIR Ref ID", "Status"].map((h, i) => (
                       <th
                         key={h}
@@ -352,7 +362,7 @@ export function ComplianceView() {
                   {eisRows.length === 0 ? (
                     <tr>
                       <td
-                        colSpan={4}
+                        colSpan={5}
                         className="py-8 text-center font-body-md text-body-md text-on-surface-variant"
                       >
                         No EIS payloads yet — run Liquidity (mint/swap) or Route Payroll to
@@ -360,46 +370,111 @@ export function ComplianceView() {
                       </td>
                     </tr>
                   ) : (
-                    eisRows.map((r, i, arr) => (
-                      <tr
-                        key={r.id}
-                        className={i < arr.length - 1 ? "border-b border-outline-variant/10" : ""}
-                      >
-                        <td className="py-3.5 font-mono text-sm font-medium text-on-surface">
-                          {r.id}
-                        </td>
-                        <td className="py-3.5 font-body-md text-body-md text-on-surface-variant">
-                          {r.date}
-                        </td>
-                        <td className="py-3.5 font-mono text-sm text-on-surface-variant">
-                          {r.memoTxHash ? (
-                            <a
-                              href={`${explorerTx}/${r.memoTxHash}`}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="text-[#2DD4BF] hover:underline"
-                              title="Memo write-back tx"
+                    eisRows.map((r, i, arr) => {
+                      const expanded = expandedPayloadId === r.id;
+                      const hasPayload = Boolean(r.payload);
+                      return (
+                        <Fragment key={r.id}>
+                          <tr
+                            className={[
+                              i < arr.length - 1 && !expanded
+                                ? "border-b border-outline-variant/10"
+                                : "",
+                              hasPayload ? "cursor-pointer hover:bg-surface-container-low/50" : "",
+                            ].join(" ")}
+                            onClick={() => {
+                              if (!hasPayload) return;
+                              setExpandedPayloadId(expanded ? null : r.id);
+                            }}
+                          >
+                            <td className="py-3.5 pl-1">
+                              {hasPayload ? (
+                                <button
+                                  type="button"
+                                  aria-expanded={expanded}
+                                  aria-label={
+                                    expanded
+                                      ? "Collapse BIR EIS payload"
+                                      : "View BIR EIS payload (20 fields)"
+                                  }
+                                  className="flex h-8 w-8 items-center justify-center rounded-lg text-on-surface-variant transition hover:bg-surface-container-high hover:text-[#2DD4BF]"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setExpandedPayloadId(expanded ? null : r.id);
+                                  }}
+                                >
+                                  <Icon
+                                    name={expanded ? "expand_less" : "expand_more"}
+                                    size={20}
+                                  />
+                                </button>
+                              ) : null}
+                            </td>
+                            <td className="py-3.5 font-mono text-sm font-medium text-on-surface">
+                              {r.id}
+                            </td>
+                            <td className="py-3.5 font-body-md text-body-md text-on-surface-variant">
+                              {r.date}
+                            </td>
+                            <td className="py-3.5 font-mono text-sm text-on-surface-variant">
+                              {r.memoTxHash ? (
+                                <a
+                                  href={`${explorerTx}/${r.memoTxHash}`}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="text-[#2DD4BF] hover:underline"
+                                  title="Memo write-back tx"
+                                  onClick={(e) => e.stopPropagation()}
+                                >
+                                  {r.ref}
+                                </a>
+                              ) : (
+                                r.ref
+                              )}
+                            </td>
+                            <td
+                              className={[
+                                "py-3.5 text-right font-body-md text-body-md font-medium",
+                                r.status === "Synchronized"
+                                  ? "text-[#2DD4BF]"
+                                  : r.status === "Failed"
+                                    ? "text-red-400"
+                                    : "text-on-surface-variant",
+                              ].join(" ")}
                             >
-                              {r.ref}
-                            </a>
-                          ) : (
-                            r.ref
-                          )}
-                        </td>
-                        <td
-                          className={[
-                            "py-3.5 text-right font-body-md text-body-md font-medium",
-                            r.status === "Synchronized"
-                              ? "text-[#2DD4BF]"
-                              : r.status === "Failed"
-                                ? "text-red-400"
-                                : "text-on-surface-variant",
-                          ].join(" ")}
-                        >
-                          {r.status}
-                        </td>
-                      </tr>
-                    ))
+                              {r.status}
+                            </td>
+                          </tr>
+                          {expanded && r.payload ? (
+                            <tr
+                              key={`${r.id}-detail`}
+                              className={
+                                i < arr.length - 1 ? "border-b border-outline-variant/10" : ""
+                              }
+                            >
+                              <td colSpan={5} className="pb-4 pt-1">
+                                <EisPayloadPanel
+                                  payload={r.payload}
+                                  payloadId={r.id}
+                                  eventKind={r.eventKind}
+                                  stellarTxHash={r.stellarTxHash}
+                                  memoTxHash={r.memoTxHash}
+                                  memoText={r.memoText}
+                                  jwsPreview={r.jwsPreview}
+                                  explorerTxBase={explorerTx}
+                                  onClose={() => setExpandedPayloadId(null)}
+                                />
+                                {r.error ? (
+                                  <p className="mt-2 font-body-md text-body-md text-red-400/90">
+                                    {r.error}
+                                  </p>
+                                ) : null}
+                              </td>
+                            </tr>
+                          ) : null}
+                        </Fragment>
+                      );
+                    })
                   )}
                 </tbody>
               </table>

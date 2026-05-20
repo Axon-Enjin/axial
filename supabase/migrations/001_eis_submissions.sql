@@ -28,6 +28,7 @@ create index if not exists idx_eis_submissions_stellar_tx
 -- Hackathon: allow service role from Next.js API only (no anon client in browser for writes)
 alter table public.eis_submissions enable row level security;
 
+drop policy if exists "service role full access" on public.eis_submissions;
 create policy "service role full access"
   on public.eis_submissions
   for all

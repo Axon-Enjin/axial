@@ -16,8 +16,13 @@ export async function GET() {
     status: uiStatus(s.status),
     stellarTxHash: s.stellarTxHash,
     memoTxHash: s.memoTxHash,
+    memoText: s.memoText,
     eventKind: s.eventKind,
     referenceId: s.referenceId,
+    pipelineStatus: s.status,
+    payload: s.payload,
+    jwsPreview: truncateJws(s.jwsCompact),
+    error: s.error,
   }));
 
   const pending = submissions.filter(
@@ -42,4 +47,9 @@ function uiStatus(
   if (status === "memo_written") return "Synchronized";
   if (status === "failed") return "Failed";
   return "Bridging";
+}
+
+function truncateJws(jws: string, max = 120): string {
+  if (jws.length <= max) return jws;
+  return `${jws.slice(0, max)}…`;
 }

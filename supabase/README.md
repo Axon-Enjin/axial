@@ -15,7 +15,8 @@ PostgreSQL backing for the **BIR EIS oracle** and future app projections.
 
 ```env
 SUPABASE_URL=https://xxxx.supabase.co
-SUPABASE_SERVICE_ROLE_KEY=eyJhbG...
+SUPABASE_SERVICE_ROLE_KEY=eyJhbG...   # Dashboard → API → service_role (preferred)
+# SUPABASE_ANON_KEY=...             # optional demo fallback (see web/lib/supabase/client.ts)
 ```
 
 5. Restart `npm run dev` in `web/`.
@@ -31,6 +32,29 @@ curl -s http://localhost:3000/api/eis/submissions | jq .store
 ```
 
 Run a Liquidity swap, then check **Compliance → BIR EIS Connect** or the `eis_submissions` table in Supabase Table Editor.
+
+## Seed demo rows (empty table / judge dry-run)
+
+With `npm run dev` running and `eisStore: "supabase"`:
+
+```bash
+curl -X POST http://localhost:3000/api/eis/seed
+```
+
+This runs the real oracle pipeline (mock JWS → mock BIR ack → memo write-back) for three demo events and upserts into `eis_submissions`. **Compliance** polls `GET /api/eis/submissions` every 8s and will show the rows.
+
+Live path (preferred for demo video): Liquidity **Tokenize & Swap** → Compliance **Route Payroll** — each on-chain tx auto-triggers the same pipeline via `triggerEisFromChain`.
+
+## Data flow
+
+```
+On-chain action (mint / swap / payroll)
+  → triggerEisFromChain (fire-and-forget)
+  → processLedgerEvent (oracle)
+  → upsertSubmission → Supabase eis_submissions
+  → GET /api/eis/submissions
+  → ComplianceView (poll 8s)
+```
 
 ## Fallback
 
