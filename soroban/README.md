@@ -152,6 +152,30 @@ stellar contract invoke \
   --face_amount 100000
 ```
 
+### receivable_token (mint before swap)
+
+```bash
+RECV_WASM=target/wasm32v1-none/release/receivable_token.wasm
+stellar contract deploy --wasm "$RECV_WASM" --source-account admin-key --network testnet
+# → RECEIVABLE_ID
+
+stellar contract invoke --id "$RECEIVABLE_ID" --source-account admin-key --network testnet -- \
+  initialize --admin "$(stellar keys address admin-key)"
+
+stellar contract invoke --id "$RECEIVABLE_ID" --source-account admin-key --network testnet -- \
+  mint \
+  --issuer "$(stellar keys address admin-key)" \
+  --msme GBCVJCRULTHI74CXNP4QFGE6OSK5XFUYIPPEONRNXS3JQSKA26TDAR66 \
+  --invoice_id INV-REC-001 \
+  --face_amount 250000
+
+stellar contract invoke --id "$RECEIVABLE_ID" --source-account admin-key --network testnet --send=no -- \
+  is_minted --invoice_id INV-REC-001
+
+stellar contract invoke --id "$RECEIVABLE_ID" --source-account admin-key --network testnet --send=no -- \
+  get_receivable --invoice_id INV-REC-001
+```
+
 ## Deploy (mainnet)
 
 **Only after testnet E2E works.** Mainnet uses real XLM for fees.

@@ -6,7 +6,7 @@ Canonical product spec: `docs/sdd-axial.md` §4 · `docs/prd-axial.md` §3 · `d
 
 | Crate | SDD name | Responsibility | Hackathon priority |
 |-------|----------|----------------|-------------------|
-| `receivable_token` | SAC / receivable token | Mint token for payer-confirmed, NoA-acknowledged invoice; metadata ref; clawback + `AUTH_REQUIRED` | **P0** |
+| `receivable_token` | SAC / receivable token | `initialize`, `mint`, `is_minted`, `get_receivable` — one mint per invoice (off-chain payer confirm + NoA) | **P0** — implemented |
 | `axial_swap` | Atomic swap | USDC advance vs receivable token; denomination-agnostic asset param; reserve + discount | **P0** |
 | `payroll_split` | Statutory payroll router | Split gross payroll to SSS / PhilHealth / Pag-IBIG (+ employees); whitelisted agency addresses | **P1** |
 | `settlement` *(optional)* | Settlement | Lockbox payment → repay funder, release reserve, margin to MSME | **P2** — merge into `axial_swap` if late |
