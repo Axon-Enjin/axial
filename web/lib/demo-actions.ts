@@ -13,8 +13,16 @@ const MESSAGES: Record<DemoActionKind, string | ((payload?: string) => string)> 
       return "Atomic swap executed. USDC settling on Stellar.";
     }
     if (payload.startsWith("tx:")) {
-      const [, invoiceId, hash] = payload.split("|");
-      return `Swap on ${invoiceId ?? "invoice"} confirmed. TX ${hash?.slice(0, 8)}…`;
+      const parts = payload.slice(3).split("|");
+      const invoiceId = parts[0] ?? "invoice";
+      const short = (h: string) => (h.length > 8 ? `${h.slice(0, 8)}…` : h);
+      if (parts.length >= 3 && parts[1] && parts[2]) {
+        return `${invoiceId} tokenized and advanced. Mint ${short(parts[1])} · Swap ${short(parts[2])}`;
+      }
+      if (parts.length >= 2 && parts[1]) {
+        return `${invoiceId} advanced on Stellar. TX ${short(parts[1])}`;
+      }
+      return `${invoiceId} settled on Stellar.`;
     }
     return `Atomic swap executed on ${payload}. USDC settling on Stellar.`;
   },

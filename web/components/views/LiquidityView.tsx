@@ -17,7 +17,61 @@ type Invoice = {
   face: number;
   immediate: number | null;
   status: InvoiceStatus;
+  mintTxHash?: string | null;
+  swapTxHash?: string | null;
 };
+
+function txExplorerUrl(base: string, hash: string) {
+  return `${base}/${hash}`;
+}
+
+function ViewTxLinks({
+  mintTxHash,
+  swapTxHash,
+  explorerTxBase,
+}: {
+  mintTxHash?: string | null;
+  swapTxHash?: string | null;
+  explorerTxBase: string;
+}) {
+  const linkClass =
+    "inline-flex items-center gap-1 bg-transparent font-label-md text-label-md text-on-surface-variant hover:text-primary underline-offset-2 hover:underline";
+
+  if (!mintTxHash && !swapTxHash) {
+    return (
+      <span className="font-label-sm text-label-sm text-outline" title="No on-chain txs for this row">
+        —
+      </span>
+    );
+  }
+
+  return (
+    <span className="inline-flex flex-col items-end gap-0.5">
+      {mintTxHash ? (
+        <a
+          href={txExplorerUrl(explorerTxBase, mintTxHash)}
+          target="_blank"
+          rel="noreferrer"
+          className={linkClass}
+        >
+          <Icon name="receipt_long" size={16} />
+          Mint TX
+        </a>
+      ) : null}
+      {swapTxHash ? (
+        <a
+          href={txExplorerUrl(explorerTxBase, swapTxHash)}
+          target="_blank"
+          rel="noreferrer"
+          className={linkClass}
+        >
+          <Icon name="swap_horiz" size={16} />
+          Swap TX
+        </a>
+      ) : null}
+    </span>
+  );
+}
 
 const initialInvoices: Invoice[] = [
   {
@@ -187,14 +241,19 @@ async function fetchQuote(face: number): Promise<number | null> {
 type ChainStatus = {
   network: string;
   onChainReady: boolean;
+  receivableReady: boolean;
   swapContractId: string | null;
+  receivableContractId: string | null;
   configSource: string;
+  explorerTxBase: string;
+  explorerContractBase: string;
 };
 
 export function LiquidityView() {
   const { dispatch } = useApp();
   const [invoices, setInvoices] = useState(initialInvoices);
   const [swappingId, setSwappingId] = useState<string | null>(null);
+  const [swapStep, setSwapStep] = useState<"idle" | "mint" | "swap">("idle");
   const [chain, setChain] = useState<ChainStatus | null>(null);
 
   useEffect(() => {
@@ -220,9 +279,27 @@ export function LiquidityView() {
   const executeSwap = useCallback(
     async (id: string, face: number) => {
       setSwappingId(id);
+      setSwapStep("mint");
+      const chainInvoiceId = `${id}-${Date.now()}`;
+
       try {
-        // Unique on-chain id per click (contract allows one swap per invoice_id)
-        const chainInvoiceId = `${id}-${Date.now()}`;
+        const mintRes = await fetch("/api/receivable/mint", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ invoiceId: chainInvoiceId, faceAmount: face }),
+        });
+        const mintData = (await mintRes.json()) as {
+          mode?: string;
+          txHash?: string;
+          error?: string;
+        };
+
+        if (!mintRes.ok) {
+          dispatch("swap-executed", mintData.error ?? `Tokenize failed (${mintRes.status})`);
+          return;
+        }
+
+        setSwapStep("swap");
         const res = await fetch("/api/swap/execute", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -240,6 +317,10 @@ export function LiquidityView() {
           return;
         }
 
+        const swapTx = data.mode === "on-chain" && data.txHash ? data.txHash : "";
+        const mintTx =
+          mintData.mode === "on-chain" && mintData.txHash ? mintData.txHash : "";
+
         setInvoices((rows) =>
           rows.map((r) =>
             r.id === id
@@ -247,18 +328,22 @@ export function LiquidityView() {
                   ...r,
                   status: "settled" as const,
                   immediate: data.advanceAmount ?? r.immediate,
+                  mintTxHash: mintTx || null,
+                  swapTxHash: swapTx || null,
                 }
               : r,
           ),
         );
-
         const payload =
-          data.mode === "on-chain" && data.txHash
-            ? `tx:${id}|${data.txHash}`
-            : id;
+          swapTx && mintTx
+            ? `tx:${id}|${mintTx}|${swapTx}`
+            : swapTx
+              ? `tx:${id}|${swapTx}`
+              : id;
         dispatch("swap-executed", payload);
       } finally {
         setSwappingId(null);
+        setSwapStep("idle");
       }
     },
     [dispatch],
@@ -277,13 +362,15 @@ export function LiquidityView() {
         >
           <span className="material-symbols-outlined text-[16px]">hub</span>
           <span>
-            {chain.onChainReady
-              ? `Stellar ${chain.network} — swaps execute on-chain`
-              : `Stellar ${chain.network} — demo mode (add STELLAR_FUNDER_SECRET to web/.env.local)`}
+            {chain.onChainReady && chain.receivableReady
+              ? `Stellar ${chain.network} — mint receivable + swap on-chain`
+              : chain.onChainReady
+                ? `Stellar ${chain.network} — swap on-chain (add STELLAR_ISSUER_SECRET for mint)`
+                : `Stellar ${chain.network} — demo mode (run soroban/scripts/write-web-env.sh)`}
           </span>
           {chain.swapContractId ? (
             <a
-              href={`https://stellar.expert/explorer/testnet/contract/${chain.swapContractId}`}
+              href={`${chain.explorerContractBase}/${chain.swapContractId}`}
               target="_blank"
               rel="noreferrer"
               className="ml-auto font-mono text-xs underline opacity-80 hover:opacity-100"
@@ -403,7 +490,11 @@ export function LiquidityView() {
                         disabled={swappingId === row.id}
                         onClick={() => void executeSwap(row.id, row.face)}
                       >
-                        {swappingId === row.id ? "Swapping…" : "Execute Atomic Swap"}
+                        {swappingId === row.id
+                          ? swapStep === "mint"
+                            ? "Tokenizing…"
+                            : "Swapping…"
+                          : "Tokenize & Swap"}
                       </Button>
                     ) : null}
                     {row.status === "scanning" ? (
@@ -412,13 +503,14 @@ export function LiquidityView() {
                       </Button>
                     ) : null}
                     {row.status === "settled" ? (
-                      <button
-                        type="button"
-                        className="inline-flex items-center gap-1.5 bg-transparent font-label-md text-label-md text-on-surface-variant hover:text-primary"
-                      >
-                        <Icon name="receipt_long" size={18} />
-                        View TX
-                      </button>
+                      <ViewTxLinks
+                        mintTxHash={row.mintTxHash}
+                        swapTxHash={row.swapTxHash}
+                        explorerTxBase={
+                          chain?.explorerTxBase ??
+                          "https://stellar.expert/explorer/testnet/tx"
+                        }
+                      />
                     ) : null}
                   </td>
                 </tr>
