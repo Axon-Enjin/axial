@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useApp } from "@/components/providers/AppProvider";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
@@ -100,17 +100,52 @@ const initialInvoices: Invoice[] = [
   },
 ];
 
-function UploadZone({ onBrowse }: { onBrowse: () => void }) {
+const ACCEPT_INVOICE = "image/png,image/jpeg,image/webp,application/pdf";
+
+function UploadZone({
+  parsing,
+  parseError,
+  onFiles,
+}: {
+  parsing: boolean;
+  parseError: string | null;
+  onFiles: (files: FileList | File[]) => void;
+}) {
   const [hover, setHover] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const handleFiles = (list: FileList | File[] | null) => {
+    if (!list?.length || parsing) return;
+    onFiles(list);
+  };
 
   return (
     <Card padding="lg">
+      <input
+        ref={inputRef}
+        type="file"
+        accept={ACCEPT_INVOICE}
+        className="sr-only"
+        disabled={parsing}
+        onChange={(e) => handleFiles(e.target.files)}
+      />
       <div
         onMouseEnter={() => setHover(true)}
         onMouseLeave={() => setHover(false)}
+        onDragOver={(e) => {
+          e.preventDefault();
+          setHover(true);
+        }}
+        onDragLeave={() => setHover(false)}
+        onDrop={(e) => {
+          e.preventDefault();
+          setHover(false);
+          handleFiles(e.dataTransfer.files);
+        }}
         className={[
           "flex flex-col items-center justify-center rounded-xl border-2 border-dashed px-6 py-12 text-center transition-colors duration-200",
           hover ? "border-primary/50" : "border-outline-variant/30",
+          parsing ? "opacity-70" : "",
         ].join(" ")}
       >
         <div
@@ -122,21 +157,41 @@ function UploadZone({ onBrowse }: { onBrowse: () => void }) {
           ].join(" ")}
         >
           <Icon
-            name="upload_file"
+            name={parsing ? "document_scanner" : "upload_file"}
             size={36}
-            className={hover ? "text-primary" : "text-on-surface-variant"}
+            className={hover || parsing ? "text-primary" : "text-on-surface-variant"}
           />
         </div>
         <h3 className="mb-2 font-headline-md text-headline-md tracking-tight text-on-surface">
           Upload B2B Invoice
         </h3>
         <p className="mb-6 max-w-md font-body-md text-body-md text-on-surface-variant">
-          Drag and drop verified PDF or XML invoices into this zone to initiate the
-          tokenization sequence.
+          Drop PNG, JPEG, or PDF — OCR extracts invoice ID, buyer, amount, and terms into
+          Active Factoring.
         </p>
-        <Button variant="secondary" onClick={onBrowse}>
-          Browse Files
+        {parseError ? (
+          <p className="mb-4 max-w-md font-body-md text-body-md text-red-400/90">
+            {parseError}
+          </p>
+        ) : null}
+        <Button
+          variant="secondary"
+          disabled={parsing}
+          onClick={() => inputRef.current?.click()}
+        >
+          {parsing ? "Reading invoice…" : "Browse Files"}
         </Button>
+        <p className="mt-4 font-label-sm text-label-sm text-on-surface-variant">
+          Try{" "}
+          <a
+            href="/samples/invoices/invoice-inv-2023-8901.png"
+            target="_blank"
+            rel="noreferrer"
+            className="text-[#2DD4BF] hover:underline"
+          >
+            sample invoice
+          </a>
+        </p>
       </div>
     </Card>
   );
@@ -200,28 +255,64 @@ function PipelineStep({
   );
 }
 
-function Pipeline() {
+type PipelineStage =
+  | "idle"
+  | "reading"
+  | "parsed"
+  | "minting"
+  | "swapping"
+  | "complete";
+
+function Pipeline({ stage }: { stage: PipelineStage }) {
+  const verifyDone = stage !== "idle" && stage !== "reading";
+  const swapActive = stage === "minting" || stage === "swapping";
+  const swapDone = stage === "complete";
+  const eisDone = stage === "complete";
+
+  let swapSub = "Click Tokenize & Swap in the table below.";
+  let swapProgress: number | undefined;
+  if (stage === "minting") {
+    swapSub = "Minting receivable SAC on Stellar…";
+    swapProgress = 0.45;
+  } else if (stage === "swapping") {
+    swapSub = "Executing USDC atomic advance…";
+    swapProgress = 0.85;
+  } else if (stage === "complete") {
+    swapSub = "Mint and swap confirmed on testnet.";
+  }
+
   return (
     <div className="relative flex flex-col gap-6">
       <div className="absolute top-6 bottom-6 left-[23px] w-px bg-outline-variant/20" />
       <PipelineStep
-        state="done"
+        state={stage === "reading" ? "active" : verifyDone ? "done" : "pending"}
         icon="document_scanner"
         title="Invoice Verification"
-        sub="OCR and metadata extraction complete."
+        sub={
+          stage === "reading"
+            ? "OCR reading PDF or image…"
+            : verifyDone
+              ? "Fields extracted — ready to tokenize."
+              : "Upload an invoice to start."
+        }
+        progress={stage === "reading" ? 0.6 : undefined}
       />
       <PipelineStep
-        state="active"
+        state={swapDone ? "done" : swapActive ? "active" : "pending"}
         icon="token"
-        title="Minting in Progress"
-        sub="Deploying Soroban asset representation."
-        progress={0.66}
+        title="Tokenize & Swap"
+        sub={swapSub}
+        progress={swapProgress}
       />
       <PipelineStep
-        state="pending"
+        state={eisDone ? "done" : swapDone ? "active" : "pending"}
         icon="balance"
-        title="Liquidity Matching"
-        sub="Awaiting token finality to open order book."
+        title="BIR EIS Bridge"
+        sub={
+          eisDone
+            ? "Oracle submitted — see Compliance tab."
+            : "Runs automatically after swap completes."
+        }
       />
     </div>
   );
@@ -255,6 +346,71 @@ export function LiquidityView() {
   const [swappingId, setSwappingId] = useState<string | null>(null);
   const [swapStep, setSwapStep] = useState<"idle" | "mint" | "swap">("idle");
   const [chain, setChain] = useState<ChainStatus | null>(null);
+  const [parsing, setParsing] = useState(false);
+  const [parseError, setParseError] = useState<string | null>(null);
+  const [pipelineStage, setPipelineStage] = useState<PipelineStage>("idle");
+
+  const parseInvoiceFiles = useCallback(
+    async (files: FileList | File[]) => {
+      const file = files[0];
+      if (!file) return;
+
+      setParsing(true);
+      setParseError(null);
+      setPipelineStage("reading");
+
+      try {
+        const body = new FormData();
+        body.append("file", file);
+
+        const res = await fetch("/api/invoices/parse", { method: "POST", body });
+        const data = (await res.json()) as {
+          parsed?: {
+            invoiceId: string;
+            party: string;
+            terms: string;
+            face: number;
+            confidence: string;
+          };
+          error?: string;
+        };
+
+        if (!res.ok || !data.parsed) {
+          setParseError(data.error ?? `Parse failed (${res.status})`);
+          setPipelineStage("idle");
+          return;
+        }
+
+        const { invoiceId, party, terms, face, confidence } = data.parsed;
+        const advance = await fetchQuote(face);
+
+        setInvoices((rows) => {
+          const withoutDup = rows.filter((r) => r.id !== invoiceId);
+          const row: Invoice = {
+            id: invoiceId,
+            party,
+            terms,
+            face,
+            immediate: advance,
+            status: "minted",
+          };
+          return [row, ...withoutDup];
+        });
+
+        setPipelineStage("parsed");
+        dispatch(
+          "invoice-parsed",
+          `${invoiceId} · ₱${face.toLocaleString()} · ${confidence} confidence`,
+        );
+      } catch {
+        setParseError("Could not read invoice — try another file or sample PNG.");
+        setPipelineStage("idle");
+      } finally {
+        setParsing(false);
+      }
+    },
+    [dispatch],
+  );
 
   useEffect(() => {
     void fetch("/api/soroban/status")
@@ -280,6 +436,7 @@ export function LiquidityView() {
     async (id: string, face: number) => {
       setSwappingId(id);
       setSwapStep("mint");
+      setPipelineStage("minting");
       const chainInvoiceId = `${id}-${Date.now()}`;
 
       try {
@@ -296,10 +453,12 @@ export function LiquidityView() {
 
         if (!mintRes.ok) {
           dispatch("swap-executed", mintData.error ?? `Tokenize failed (${mintRes.status})`);
+          setPipelineStage("parsed");
           return;
         }
 
         setSwapStep("swap");
+        setPipelineStage("swapping");
         const res = await fetch("/api/swap/execute", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -314,9 +473,11 @@ export function LiquidityView() {
 
         if (!res.ok) {
           dispatch("swap-executed", data.error ?? `Swap failed (${res.status})`);
+          setPipelineStage("parsed");
           return;
         }
 
+        setPipelineStage("complete");
         const swapTx = data.mode === "on-chain" && data.txHash ? data.txHash : "";
         const mintTx =
           mintData.mode === "on-chain" && mintData.txHash ? mintData.txHash : "";
@@ -341,6 +502,8 @@ export function LiquidityView() {
               ? `tx:${id}|${swapTx}`
               : id;
         dispatch("swap-executed", payload);
+      } catch {
+        setPipelineStage("parsed");
       } finally {
         setSwappingId(null);
         setSwapStep("idle");
@@ -382,7 +545,11 @@ export function LiquidityView() {
       ) : null}
       <div className="grid grid-cols-1 gap-gutter md:grid-cols-12">
         <div className="flex flex-col gap-6 md:col-span-8">
-          <UploadZone onBrowse={() => dispatch("browse-files")} />
+          <UploadZone
+            parsing={parsing}
+            parseError={parseError}
+            onFiles={(files) => void parseInvoiceFiles(files)}
+          />
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
             <StatTile label="Total Liquidity Pool" value="2.4M" unit="USDC" accent />
             <StatTile label="24h Swap Volume" value="850K" unit="USDC" />
@@ -400,7 +567,7 @@ export function LiquidityView() {
               </h3>
               <Icon name="tune" size={20} className="text-on-surface-variant" />
             </div>
-            <Pipeline />
+            <Pipeline stage={pipelineStage} />
           </Card>
         </div>
       </div>

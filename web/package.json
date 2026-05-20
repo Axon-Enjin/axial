@@ -13,8 +13,10 @@
     "@stellar/stellar-sdk": "^13.3.0",
     "@supabase/supabase-js": "^2.106.1",
     "next": "15.5.18",
+    "pdf-parse": "^2.4.5",
     "react": "19.1.0",
-    "react-dom": "19.1.0"
+    "react-dom": "19.1.0",
+    "tesseract.js": "^7.0.0"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",

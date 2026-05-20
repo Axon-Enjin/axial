@@ -2,6 +2,7 @@ export type DemoActionKind =
   | "unlock"
   | "transfer"
   | "browse-files"
+  | "invoice-parsed"
   | "swap-executed"
   | "payroll-routed";
 
@@ -9,6 +10,10 @@ const MESSAGES: Record<DemoActionKind, string | ((payload?: string) => string)> 
   unlock: "Capital unlock flow opened — choose a receivable to tokenize.",
   transfer: "Transfer composer opened.",
   "browse-files": "File picker opened. Drop PDF or XML invoices to tokenize.",
+  "invoice-parsed": (payload) =>
+    payload
+      ? `Invoice read: ${payload}`
+      : "Invoice extracted — review the new row in Active Factoring.",
   "swap-executed": (payload) => {
     if (!payload) {
       return "Atomic swap executed. USDC settling on Stellar.";
