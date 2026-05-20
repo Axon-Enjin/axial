@@ -176,6 +176,32 @@ stellar contract invoke --id "$RECEIVABLE_ID" --source-account admin-key --netwo
   get_receivable --invoice_id INV-REC-001
 ```
 
+### payroll_split (after swap — route payroll from MSME wallet)
+
+Demo rates: SSS 11%, PhilHealth 5%, Pag-IBIG 2%, net 82% (hackathon placeholders — not legal tables).
+
+```bash
+PAYROLL_WASM=target/wasm32v1-none/release/payroll_split.wasm
+stellar contract deploy --wasm "$PAYROLL_WASM" --source-account admin-key --network testnet
+# → PAYROLL_ID
+
+USDC_ID=CDECR6Z4KYGUHCJG3IBQSCLUN3NZQGUXCZRQLPAWBZ7GFN4I5ZBUDODS
+MSME=GBCVJCRULTHI74CXNP4QFGE6OSK5XFUYIPPEONRNXS3JQSKA26TDAR66
+
+stellar contract invoke --id "$PAYROLL_ID" --source-account admin-key --network testnet -- \
+  initialize \
+  --admin "$(stellar keys address admin-key)" \
+  --usdc "$USDC_ID" \
+  --sss "$(stellar keys address treasury-key)" \
+  --philhealth "$(stellar keys address treasury-key)" \
+  --pagibig "$(stellar keys address treasury-key)" \
+  --employees "$MSME" \
+  --sss_bps 1100 --philhealth_bps 500 --pagibig_bps 200
+
+stellar contract invoke --id "$PAYROLL_ID" --source-account my-key --network testnet --send=yes -- \
+  route_payroll --payer "$MSME" --payroll_id PAY-2026-04-01 --gross_amount 100000
+```
+
 ## Deploy (mainnet)
 
 **Only after testnet E2E works.** Mainnet uses real XLM for fees.
@@ -222,7 +248,7 @@ See **`CONTRACTS.md`** for the full on-chain vs off-chain split.
 
 1. **`receivable_token`** — SAC mint after API funding gate (fork `soroban-examples/token`).
 2. **`axial_swap`** — USDC advance to MSME at configurable bps (85% default); `execute_advance` + `quote` implemented.
-3. **`payroll_split`** — statutory splits to agency addresses.
+3. **`payroll_split`** — `quote` + `route_payroll` to agency addresses + employee pool (implemented).
 4. **Backend** — EIS oracle + mock BIR + memo (not a Soroban crate).
 5. Wire contract IDs into `web/` env — **never commit secret keys**.
 
