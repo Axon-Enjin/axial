@@ -57,6 +57,8 @@ axial/
 
 The "backend" is **Next.js Route Handlers under `web/app/api/`** — there is no separate server. The SDD's modular-monolith / BullMQ-Temporal plan was not adopted; ignore it as a build target.
 
+For what is actually built vs. only documented, the source of truth is **`docs/flow.md`** (built/mock/planned matrix) and the **"Implementation status" table in `docs/Axial.md`**. Not built as of May 2026: real payer portal, on-chain lockbox/settlement contract, T+3 submission worker, reconciliation/leakage worker, Freighter wallet connect (all chain signing is custodial/server-side), Reflector FX (rate is hardcoded), mainnet deploy, and auth/multi-tenancy.
+
 **Stack:** Next.js 15.5 · React 19 · TypeScript 5 (strict) · Tailwind CSS 4 · `@stellar/stellar-sdk` · `@supabase/supabase-js` · `tesseract.js` + `pdf-parse` (invoice OCR). Path alias `@/*` → `web/*`.
 
 **Pages (`web/app/`):** root `layout.tsx` (Geist fonts + Material Symbols) → `(app)/layout.tsx` (auth shell with `AppSidebar`) → four tabs: `page.tsx` (Overview/Command Center), `liquidity/`, `compliance/`, `settings/`. Each page is a thin wrapper that renders a view from `components/views/` (`OverviewView`, `LiquidityView`, etc.). `components/stitch/` holds older design-export versions of those views — `components/views/` is the live set. Shared shell in `components/layout/`, primitives in `components/ui/`, client state via `components/providers/AppProvider.tsx`.
@@ -116,7 +118,7 @@ Build L1 completely before L2/L3:
 
 - **L1 (must ship):** Soroban contracts deployed · real USDC atomic swap · payroll split · BIR EIS oracle · JWS-signed payload · mock BIR endpoint · Stellar memo write-back. No external deps.
 - **L2 (nice to have):** L1 + mocked PDAX UI screens.
-- **L3 (bonus):** real PDAX Connect API calls (needs PDAX sandbox access).
+- **L3 (dropped 2026-05-22):** real PDAX Connect API calls — PDAX sandbox access was not granted; final scope is L1 + L2. See `docs/sprint.md` and the "Build audit" section in `docs/Axial.md`.
 
 ## Design System
 

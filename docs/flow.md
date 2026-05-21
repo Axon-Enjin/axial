@@ -92,9 +92,9 @@ flowchart LR
     E4["⬜ Reconciliation worker"]
   end
 
-  subgraph phaseF [F — Fiat edge — L2/L3]
+  subgraph phaseF [F — Fiat edge — L2 only]
     F1["✅ PDAX mock UI — Settings"]
-    F2["❌ Real PDAX API"]
+    F2["❌ Real PDAX API — no sandbox access"]
   end
 
   A1 --> A2 --> A3 --> A4 --> A5 --> B1 --> B2 --> C1
@@ -313,8 +313,8 @@ flowchart LR
     L2c["🟡 Payer/lockbox demo UX"]
   end
 
-  subgraph L3 [L3 Bonus]
-    L3a["⬜ PDAX Connect API"]
+  subgraph L3 [L3 Dropped — no PDAX sandbox access]
+    L3a["❌ PDAX Connect API — not pursued 2026-05-22"]
   end
 
   L1 --> L2 --> L3
@@ -374,3 +374,5 @@ flowchart TB
 ---
 
 *Update this doc when Mainnet, real payer portal, or T+3 worker land.*
+
+*Audit-derived task board: [`sprint.md`](sprint.md) · scope decisions: "Build audit & final scope lock (2026-05-22)" in [`Axial.md`](Axial.md).*

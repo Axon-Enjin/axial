@@ -40,19 +40,31 @@ After fact-checking against current sources and aligning to PDAX (hackathon main
 | Funder protection | ✅ Locked | **Advance < face value + reserve + recourse.** Advance ~80–90% (not 97%); a holdback reserve is retained; the MSME carries contractual recourse + personal guarantee if the payer does not settle through the system. Funders are protected by structure, never by a "this can't happen" promise. |
 | Leakage handling | ✅ Locked | **Reconciliation + automatic escalation.** Invoice due but no funds in the lockbox by T+X → MSME account auto-frozen, funder notified, recourse + blacklist triggered. Leakage is detected in days, not never. |
 
+### Build audit & final scope lock (2026-05-22)
+
+A CTO/auditor review on Day 5 of the hackathon checked the `web/` and `soroban/` build against this document. The following are now **locked**. The prioritized task board derived from this audit lives in [`docs/sprint.md`](sprint.md).
+
+| Item | Status | Locked decision |
+|---|---|---|
+| PDAX Connect (L3) | ❌ Dropped | PDAX sandbox access was **not granted**. Final hackathon scope is **L1 + L2** (L2 = our own mocked PDAX UI). No real PDAX API calls. The SEP-24 abstraction stands so PDAX can be wired post-hackathon without contract changes. |
+| Wallet management (Q7) | ✅ Locked | **Custodial backend signing** for the hackathon demo — the Next.js server holds the funder/MSME/issuer secrets and signs all Soroban transactions. No Freighter/Albedo in v1. Freighter (MSME + payer self-custody) is post-hackathon roadmap. |
+| Mainnet deploy | 🟡 Conditional | Attempt the 3-contract Mainnet deploy on Day 6 only if testnet is stable; keep testnet as the live demo path. A polished testnet demo ships over a broken Mainnet one. Measure real XLM deploy/rent cost before funding the Mainnet wallet (see §13.9). |
+| Closed-loop settlement build gap | ⚠️ Acknowledged | The settlement-integrity model above is only partially built — payer-confirm is a demo PATCH, with no NoA artifact, no on-chain lockbox, and no reconciliation worker. Acceptable for an L1 demo; it is the #1 post-hackathon priority. Do **not** present the closed loop as live. |
+| Hardcoded demo data | ⚠️ Acknowledged | FX rate (`56.5`), Settings credentials/audit log, and seller/buyer TINs are hardcoded demo values. Acceptable for the hackathon; tracked for replacement in [`docs/sprint.md`](sprint.md). |
+
 ### Locked architecture in one paragraph
 
 The **user-facing layer denominates everything in pesos** (invoices, payroll previews, compliance dashboards). The **settlement layer uses USDC on Stellar** — Soroban contracts for SAC mint, atomic swap, statutory payroll routing, and settlement, all written denomination-agnostic so the asset address is a parameter. The **compliance layer is an off-chain oracle service** that subscribes to Stellar ledger events, maps each reportable event to the BIR EIS 20-field schema, JWS-signs in a vault-mediated key context, submits to BIR with idempotency keys, and writes the success reference back as a Stellar memo. The **fiat edge** is handled by PDAX (or any SEP-24 anchor) — Axial itself never touches PHP cash.
 
 ### Hackathon demo strategy — three layers
 
-Build **L1 first**. L1 alone is a complete, judge-able submission. L2 enriches the demo without adding external dependency. L3 is upside if PDAX onboards us in time.
+Build **L1 first**. L1 alone is a complete, judge-able submission. L2 enriches the demo without adding external dependency. **L3 was scoped out (2026-05-22)** — PDAX sandbox access was not granted; final hackathon scope is **L1 + L2**. See "Build audit & final scope lock" above.
 
 | Layer | What's real (live on Mainnet / working) | What's mocked | External dependency |
 |---|---|---|---|
 | **L1 — must ship** | Soroban contracts deployed to Mainnet · real USDC atomic swap · payroll split contract · BIR EIS oracle service · JWS-signed payload to mock BIR endpoint · Stellar memo write-back of success reference | Fiat in/out (rendered as labeled placeholder screens) | None |
 | **L2 — nice to have** | Everything in L1 | PDAX UI screens for PHP↔USDC ramp drawn by us | None — we draw the screens |
-| **L3 — bonus if PDAX responds** | Real PDAX Connect API calls behind the L2 mocked UI | Nothing | PDAX sandbox access |
+| **L3 — not pursued** | ~~Real PDAX Connect API calls behind the L2 mocked UI~~ | — | ❌ PDAX sandbox access **not granted (2026-05-22)** — dropped from scope |
 
 ### Day-by-day skeleton (3 devs × 7 days ≈ 21 dev-days)
 
@@ -88,11 +100,15 @@ Snapshot of what ships in **`web/`** today vs locked product vision. Visual tab 
 | MSME trust (payer confirm, lockbox) | 🟡 Demo | PATCH + UI trust strip; no real payer portal or on-chain lockbox |
 | Overview / Liquidity metrics | ✅ | `GET /api/dashboard/summary` — book face PHP, treasury USDC, contract count |
 | Testnet treasury card | ✅ | `GET /api/wallets/balances` on Overview |
-| PDAX ramp (L2) | ✅ UI | Settings demo card; no Connect API |
+| PDAX ramp (L2) | ✅ UI | Settings demo card; **L3 Connect API not pursued — sandbox access not granted (2026-05-22)** |
+| Wallet signing | ✅ Custodial | Server-side signing with funder/MSME/issuer secrets; no Freighter (Q7 locked custodial 2026-05-22) |
 | Mainnet + Circle USDC | ⬜ | Still testnet; issuer/trustlines per hackathon plan |
+| Public landing page | ⬜ | No marketing/landing route; `/` opens straight into Overview |
 | T+3 submission worker | ⬜ | Immediate oracle submit only |
 | Leakage freeze / reconciliation worker | ⬜ | Documented in settlement-integrity review; not automated |
 | Closed-loop collection contract | ⬜ | `mark_collected` demo only |
+
+Audit-derived task board: [`docs/sprint.md`](sprint.md).
 
 **Demo order:** Overview (treasury) → Liquidity (upload or seed row → confirm payer → tokenize & swap) → Compliance (payroll + EIS) → Settings (PDAX toast).
 
@@ -108,7 +124,7 @@ Decisions Carlos doesn't have a strong opinion on. Resolve early so they don't b
 | Q4 | **Reflector vs hardcoded FX rate** for PHP/USDC conversion? | Reflector signals Stellar-ecosystem mastery; hardcoded ships faster. Hybrid: hardcoded behind a feature flag, swap to Reflector if time permits | Day 2 |
 | Q5 | **How to handle FX risk during swap-to-payroll window?** | Lock rate at swap time (Reflector reading written to contract storage)? Float and reconcile? Hackathon answer can be "out of scope, addressed in production roadmap" | Day 3 |
 | Q6 | **Mock BIR EIS endpoint design** — separate service or in-process route? | Affects demo realism. Separate service feels more real; in-process is faster to build | Day 3 |
-| Q7 | **Wallet management for the demo accounts** — Freighter, Albedo, or custodial backend signing? | Freighter is the standard Stellar browser wallet; custodial is easier for a clean demo UX. Decision affects what judges see on stage | Day 4 |
+| Q7 | **Wallet management for the demo accounts** — Freighter, Albedo, or custodial backend signing? | Freighter is the standard Stellar browser wallet; custodial is easier for a clean demo UX. Decision affects what judges see on stage | ✅ **Resolved: custodial** (Build audit 2026-05-22) |
 | Q8 | **Hosting target** — Vercel, Railway, Render, fly.io? | Affects API latency to Stellar RPC and (eventually) BIR. Asia-Pacific region preferred | Day 5 |
 | Q9 | **Idempotency key strategy** for EIS submissions | `{org_id}:{stellar_tx_hash}:{invoice_id}` is suggested in SDD; team should sanity-check before implementing | Day 3 |
 | Q10 | **How explicit is "demo mode" in the UI?** | Demo-mode banner? Watermark? "Testnet" badge? Affects whether judges think it's real | Day 6 |
@@ -177,7 +193,7 @@ A few principles to internalize before writing any code:
 3. **Calm beats clever in the UI.** The brand is The Architect, not The Disruptor. No `URGENT`, no all-caps banners, no looping animations. Read [DSD §9](docs/dsd-axial.md) (microcopy) before writing any user-facing string.
 4. **Treat the BIR EIS oracle as the centerpiece of the demo.** It is the part of Axial that no other hackathon team will build. The atomic swap is table stakes; the EIS submission with the BIR success reference written back to a Stellar memo is the moment that wins Real-World Impact points.
 5. **If the demo glitches, fall back to recorded video.** Have a clean recording by Day 7 morning regardless. Live demos break.
-6. **PDAX is a sponsor and an opportunity, not a dependency.** Reach out, then forget about them. If they respond, L3 lights up. If they don't, L1+L2 wins the hackathon.
+6. **PDAX is a sponsor and an opportunity, not a dependency.** Reach out, then forget about them. If they respond, L3 lights up. If they don't, L1+L2 wins the hackathon. *(Outcome 2026-05-22: PDAX sandbox access was not granted — L3 dropped, L1+L2 is the final scope.)*
 7. **The four tabs are a constraint, not a target.** Don't add a fifth tab. Don't merge two. Liquidity, Compliance, Overview, Settings — fixed order. See §7.3 and [DSD §5](docs/dsd-axial.md).
 
 ---
@@ -583,7 +599,7 @@ These are things we have decided at a high level but where the implementation de
 |---|---|---|---|
 | Settlement asset | ✅ Resolved | **USDC on Stellar** | Real, on Mainnet, no external dependency. UI denominates in PHP via FX conversion at the edge. |
 | PHP stablecoin = PHPC on Stellar | ❌ Retired | Not pursued | PHPC is on Polygon and Ronin, not Stellar. Exited BSP sandbox July 2025. Bridging is out of scope for v1. |
-| PHP fiat rail (production) | ✅ Resolved | **PDAX as primary anchor** via PDAX Connect API; SEP-24 abstraction allows Coins.ph or future PHP-Stellar issuers to plug in without changing contract logic | Hackathon demo can ship without PDAX access; L3 layer integrates it if granted. |
+| PHP fiat rail (production) | ✅ Resolved | **PDAX as primary anchor** via PDAX Connect API; SEP-24 abstraction allows Coins.ph or future PHP-Stellar issuers to plug in without changing contract logic | PDAX sandbox access **not granted (2026-05-22)** — L3 dropped; hackathon ships L2 mocked PDAX UI. SEP-24 abstraction lets PDAX wire in post-hackathon with no contract changes. |
 | Direct QRPh integration | ❌ Retired | Not buildable as third-party | QRPh requires BSP-licensed PSP/EMI status. Handled at the anchor edge. |
 | FX rate source (PHP/USDC) | 🟡 Open | Reflector preferred, hardcoded acceptable for hackathon | See [Q4 in FOR DEVS § Open questions](#open-questions-for-the-dev-team) |
 | Liquidity provider sourcing | 🟡 Open | Institutional lenders or pools, accessible via PDAX's 20+ LP network | Partner agreements TBD; affects discount rate structure |
@@ -593,7 +609,7 @@ These are things we have decided at a high level but where the implementation de
 | Job queue tech | 🟡 Open | BullMQ vs Temporal | See [Q1 in FOR DEVS § Open questions](#open-questions-for-the-dev-team) |
 | BIR EIS API access (production) | 🟡 Open | Awaiting PTT certification path | BIR staging environment availability TBD. Hackathon uses mock endpoint. |
 | Statutory tables | 🟡 Open | Encoded as versioned rule packs (not hard-coded in Soroban) | Legal/accounting sign-off on bracket accuracy required before production |
-| Wallet management (demo) | 🟡 Open | Freighter, Albedo, or custodial backend signing | See [Q7 in FOR DEVS § Open questions](#open-questions-for-the-dev-team) |
+| Wallet management (demo) | ✅ Locked | **Custodial backend signing** — the Next.js server holds funder/MSME/issuer secrets and signs all Soroban transactions | Locked 2026-05-22 (Build audit). Freighter self-custody is post-hackathon — tracked in [`sprint.md`](sprint.md) |
 | Hosting region | 🟡 Open | Cloud, Asia-Pacific (Singapore/Manila latency) | See [Q8 in FOR DEVS § Open questions](#open-questions-for-the-dev-team) |
 | Pricing model | ✅ Locked | **Two engines:** liquidity spread (~0.5–1.5% of face value platform cut, ≈1% of every funded peso) + tiered compliance subscription. All-in factoring cost capped below traditional PH factoring | Locked 2026-05-19. Detailed in §7.4 and `brd-axial.md`. Funder-yield split depends on liquidity partner agreements |
 
