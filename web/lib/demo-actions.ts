@@ -62,19 +62,19 @@ export const PAGE_META: Record<
   string,
   { title: string; subtitle: string | null }
 > = {
-  "/": {
+  "/app": {
     title: "Overview",
     subtitle: null,
   },
-  "/liquidity": {
+  "/app/liquidity": {
     title: "Liquidity Engine",
     subtitle: "Tokenize B2B receivables and execute atomic swaps on Stellar.",
   },
-  "/compliance": {
+  "/app/compliance": {
     title: "Compliance Ledger",
     subtitle: null,
   },
-  "/settings": {
+  "/app/settings": {
     title: "Architectural Settings",
     subtitle: null,
   },

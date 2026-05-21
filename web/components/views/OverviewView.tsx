@@ -271,7 +271,7 @@ export function OverviewView() {
               </StatusBadge>
             </div>
             <div className="relative mt-12 flex gap-3.5">
-              <Link href="/liquidity">
+              <Link href="/app/liquidity">
                 <Button variant="primary" size="lg" onClick={() => dispatch("unlock")}>
                   Unlock Capital
                 </Button>
@@ -389,7 +389,7 @@ export function OverviewView() {
               label="Recent Actions"
               action={
                 <Link
-                  href="/compliance"
+                  href="/app/compliance"
                   className="bg-transparent font-label-sm text-label-sm text-primary hover:underline"
                 >
                   View All

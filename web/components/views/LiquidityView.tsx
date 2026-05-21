@@ -613,7 +613,7 @@ export function LiquidityView() {
             ) : null}
           </div>
           <Link
-            href="/settings"
+            href="/app/settings"
             className="font-label-sm text-label-sm text-on-surface-variant hover:text-[#2DD4BF]"
           >
             PHP ramp

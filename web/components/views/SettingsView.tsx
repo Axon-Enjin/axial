@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { PdaxRampCard } from "@/components/settings/PdaxRampCard";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
@@ -18,28 +18,36 @@ type AutoSettings = {
   statutory: boolean;
 };
 
-const auditLogs = [
-  {
-    time: "2026-10-24 16:10",
+type AuditRow = { time: string; actor: string; event: string };
+
+function eisToAuditRow(s: {
+  date: string;
+  eventKind: string;
+  pipelineStatus: string;
+  referenceId: string;
+  birReferenceId: string | null;
+}): AuditRow {
+  const kindLabel: Record<string, string> = {
+    receivable_minted: "Receivable SAC minted",
+    swap_executed: "Atomic swap executed",
+    payroll_routed: "Statutory split routed",
+  };
+  const statusLabel: Record<string, string> = {
+    memo_written: "memo written to Stellar",
+    acknowledged: "BIR acknowledged",
+    submitted: "submitted to BIR",
+    queued: "queued",
+    failed: "pipeline failed",
+  };
+  const kind = kindLabel[s.eventKind] ?? "EIS event";
+  const status = statusLabel[s.pipelineStatus] ?? s.pipelineStatus;
+  const bir = s.birReferenceId ? ` · BIR ref: ${s.birReferenceId}` : "";
+  return {
+    time: s.date,
     actor: "system",
-    event: "EIS payload PLD-8831-C signed (JWS) and queued for T+3 bridge.",
-  },
-  {
-    time: "2026-10-24 14:30",
-    actor: "system",
-    event: "BIR EIS PLD-8829-A acknowledged. Ref: BIR-2026-991A.",
-  },
-  {
-    time: "2026-10-24 11:02",
-    actor: "AM",
-    event: "Atomic swap executed on INV-2023-8901. 118,500 USDC settled.",
-  },
-  {
-    time: "2026-10-23 17:44",
-    actor: "system",
-    event: "Statutory split routed. SSS 142,500 · PhilHealth 56,250 · Pag-IBIG 25,000.",
-  },
-];
+    event: `${kind} — ${s.referenceId} · ${status}${bir}.`,
+  };
+}
 
 function Field({
   label,
@@ -130,6 +138,18 @@ export function SettingsView() {
     statutory: false,
   });
   const [lenderLimit, setLenderLimit] = useState("250000");
+  const [auditLogs, setAuditLogs] = useState<AuditRow[]>([]);
+  const [auditLoading, setAuditLoading] = useState(true);
+
+  useEffect(() => {
+    fetch("/api/eis/submissions")
+      .then((r) => r.json())
+      .then((data) => {
+        setAuditLogs((data.submissions ?? []).map(eisToAuditRow));
+      })
+      .catch(() => {})
+      .finally(() => setAuditLoading(false));
+  }, []);
 
   return (
     <main className="mx-auto max-w-container-max space-y-gutter px-margin-mobile py-7 md:px-margin-desktop">
@@ -260,26 +280,36 @@ export function SettingsView() {
           </Button>
         </div>
         <div className="flex flex-col">
-          {auditLogs.map((r, i, arr) => (
-            <div
-              key={r.time}
-              className={[
-                "grid grid-cols-1 items-baseline gap-2 py-3 md:grid-cols-[180px_60px_1fr] md:gap-4",
-                i < arr.length - 1 ? "border-b border-outline-variant/15" : "",
-              ].join(" ")}
-            >
-              <span className="font-mono text-sm text-on-surface-variant">{r.time}</span>
-              <span
+          {auditLoading ? (
+            <p className="py-6 text-center font-body-md text-body-md text-on-surface-variant">
+              Loading…
+            </p>
+          ) : auditLogs.length === 0 ? (
+            <p className="py-6 text-center font-body-md text-body-md text-on-surface-variant">
+              No EIS events yet. Execute a swap or route payroll to populate this log.
+            </p>
+          ) : (
+            auditLogs.map((r, i, arr) => (
+              <div
+                key={`${r.time}-${i}`}
                 className={[
-                  "font-label-sm text-label-sm uppercase tracking-wider",
-                  r.actor === "system" ? "text-[#2DD4BF]" : "text-primary",
+                  "grid grid-cols-1 items-baseline gap-2 py-3 md:grid-cols-[180px_60px_1fr] md:gap-4",
+                  i < arr.length - 1 ? "border-b border-outline-variant/15" : "",
                 ].join(" ")}
               >
-                {r.actor}
-              </span>
-              <span className="font-body-md text-body-md text-on-surface">{r.event}</span>
-            </div>
-          ))}
+                <span className="font-mono text-sm text-on-surface-variant">{r.time}</span>
+                <span
+                  className={[
+                    "font-label-sm text-label-sm uppercase tracking-wider",
+                    r.actor === "system" ? "text-[#2DD4BF]" : "text-primary",
+                  ].join(" ")}
+                >
+                  {r.actor}
+                </span>
+                <span className="font-body-md text-body-md text-on-surface">{r.event}</span>
+              </div>
+            ))
+          )}
         </div>
       </Card>
     </main>

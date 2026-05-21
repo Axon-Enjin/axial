@@ -4,10 +4,10 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 const NAV = [
-  { href: "/", label: "Command Center", icon: "dashboard" },
-  { href: "/liquidity", label: "Liquidity", icon: "swap_horiz" },
-  { href: "/compliance", label: "Compliance", icon: "gavel" },
-  { href: "/settings", label: "Settings", icon: "settings_input_component" },
+  { href: "/app", label: "Command Center", icon: "dashboard" },
+  { href: "/app/liquidity", label: "Liquidity", icon: "swap_horiz" },
+  { href: "/app/compliance", label: "Compliance", icon: "gavel" },
+  { href: "/app/settings", label: "Settings", icon: "settings_input_component" },
 ] as const;
 
 function NavLink({
@@ -41,10 +41,11 @@ function NavLink({
 }
 
 type AppSidebarProps = {
+  network: string;
   onNewTransaction?: () => void;
 };
 
-export function AppSidebar({ onNewTransaction }: AppSidebarProps) {
+export function AppSidebar({ network, onNewTransaction }: AppSidebarProps) {
   const pathname = usePathname();
 
   return (
@@ -59,9 +60,19 @@ export function AppSidebar({ onNewTransaction }: AppSidebarProps) {
           <h1 className="font-headline-md text-headline-md font-bold tracking-tight text-primary">
             Axial MVP
           </h1>
-          <p className="font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant">
-            Architect Mode
-          </p>
+          <div className="mt-1 flex items-center gap-2">
+            <p className="font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant">
+              Architect Mode
+            </p>
+            <span className={[
+              "inline-flex items-center rounded-full border px-1.5 py-px font-label-sm text-label-sm uppercase tracking-wider",
+              network === "mainnet"
+                ? "border-primary/40 text-primary"
+                : "border-[#2DD4BF]/40 text-[#2DD4BF]",
+            ].join(" ")}>
+              {network}
+            </span>
+          </div>
         </div>
       </div>
 
@@ -84,8 +95,8 @@ export function AppSidebar({ onNewTransaction }: AppSidebarProps) {
             label={item.label}
             icon={item.icon}
             active={
-              item.href === "/"
-                ? pathname === "/"
+              item.href === "/app"
+                ? pathname === "/app"
                 : pathname.startsWith(item.href)
             }
           />

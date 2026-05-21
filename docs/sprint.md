@@ -85,48 +85,103 @@ This is the working task board for Axial, derived from the **CTO/auditor review 
 > Goal: protect a working L1 demo, remove demo-credibility risks, ship a landing page.
 > Do **not** start large builds (Freighter, payer portal, settlement contract) now.
 
-### S0-1 · Fix fake audit-log dates in Settings · `P0` · 🔴 todo
-The Settings audit log is hardcoded with dates `2026-10-24` (5 months in the future).
-A judge clicking Settings sees fabricated future-dated logs. Fix the dates to a
-realistic range, or hide the panel for the demo.
-- **References:** [`../web/components/views/SettingsView.tsx`](../web/components/views/SettingsView.tsx) (`auditLogs` array)
+### S0-1 · Fix fake audit-log dates in Settings · `P0` · ✅ done
+Wired the audit log to live data from `GET /api/eis/submissions` (replaces the
+hardcoded `2026-10-24` array). Loading + empty states included. The panel now
+shows real EIS events once swaps or payroll runs execute. File fallback works
+locally without Supabase; for the deployed demo set `SUPABASE_URL` +
+`SUPABASE_SERVICE_ROLE_KEY` on Vercel and confirm migration 001 is applied.
+- **References:** [`../web/components/views/SettingsView.tsx`](../web/components/views/SettingsView.tsx)
 
-### S0-2 · Add a visible "Testnet" badge · `P1` · 🔴 todo
-Resolve Axial.md Q10 — make the demo environment explicit so judges know it is testnet.
-Small badge in the top bar / sidebar.
-- **References:** [`../web/components/layout/TopBar.tsx`](../web/components/layout/TopBar.tsx), `../web/components/layout/AppShell.tsx`, `getPublicChainStatus()` in `../web/lib/soroban/config.ts`
+### S0-2 · Add a visible "Testnet" badge · `P1` · ✅ done
+Sidebar header now shows a small pill badge (teal on testnet, lavender on mainnet)
+wired to `getPublicChainStatus().network` from the server layout. Also present in
+the landing page nav. No client bundle impact — resolved server-side in
+`web/app/app/layout.tsx`.
+- **References:** [`../web/components/AppSidebar.tsx`](../web/components/AppSidebar.tsx), [`../web/app/app/layout.tsx`](../web/app/app/layout.tsx)
 
-### S0-3 · Build the public landing page · `P1` · 🔴 todo
-No marketing/landing route exists — `/` opens straight into the Overview tab. Add an
-informative landing page in a separate route group (e.g. `app/(marketing)/page.tsx`)
-so the app shell stays isolated. Content: tagline "Instant Capital, Invisible
-Compliance", the problem ($221B gap + BIR EIS Dec-2026 mandate), the 5-step flow, a
-"Testnet demo" badge, CTA into the app. Honor the brand voice (calm, never alarmist).
-- **References:** `../web/app/layout.tsx`, `../web/app/(app)/layout.tsx`, [`dsd-axial.md`](dsd-axial.md) (§9 microcopy), `Axial.md` §6 (brand) + §7 (workflow), `../web/tailwind.config.ts`
+### S0-3 · Build the public landing page · `P1` · ✅ done
+Routing restructured: the `(app)` route group became the `app` URL segment — all
+four tabs now live at `/app/*`. Landing page at `web/app/page.tsx` serves `/`.
+Content: tagline, $221B + BIR EIS problem cards, 5-step how-it-works flow, testnet
+badge, CTAs. Brand voice per dsd-axial.md §9. AppSidebar nav hrefs and PAGE_META
+keys updated to `/app/*`; three internal `<Link>` refs in OverviewView and
+LiquidityView also updated.
+- **References:** [`../web/app/page.tsx`](../web/app/page.tsx), [`../web/app/app/`](../web/app/app/), [`../web/components/AppSidebar.tsx`](../web/components/AppSidebar.tsx), [`../web/lib/demo-actions.ts`](../web/lib/demo-actions.ts)
 
-### S0-4 · Measure real XLM cost of the contracts · `P1` · 🔴 todo
-We have no measured deploy cost. Testnet and Mainnet share the same fee schedule —
-open the 3 deploy transactions on stellar.expert (testnet) and record the XLM resource
-fee, plus note WASM byte sizes. Budget Mainnet wallet accordingly (deploy + TTL rent + margin).
-- Contract IDs (from `deployments/testnet.json`): `axial_swap` `CDDAIDM4D62OZL5MQPKO5ZFWE7TBRFJD5Y3L2UZKP5OVGP2VHZ2UU736` · `receivable_token` `CAQEEFBO44FONQKGCEHR2QFTLOIIO232Z7WM6722ZDA6MNAL2NNU7SOP` · `payroll_split` `CBJCEJMDGRGLVU7VHAFR2VSVSBIKIWZA6LBQN6SCLZVJU6YROTETY3MB`
-- **References:** [`../soroban/README.md`](../soroban/README.md) (deploy/cost), `../soroban/deployments/testnet.json`, WASM at `soroban/target/wasm32v1-none/release/*.wasm`
+### S0-4 · Measure real XLM cost of the contracts · `P1` · ✅ done
+Pulled from Horizon testnet (same fee schedule as mainnet). All three contracts were
+deployed 2026-05-20 by `GD67NPG7…`.
+
+| Contract | WASM size | WASM upload fee | CreateContract fee |
+|---|---|---|---|
+| `axial_swap` | 8.9 KB | **0.726 XLM** (measured) | ~0.002 XLM |
+| `receivable_token` | 4.2 KB | ~0.34 XLM (est. proportional) | ~0.002 XLM |
+| `payroll_split` | 10.8 KB | ~0.89 XLM (est. proportional) | ~0.002 XLM |
+| **Total 3 deploys** | | **~1.96 XLM** | **~0.006 XLM** |
+
+**Recommended mainnet wallet balance: ≥10 XLM** (covers 3 WASM uploads + 3
+CreateContracts + minimum base reserves 1 XLM + 0.5 XLM/entry × 3 entries + TTL
+rent buffer + one test swap margin).
+
+- Mainnet wallet: `GB6TMTI6DB6BETQEPMKXOAYAMYKGNHR4AJVZHKEQ5LCVFINGEDQDKCFI` (see S0-5)
+- **References:** Horizon testnet · stellar.expert testnet · contract IDs in `deployments/testnet.json`
 
 ### S0-5 · (Conditional) Deploy 3 contracts to Mainnet · `P2` · 🔴 todo
-Per D3 — attempt only if testnet is stable, do it Day 6 not Day 7. Deploy
-`receivable_token`, `axial_swap`, `payroll_split` to Mainnet, establish a Circle USDC
-trustline, run one tiny test swap. Keep testnet as the live demo path; show Mainnet
-contract IDs on stellar.expert as proof. Mainnet XLM wallet: `GB6TMTI6DB6BETQEPMKXOAYAMYKGNHR4AJVZHKEQ5LCVFINGEDQDKCFI` (Axial.md §13.9).
-- **References:** [`../soroban/README.md`](../soroban/README.md) ("Deploy (mainnet)"), `../soroban/scripts/write-web-env.sh`, `Axial.md` §13.8–13.9, depends on **S0-4**
+Per D3 — attempt **Day 6 only** if testnet demo is stable. Keep testnet as the live
+demo path; Mainnet contract IDs on stellar.expert are the proof artifact.
+
+**Mainnet deploy runbook (run from WSL):**
+
+```bash
+# 1 — Verify wallet is funded (need ≥10 XLM)
+cd /mnt/d/PROJECTS/axial/soroban
+stellar account balances --network mainnet --account GB6TMTI6DB6BETQEPMKXOAYAMYKGNHR4AJVZHKEQ5LCVFINGEDQDKCFI
+
+# 2 — Build all contracts (fresh)
+make build
+
+# 3 — Deploy all three to mainnet
+#     SOURCE = your mainnet identity name (the one holding the mainnet XLM)
+make deploy-all NETWORK=mainnet SOURCE=<your-mainnet-identity>
+#     Paste the three contract IDs output into soroban/deployments/mainnet.json
+
+# 4 — Establish USDC trustline (mainnet issuer in Axial.md §13 locked decisions)
+#     Run one tiny test payment to confirm USDC flows
+
+# 5 — Update web env (if adding mainnet support)
+./scripts/write-web-env.sh  # adjust for mainnet paths if needed
+
+# 6 — Confirm on stellar.expert/public/contract/<each-id>
+```
+
+- Mainnet XLM wallet: `GB6TMTI6DB6BETQEPMKXOAYAMYKGNHR4AJVZHKEQ5LCVFINGEDQDKCFI`
+- Mainnet USDC issuer: `GA5ZSEJYB37JRC5AVCIA5MOP4RHTM335X2KGX3IHOJAPP5RE34K4KZVN`
+- **References:** [`../soroban/README.md`](../soroban/README.md), `Axial.md` §13.8–13.9, depends on **S0-4** ✅
 
 ### S0-6 · Demo recording + ≥3 dry runs · `P0` · 🔴 todo
-Record a clean end-to-end demo (Overview → Liquidity upload/seed → confirm → tokenize
-& swap → Compliance payroll + EIS → Settings). Have the recording ready as a fallback
-before the live demo. Follow the demo order in `Axial.md` "Implementation status".
-- **References:** [`flow.md`](flow.md) §3 (demo path sequence), `Axial.md` "Implementation status"
+Record a clean end-to-end demo. Have the recording ready as a fallback before the
+live presentation. All routes are now at `/app/*`.
+
+**Demo shot list (in order):**
+
+1. **Landing** — open `/` · show tagline, problem cards, 5-step flow · click "Launch testnet demo"
+2. **Overview** (`/app`) — EIS pulse live · treasury USDC · testnet badge visible
+3. **Liquidity** (`/app/liquidity`) — upload a real PDF invoice (or hit seed) · row appears in table
+4. **Confirm payer** — click "Confirm payer" demo PATCH · status changes to Fundable
+5. **Tokenize & Swap** — click "Tokenize & Swap" · toast pipeline runs · row shows USDC settled
+6. **Compliance** (`/app/compliance`) — expand a submission row · show 20 BIR fields + JWS preview + Stellar memo link
+7. **Route Payroll** — enter gross · click route · toast appears · check Compliance feed updates
+8. **Overview** — return · EIS pulse updated · treasury balance changed
+9. **Settings** (`/app/settings`) — show Audit Logs (now live EIS events, not hardcoded dates)
+
+- **References:** [`flow.md`](flow.md) §3 (sequence diagram), `Axial.md` "Implementation status"
 
 ### S0-7 · Sync docs before repo push · `P1` · 🟡 in progress
-Keep `Axial.md`, `flow.md`, `CLAUDE.md`, and this file consistent as Sprint 0 lands.
-(The 2026-05-22 audit edits are done — this task is the ongoing keep-in-sync.)
+S0-1/2/3/4 are reflected in this file. CLAUDE.md updated for routing change (`(app)`
+→ `app` segment, `/app/*` routes, landing at `/`). Remaining: update `Axial.md`
+implementation status table once all S0 tasks land; update `flow.md` if routing
+change affects the diagrams (route labels only — no functional change).
 - **References:** [`Axial.md`](Axial.md), [`flow.md`](flow.md), [`../CLAUDE.md`](../CLAUDE.md)
 
 ---

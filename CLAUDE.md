@@ -61,13 +61,15 @@ For what is actually built vs. only documented, the source of truth is **`docs/f
 
 **Stack:** Next.js 15.5 · React 19 · TypeScript 5 (strict) · Tailwind CSS 4 · `@stellar/stellar-sdk` · `@supabase/supabase-js` · `tesseract.js` + `pdf-parse` (invoice OCR). Path alias `@/*` → `web/*`.
 
-**Pages (`web/app/`):** root `layout.tsx` (Geist fonts + Material Symbols) → `(app)/layout.tsx` (auth shell with `AppSidebar`) → four tabs: `page.tsx` (Overview/Command Center), `liquidity/`, `compliance/`, `settings/`. Each page is a thin wrapper that renders a view from `components/views/` (`OverviewView`, `LiquidityView`, etc.). `components/stitch/` holds older design-export versions of those views — `components/views/` is the live set. Shared shell in `components/layout/`, primitives in `components/ui/`, client state via `components/providers/AppProvider.tsx`.
+**Pages (`web/app/`):** root `layout.tsx` (Geist fonts + Material Symbols) → `page.tsx` (public landing at `/`) → `app/layout.tsx` (auth shell with `AppSidebar`, calls `getPublicChainStatus()` server-side) → four tabs at `/app/*`: `app/page.tsx` (Overview), `app/liquidity/`, `app/compliance/`, `app/settings/`. Each page is a thin wrapper that renders a view from `components/views/` (`OverviewView`, `LiquidityView`, etc.). `components/stitch/` holds older design-export versions of those views — `components/views/` is the live set. Shared shell in `components/layout/`, primitives in `components/ui/`, client state via `components/providers/AppProvider.tsx`.
 
-**API routes (`web/app/api/`):** invoices (upload/parse/seed/CRUD), `eis/*` (submissions, process, seed), `bir/eis` (mock BIR endpoint), `swap/*` + `receivable/mint` + `payroll/*` (Soroban invocation + quotes), `soroban/status`, `wallets/balances`, `dashboard/summary`.
+**API routes (`web/app/api/`):** invoices (upload/parse/parse-sample/seed/CRUD), `eis/*` (submissions, process, seed), `bir/eis` (mock BIR endpoint), `swap/*` + `receivable/mint` + `payroll/*` (Soroban invocation + quotes), `soroban/status`, `wallets/balances`, `dashboard/summary`.
 
 ### Persistence — dual backend
 
 `lib/eis/store.ts` and `lib/invoices/store.ts` pick a backend at runtime: **Supabase** when `SUPABASE_URL` + a service-role/anon key are set, otherwise a **local JSON file fallback** under `web/data/`. Always write store access through these modules — never assume one backend. Supabase schema lives in `supabase/migrations/` (`001_eis_submissions.sql`, `002_factoring_invoices.sql`).
+
+The hosted Supabase project ref is `ifzyntqwymmgimnxtguz` — `SUPABASE_URL` must point at it (`https://ifzyntqwymmgimnxtguz.supabase.co`). Per `.cursor/README.md`, do not register this project's Supabase MCP server globally.
 
 ### Compliance pipeline (the EIS oracle)
 
