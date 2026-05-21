@@ -1,62 +1,124 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { Fragment, useCallback, useEffect, useRef, useState } from "react";
+import Link from "next/link";
+import { InvoiceTrustRow } from "@/components/liquidity/InvoiceTrustRow";
+import { TokenizationPipeline } from "@/components/liquidity/TokenizationPipeline";
 import { useApp } from "@/components/providers/AppProvider";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { Icon } from "@/components/ui/Icon";
 import { StatTile } from "@/components/ui/StatTile";
 import { StatusBadge } from "@/components/ui/StatusBadge";
+import type { FactoringInvoiceClient } from "@/lib/invoices/types";
+import { isFundable, trustHint } from "@/lib/msme/invoice-trust";
+import {
+  pipelineModalContent,
+  type PipelineStage,
+} from "@/lib/liquidity/pipeline-stage";
 
-type InvoiceStatus = "minted" | "scanning" | "settled";
+type Invoice = FactoringInvoiceClient;
 
-type Invoice = {
-  id: string;
-  party: string;
-  terms: string;
-  face: number;
-  immediate: number | null;
-  status: InvoiceStatus;
-};
+const PAGE_SIZE = 5;
 
-const initialInvoices: Invoice[] = [
-  {
-    id: "INV-2023-8901",
-    party: "Acme Logistics Corp",
-    terms: "Net 60",
-    face: 125000,
-    immediate: null,
-    status: "minted",
-  },
-  {
-    id: "INV-2023-8904",
-    party: "Nexus Tech Solutions",
-    terms: "Net 90",
-    face: 450000,
-    immediate: null,
-    status: "scanning",
-  },
-  {
-    id: "INV-2023-8872",
-    party: "Global Freight Systems",
-    terms: "Net 30",
-    face: 75500,
-    immediate: null,
-    status: "settled",
-  },
-];
+function txExplorerUrl(base: string, hash: string) {
+  return `${base}/${hash}`;
+}
 
-function UploadZone({ onBrowse }: { onBrowse: () => void }) {
+function ViewTxLinks({
+  mintTxHash,
+  swapTxHash,
+  explorerTxBase,
+}: {
+  mintTxHash?: string | null;
+  swapTxHash?: string | null;
+  explorerTxBase: string;
+}) {
+  const linkClass =
+    "inline-flex items-center gap-1 bg-transparent font-label-md text-label-md text-on-surface-variant hover:text-primary underline-offset-2 hover:underline";
+
+  if (!mintTxHash && !swapTxHash) {
+    return (
+      <span className="font-label-sm text-label-sm text-outline" title="No on-chain txs for this row">
+        —
+      </span>
+    );
+  }
+
+  return (
+    <span className="inline-flex flex-col items-end gap-0.5">
+      {mintTxHash ? (
+        <a
+          href={txExplorerUrl(explorerTxBase, mintTxHash)}
+          target="_blank"
+          rel="noreferrer"
+          className={linkClass}
+        >
+          <Icon name="receipt_long" size={16} />
+          Mint TX
+        </a>
+      ) : null}
+      {swapTxHash ? (
+        <a
+          href={txExplorerUrl(explorerTxBase, swapTxHash)}
+          target="_blank"
+          rel="noreferrer"
+          className={linkClass}
+        >
+          <Icon name="swap_horiz" size={16} />
+          Swap TX
+        </a>
+      ) : null}
+    </span>
+  );
+}
+
+const ACCEPT_INVOICE = "image/png,image/jpeg,image/webp,application/pdf";
+
+function UploadZone({
+  parsing,
+  parseError,
+  onFiles,
+}: {
+  parsing: boolean;
+  parseError: string | null;
+  onFiles: (files: FileList | File[]) => void;
+}) {
   const [hover, setHover] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const handleFiles = (list: FileList | File[] | null) => {
+    if (!list?.length || parsing) return;
+    onFiles(list);
+  };
 
   return (
     <Card padding="lg">
+      <input
+        ref={inputRef}
+        type="file"
+        accept={ACCEPT_INVOICE}
+        className="sr-only"
+        disabled={parsing}
+        onChange={(e) => handleFiles(e.target.files)}
+      />
       <div
         onMouseEnter={() => setHover(true)}
         onMouseLeave={() => setHover(false)}
+        onDragOver={(e) => {
+          e.preventDefault();
+          setHover(true);
+        }}
+        onDragLeave={() => setHover(false)}
+        onDrop={(e) => {
+          e.preventDefault();
+          setHover(false);
+          handleFiles(e.dataTransfer.files);
+        }}
         className={[
           "flex flex-col items-center justify-center rounded-xl border-2 border-dashed px-6 py-12 text-center transition-colors duration-200",
           hover ? "border-primary/50" : "border-outline-variant/30",
+          parsing ? "opacity-70" : "",
         ].join(" ")}
       >
         <div
@@ -68,161 +130,277 @@ function UploadZone({ onBrowse }: { onBrowse: () => void }) {
           ].join(" ")}
         >
           <Icon
-            name="upload_file"
+            name={parsing ? "document_scanner" : "upload_file"}
             size={36}
-            className={hover ? "text-primary" : "text-on-surface-variant"}
+            className={hover || parsing ? "text-primary" : "text-on-surface-variant"}
           />
         </div>
         <h3 className="mb-2 font-headline-md text-headline-md tracking-tight text-on-surface">
           Upload B2B Invoice
         </h3>
         <p className="mb-6 max-w-md font-body-md text-body-md text-on-surface-variant">
-          Drag and drop verified PDF or XML invoices into this zone to initiate the
-          tokenization sequence.
+          Drop PNG, JPEG, or PDF — OCR extracts invoice ID, buyer, amount, and terms into
+          Active Factoring.
         </p>
-        <Button variant="secondary" onClick={onBrowse}>
-          Browse Files
+        {parseError ? (
+          <p className="mb-4 max-w-md font-body-md text-body-md text-red-400/90">
+            {parseError}
+          </p>
+        ) : null}
+        <Button
+          variant="secondary"
+          disabled={parsing}
+          onClick={() => inputRef.current?.click()}
+        >
+          {parsing ? "Reading invoice…" : "Browse Files"}
         </Button>
+        <p className="mt-4 font-label-sm text-label-sm text-on-surface-variant">
+          Try{" "}
+          <a
+            href="/samples/invoices/invoice-inv-2023-8901.png"
+            target="_blank"
+            rel="noreferrer"
+            className="text-[#2DD4BF] hover:underline"
+          >
+            sample invoice
+          </a>
+        </p>
       </div>
     </Card>
   );
 }
 
-function PipelineStep({
-  state,
-  icon,
-  title,
-  sub,
-  progress,
-}: {
-  state: "done" | "active" | "pending";
-  icon: string;
-  title: string;
-  sub: string;
-  progress?: number;
-}) {
-  const circleClass =
-    state === "active"
-      ? "border-[#2DD4BF]/50 bg-[#2DD4BF]/20 text-[#2DD4BF] shadow-[0_0_15px_rgba(45,212,191,0.3)]"
-      : state === "done"
-        ? "border-outline-variant/30 bg-surface-container-high text-on-surface-variant"
-        : "border-outline-variant/15 bg-surface-variant/30 text-outline";
-
-  return (
-    <div
-      className={[
-        "relative z-10 flex gap-4",
-        state === "pending" ? "opacity-60" : "",
-      ].join(" ")}
-    >
-      <div
-        className={[
-          "flex h-12 w-12 shrink-0 items-center justify-center rounded-full border",
-          circleClass,
-        ].join(" ")}
-      >
-        <Icon name={icon} size={20} fill={state === "active"} />
-      </div>
-      <div className="flex-1 pt-1">
-        <p
-          className={[
-            "font-body-md text-body-md font-medium",
-            state === "active" ? "text-[#2DD4BF]" : "text-on-surface",
-          ].join(" ")}
-        >
-          {title}
-        </p>
-        <p className="mt-1 font-body-md text-body-md text-on-surface-variant">{sub}</p>
-        {progress != null ? (
-          <div className="mt-2.5 h-0.5 max-w-[280px] overflow-hidden rounded-full bg-surface-container-high">
-            <div
-              className="h-full rounded-full bg-primary"
-              style={{ width: `${progress * 100}%` }}
-            />
-          </div>
-        ) : null}
-      </div>
-    </div>
-  );
-}
-
-function Pipeline() {
-  return (
-    <div className="relative flex flex-col gap-6">
-      <div className="absolute top-6 bottom-6 left-[23px] w-px bg-outline-variant/20" />
-      <PipelineStep
-        state="done"
-        icon="document_scanner"
-        title="Invoice Verification"
-        sub="OCR and metadata extraction complete."
-      />
-      <PipelineStep
-        state="active"
-        icon="token"
-        title="Minting in Progress"
-        sub="Deploying Soroban asset representation."
-        progress={0.66}
-      />
-      <PipelineStep
-        state="pending"
-        icon="balance"
-        title="Liquidity Matching"
-        sub="Awaiting token finality to open order book."
-      />
-    </div>
-  );
-}
-
-async function fetchQuote(face: number): Promise<number | null> {
-  try {
-    const res = await fetch(`/api/swap/quote?face=${face}`);
-    if (!res.ok) return null;
-    const data = (await res.json()) as { advanceAmount: number };
-    return data.advanceAmount;
-  } catch {
-    return null;
-  }
-}
-
 type ChainStatus = {
   network: string;
   onChainReady: boolean;
+  receivableReady: boolean;
   swapContractId: string | null;
+  receivableContractId: string | null;
   configSource: string;
+  explorerTxBase: string;
+  explorerContractBase: string;
 };
 
 export function LiquidityView() {
-  const { dispatch } = useApp();
-  const [invoices, setInvoices] = useState(initialInvoices);
+  const { dispatch, setLastSwapAdvancePhp, setProgressToast, dismissToast } = useApp();
+  const [invoices, setInvoices] = useState<Invoice[]>([]);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [total, setTotal] = useState(0);
+  const [initialLoading, setInitialLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [storeBackend, setStoreBackend] = useState<string | null>(null);
+  const [confirmingId, setConfirmingId] = useState<string | null>(null);
   const [swappingId, setSwappingId] = useState<string | null>(null);
+  const [swapStep, setSwapStep] = useState<"idle" | "mint" | "swap">("idle");
   const [chain, setChain] = useState<ChainStatus | null>(null);
+  const [parsing, setParsing] = useState(false);
+  const [parseError, setParseError] = useState<string | null>(null);
+  const [pipelineStage, setPipelineStage] = useState<PipelineStage>("idle");
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [summary, setSummary] = useState<{
+    book?: { totalInvoices: number; totalFacePhp: number; settledCount: number };
+    treasury?: { funderUsdc: string | null };
+    contractsDeployed?: number;
+  } | null>(null);
+  const hasLoadedRef = useRef(false);
 
   useEffect(() => {
+    if (pipelineStage === "idle") {
+      dismissToast();
+      return;
+    }
+    const step = pipelineModalContent(pipelineStage);
+    if (!step?.loading) return;
+    setProgressToast(step.sub, {
+      progress: step.progress,
+      stepLabel: `Step ${step.step} of 3 · ${step.title}`,
+    });
+  }, [pipelineStage, setProgressToast, dismissToast]);
+
+  const loadInvoices = useCallback(async (targetPage: number, silent?: boolean) => {
+    const background = silent ?? hasLoadedRef.current;
+    if (background) {
+      setRefreshing(true);
+    } else {
+      setInitialLoading(true);
+    }
+    try {
+      const res = await fetch(
+        `/api/invoices?page=${targetPage}&pageSize=${PAGE_SIZE}`,
+      );
+      const data = (await res.json()) as {
+        items?: Invoice[];
+        page?: number;
+        total?: number;
+        totalPages?: number;
+        store?: string;
+        error?: string;
+      };
+      if (!res.ok) {
+        throw new Error(data.error ?? `List failed (${res.status})`);
+      }
+      setInvoices(data.items ?? []);
+      setPage(data.page ?? targetPage);
+      setTotal(data.total ?? 0);
+      setTotalPages(data.totalPages ?? 1);
+      setStoreBackend(data.store ?? null);
+      hasLoadedRef.current = true;
+    } catch {
+      if (!background) {
+        setInvoices([]);
+      }
+    } finally {
+      setInitialLoading(false);
+      setRefreshing(false);
+    }
+  }, []);
+
+  const replaceInvoiceInList = useCallback((updated: Invoice) => {
+    setInvoices((rows) => rows.map((r) => (r.id === updated.id ? updated : r)));
+  }, []);
+
+  useEffect(() => {
+    void loadInvoices(page);
+  }, [page, loadInvoices]);
+
+  const parseInvoiceFiles = useCallback(
+    async (files: FileList | File[]) => {
+      const file = files[0];
+      if (!file) return;
+
+      setParsing(true);
+      setParseError(null);
+      setPipelineStage("reading");
+
+      try {
+        const body = new FormData();
+        body.append("file", file);
+
+        const res = await fetch("/api/invoices/parse", { method: "POST", body });
+        const data = (await res.json()) as {
+          parsed?: {
+            invoiceId: string;
+            party: string;
+            terms: string;
+            face: number;
+            confidence: string;
+          };
+          error?: string;
+        };
+
+        if (!res.ok || !data.parsed) {
+          setParseError(data.error ?? `Parse failed (${res.status})`);
+          setPipelineStage("idle");
+          dismissToast();
+          return;
+        }
+
+        const { invoiceId, face, confidence } = data.parsed;
+
+        setPipelineStage("parsed");
+        if (page === 1) {
+          await loadInvoices(1, true);
+        } else {
+          setPage(1);
+        }
+        dispatch(
+          "invoice-parsed",
+          `${invoiceId} · ₱${face.toLocaleString()} · ${confidence} confidence`,
+        );
+      } catch {
+        setParseError("Could not read invoice — try another file or sample PNG.");
+        setPipelineStage("idle");
+        dismissToast();
+      } finally {
+        setParsing(false);
+      }
+    },
+    [dispatch, dismissToast, loadInvoices, page],
+  );
+
+  useEffect(() => {
+    void fetch("/api/dashboard/summary")
+      .then((r) => r.json())
+      .then((d) => setSummary(d))
+      .catch(() => setSummary(null));
     void fetch("/api/soroban/status")
       .then((r) => r.json())
       .then((data: ChainStatus) => setChain(data))
       .catch(() => setChain(null));
   }, []);
 
-  useEffect(() => {
-    void (async () => {
-      const quoted = await Promise.all(
-        initialInvoices.map(async (row) => {
-          if (row.immediate != null) return row;
-          const advance = await fetchQuote(row.face);
-          return advance != null ? { ...row, immediate: advance } : row;
-        }),
-      );
-      setInvoices(quoted);
-    })();
-  }, []);
+  const confirmPayerDemo = useCallback(
+    async (id: string) => {
+      setConfirmingId(id);
+      try {
+        const res = await fetch(`/api/invoices/${encodeURIComponent(id)}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "confirm_payer" }),
+        });
+        const data = (await res.json()) as { invoice?: Invoice; error?: string };
+        if (!res.ok || !data.invoice) {
+          dispatch("swap-executed", data.error ?? "Confirm payer failed");
+          return;
+        }
+        replaceInvoiceInList(data.invoice);
+        dispatch("payer-confirmed", id);
+      } finally {
+        setConfirmingId(null);
+      }
+    },
+    [dispatch, replaceInvoiceInList],
+  );
+
+  const markCollectedDemo = useCallback(
+    async (id: string) => {
+      const res = await fetch(`/api/invoices/${encodeURIComponent(id)}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "mark_collected" }),
+      });
+      const data = (await res.json()) as { invoice?: Invoice };
+      if (res.ok && data.invoice) {
+        replaceInvoiceInList(data.invoice);
+      }
+    },
+    [replaceInvoiceInList],
+  );
 
   const executeSwap = useCallback(
     async (id: string, face: number) => {
+      const row = invoices.find((r) => r.id === id);
+      if (!row || !isFundable(row.trust)) {
+        dispatch("swap-executed", "Confirm payer and NoA before funding.");
+        return;
+      }
+
       setSwappingId(id);
+      setSwapStep("mint");
+      setPipelineStage("minting");
+      const chainInvoiceId = `${id}-${Date.now()}`;
+
       try {
-        // Unique on-chain id per click (contract allows one swap per invoice_id)
-        const chainInvoiceId = `${id}-${Date.now()}`;
+        const mintRes = await fetch("/api/receivable/mint", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ invoiceId: chainInvoiceId, faceAmount: face }),
+        });
+        const mintData = (await mintRes.json()) as {
+          mode?: string;
+          txHash?: string;
+          error?: string;
+        };
+
+        if (!mintRes.ok) {
+          dispatch("swap-executed", mintData.error ?? `Tokenize failed (${mintRes.status})`);
+          setPipelineStage("parsed");
+          return;
+        }
+
+        setSwapStep("swap");
+        setPipelineStage("swapping");
         const res = await fetch("/api/swap/execute", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -237,31 +415,52 @@ export function LiquidityView() {
 
         if (!res.ok) {
           dispatch("swap-executed", data.error ?? `Swap failed (${res.status})`);
+          setPipelineStage("parsed");
           return;
         }
 
-        setInvoices((rows) =>
-          rows.map((r) =>
-            r.id === id
-              ? {
-                  ...r,
-                  status: "settled" as const,
-                  immediate: data.advanceAmount ?? r.immediate,
-                }
-              : r,
-          ),
-        );
+        setPipelineStage("complete");
+        const swapTx = data.mode === "on-chain" && data.txHash ? data.txHash : "";
+        const mintTx =
+          mintData.mode === "on-chain" && mintData.txHash ? mintData.txHash : "";
+        const advancePhp = data.advanceAmount ?? row.immediate ?? 0;
+        if (advancePhp > 0) {
+          setLastSwapAdvancePhp(advancePhp);
+        }
 
+        const settleRes = await fetch(`/api/invoices/${encodeURIComponent(id)}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            action: "settle",
+            immediate: advancePhp || row.immediate || 0,
+            mintTxHash: mintTx || null,
+            swapTxHash: swapTx || null,
+          }),
+        });
+        const settleData = (await settleRes.json()) as { invoice?: Invoice };
+        setExpandedId(id);
+        if (page === 1 && settleData.invoice) {
+          replaceInvoiceInList(settleData.invoice);
+          void loadInvoices(1, true);
+        } else {
+          setPage(1);
+        }
         const payload =
-          data.mode === "on-chain" && data.txHash
-            ? `tx:${id}|${data.txHash}`
-            : id;
+          swapTx && mintTx
+            ? `tx:${id}|${mintTx}|${swapTx}`
+            : swapTx
+              ? `tx:${id}|${swapTx}`
+              : id;
         dispatch("swap-executed", payload);
+      } catch {
+        setPipelineStage("parsed");
       } finally {
         setSwappingId(null);
+        setSwapStep("idle");
       }
     },
-    [dispatch],
+    [dispatch, invoices, setLastSwapAdvancePhp, loadInvoices, page, replaceInvoiceInList],
   );
 
   return (
@@ -277,13 +476,15 @@ export function LiquidityView() {
         >
           <span className="material-symbols-outlined text-[16px]">hub</span>
           <span>
-            {chain.onChainReady
-              ? `Stellar ${chain.network} — swaps execute on-chain`
-              : `Stellar ${chain.network} — demo mode (add STELLAR_FUNDER_SECRET to web/.env.local)`}
+            {chain.onChainReady && chain.receivableReady
+              ? `Stellar ${chain.network} — mint receivable + swap on-chain`
+              : chain.onChainReady
+                ? `Stellar ${chain.network} — swap on-chain (add STELLAR_ISSUER_SECRET for mint)`
+                : `Stellar ${chain.network} — demo mode (run soroban/scripts/write-web-env.sh)`}
           </span>
           {chain.swapContractId ? (
             <a
-              href={`https://stellar.expert/explorer/testnet/contract/${chain.swapContractId}`}
+              href={`${chain.explorerContractBase}/${chain.swapContractId}`}
               target="_blank"
               rel="noreferrer"
               className="ml-auto font-mono text-xs underline opacity-80 hover:opacity-100"
@@ -295,11 +496,32 @@ export function LiquidityView() {
       ) : null}
       <div className="grid grid-cols-1 gap-gutter md:grid-cols-12">
         <div className="flex flex-col gap-6 md:col-span-8">
-          <UploadZone onBrowse={() => dispatch("browse-files")} />
+          <UploadZone
+            parsing={parsing}
+            parseError={parseError}
+            onFiles={(files) => void parseInvoiceFiles(files)}
+          />
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-            <StatTile label="Total Liquidity Pool" value="2.4M" unit="USDC" accent />
-            <StatTile label="24h Swap Volume" value="850K" unit="USDC" />
-            <StatTile label="Active Smart Contracts" value="142" />
+            <StatTile
+              label="Treasury USDC"
+              value={summary?.treasury?.funderUsdc?.split(".")[0] ?? "—"}
+              unit={summary?.treasury?.funderUsdc ? "USDC" : ""}
+              accent
+            />
+            <StatTile
+              label="Factoring book"
+              value={
+                summary?.book?.totalFacePhp
+                  ? `${(summary.book.totalFacePhp / 1_000_000).toFixed(1)}M`
+                  : "—"
+              }
+              unit="PHP face"
+            />
+            <StatTile
+              label="Soroban contracts"
+              value={String(summary?.contractsDeployed ?? 0)}
+              unit={chain?.network ?? "testnet"}
+            />
           </div>
         </div>
 
@@ -313,7 +535,7 @@ export function LiquidityView() {
               </h3>
               <Icon name="tune" size={20} className="text-on-surface-variant" />
             </div>
-            <Pipeline />
+            <TokenizationPipeline stage={pipelineStage} />
           </Card>
         </div>
       </div>
@@ -322,16 +544,37 @@ export function LiquidityView() {
         <div className="flex items-start justify-between border-b border-outline-variant/15 p-6">
           <div>
             <h3 className="font-headline-md text-headline-md text-on-surface">Active Factoring</h3>
-            <p className="mt-1.5 font-body-md text-body-md text-on-surface-variant">
-              Pending and executed atomic swaps.
+            <p className="mt-1 font-body-md text-body-md text-on-surface-variant">
+              Confirm payer → tokenize → collect at maturity.
             </p>
+            {storeBackend ? (
+              <p className="mt-1 font-label-sm text-label-sm text-outline">
+                Store: {storeBackend} · {total} invoices
+              </p>
+            ) : null}
           </div>
-          <Button variant="ghost" icon="filter_list" className="text-primary">
-            Filter
-          </Button>
+          <Link
+            href="/settings"
+            className="font-label-sm text-label-sm text-on-surface-variant hover:text-[#2DD4BF]"
+          >
+            PHP ramp
+          </Link>
         </div>
-        <div className="overflow-x-auto">
-          <table className="w-full border-collapse">
+        <div className="relative overflow-x-auto">
+          {refreshing ? (
+            <div
+              className="pointer-events-none absolute inset-x-0 top-0 z-10 h-0.5 overflow-hidden bg-surface-container-high"
+              aria-hidden
+            >
+              <div className="h-full w-1/3 animate-pulse rounded-full bg-[#2DD4BF]/80" />
+            </div>
+          ) : null}
+          <table
+            className={[
+              "w-full border-collapse transition-opacity duration-200",
+              refreshing ? "opacity-80" : "opacity-100",
+            ].join(" ")}
+          >
             <thead>
               <tr>
                 {[
@@ -339,7 +582,7 @@ export function LiquidityView() {
                   "Counterparty",
                   "Terms",
                   "Face value",
-                  "Immediate USDC",
+                  "Advance",
                   "Status",
                   "Action",
                 ].map((h, i) => (
@@ -356,75 +599,159 @@ export function LiquidityView() {
               </tr>
             </thead>
             <tbody>
-              {invoices.map((row) => (
-                <tr key={row.id} className="border-b border-outline-variant/10">
-                  <td className="px-6 py-4 font-mono text-sm font-medium text-on-surface">
-                    {row.id}
-                  </td>
-                  <td className="px-6 py-4 font-body-md text-body-md text-on-surface-variant">
-                    {row.party}
-                  </td>
-                  <td className="px-6 py-4">
-                    <span className="rounded-sm bg-surface-container-high px-2.5 py-1 font-label-sm text-label-sm tracking-wide text-on-surface">
-                      {row.terms}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 text-right font-mono text-sm text-on-surface">
-                    ${row.face.toLocaleString()}.00
-                  </td>
+              {initialLoading ? (
+                Array.from({ length: 3 }).map((_, i) => (
+                  <tr key={`skel-${i}`} className="border-b border-outline-variant/10">
+                    <td colSpan={7} className="px-6 py-4">
+                      <div className="h-4 max-w-md animate-pulse rounded bg-surface-container-high" />
+                    </td>
+                  </tr>
+                ))
+              ) : null}
+              {!initialLoading && invoices.length === 0 ? (
+                <tr>
                   <td
-                    className={[
-                      "px-6 py-4 text-right font-mono text-sm font-medium",
-                      row.immediate ? "text-primary" : "text-on-surface-variant",
-                    ].join(" ")}
+                    colSpan={7}
+                    className="px-6 py-12 text-center font-body-md text-body-md text-on-surface-variant"
                   >
-                    {row.immediate ? `${row.immediate.toLocaleString()}.00` : "—"}
-                  </td>
-                  <td className="px-6 py-4 text-center">
-                    {row.status === "minted" ? (
-                      <StatusBadge kind="minted">Minted</StatusBadge>
-                    ) : null}
-                    {row.status === "scanning" ? (
-                      <StatusBadge kind="scanning" icon="sync" animated>
-                        Scanning
-                      </StatusBadge>
-                    ) : null}
-                    {row.status === "settled" ? (
-                      <StatusBadge kind="settled" icon="check_circle">
-                        Settled
-                      </StatusBadge>
-                    ) : null}
-                  </td>
-                  <td className="px-6 py-4 text-right">
-                    {row.status === "minted" ? (
-                      <Button
-                        variant="teal"
-                        size="sm"
-                        disabled={swappingId === row.id}
-                        onClick={() => void executeSwap(row.id, row.face)}
-                      >
-                        {swappingId === row.id ? "Swapping…" : "Execute Atomic Swap"}
-                      </Button>
-                    ) : null}
-                    {row.status === "scanning" ? (
-                      <Button variant="surface" size="sm" disabled>
-                        Pending
-                      </Button>
-                    ) : null}
-                    {row.status === "settled" ? (
-                      <button
-                        type="button"
-                        className="inline-flex items-center gap-1.5 bg-transparent font-label-md text-label-md text-on-surface-variant hover:text-primary"
-                      >
-                        <Icon name="receipt_long" size={18} />
-                        View TX
-                      </button>
-                    ) : null}
+                    No invoices yet — upload one or seed demo data.
                   </td>
                 </tr>
-              ))}
+              ) : null}
+              {!initialLoading &&
+                invoices.map((row) => {
+                const showLockbox = expandedId === row.id && row.trust.lockboxAddress;
+                return (
+                <Fragment key={row.id}>
+                  <tr className="border-b border-outline-variant/10">
+                    <td className="px-6 py-4">
+                      <button
+                        type="button"
+                        className="group flex flex-col items-start gap-0.5 text-left"
+                        onClick={() =>
+                          setExpandedId((id) => (id === row.id ? null : row.id))
+                        }
+                        disabled={!row.trust.lockboxAddress}
+                      >
+                        <span className="font-mono text-sm font-medium text-on-surface group-hover:text-primary">
+                          {row.id}
+                        </span>
+                        {row.trust.lockboxAddress ? (
+                          <span className="font-label-sm text-label-sm text-on-surface-variant">
+                            {expandedId === row.id ? "Hide lockbox" : "Lockbox"}
+                          </span>
+                        ) : null}
+                      </button>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="font-body-md text-body-md text-on-surface-variant">
+                        {row.party}
+                      </div>
+                      <div className="mt-0.5 font-label-sm text-label-sm text-outline">
+                        {trustHint(row.trust)}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className="rounded-sm bg-surface-container-high px-2.5 py-1 font-label-sm text-label-sm tracking-wide text-on-surface">
+                        {row.terms}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 text-right font-mono text-sm text-on-surface">
+                      ₱{row.face.toLocaleString()}.00
+                    </td>
+                    <td
+                      className={[
+                        "px-6 py-4 text-right font-mono text-sm font-medium",
+                        row.immediate ? "text-primary" : "text-on-surface-variant",
+                      ].join(" ")}
+                    >
+                      {row.immediate ? `₱${row.immediate.toLocaleString()}.00` : "—"}
+                    </td>
+                    <td className="px-6 py-4 text-center">
+                      {row.status === "fundable" ? (
+                        <StatusBadge kind="minted">Ready</StatusBadge>
+                      ) : null}
+                      {row.status === "awaiting_payer" ? (
+                        <StatusBadge kind="scanning">Pending</StatusBadge>
+                      ) : null}
+                      {row.status === "settled" ? (
+                        <StatusBadge kind="settled" icon="check_circle">
+                          Funded
+                        </StatusBadge>
+                      ) : null}
+                    </td>
+                    <td className="px-6 py-4 text-right">
+                      {row.status === "fundable" ? (
+                        <Button
+                          variant="teal"
+                          size="sm"
+                          disabled={swappingId === row.id}
+                          onClick={() => void executeSwap(row.id, row.face)}
+                        >
+                          {swappingId === row.id
+                            ? swapStep === "mint"
+                              ? "Tokenizing…"
+                              : "Swapping…"
+                            : "Tokenize & Swap"}
+                        </Button>
+                      ) : null}
+                      {row.status === "awaiting_payer" ? (
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          disabled={confirmingId === row.id}
+                          onClick={() => void confirmPayerDemo(row.id)}
+                        >
+                          {confirmingId === row.id ? "Confirming…" : "Confirm payer"}
+                        </Button>
+                      ) : null}
+                      {row.status === "settled" ? (
+                        <ViewTxLinks
+                          mintTxHash={row.mintTxHash}
+                          swapTxHash={row.swapTxHash}
+                          explorerTxBase={
+                            chain?.explorerTxBase ??
+                            "https://stellar.expert/explorer/testnet/tx"
+                          }
+                        />
+                      ) : null}
+                    </td>
+                  </tr>
+                  {showLockbox ? (
+                    <InvoiceTrustRow
+                      trust={row.trust}
+                      onMarkCollected={() => void markCollectedDemo(row.id)}
+                    />
+                  ) : null}
+                </Fragment>
+              );
+              })}
             </tbody>
           </table>
+        </div>
+        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-outline-variant/10 px-6 py-3">
+          <p className="font-label-sm text-label-sm text-on-surface-variant">
+            Page {page} of {totalPages}
+            {total > 0 ? ` · showing ${invoices.length} of ${total}` : ""}
+          </p>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              disabled={page <= 1 || initialLoading || refreshing}
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+            >
+              Previous
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              disabled={page >= totalPages || initialLoading || refreshing}
+              onClick={() => setPage((p) => p + 1)}
+            >
+              Next
+            </Button>
+          </div>
         </div>
       </Card>
     </main>

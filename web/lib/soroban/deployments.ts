@@ -6,11 +6,14 @@ export type TestnetDeployment = {
   passphrase: string;
   rpc: string;
   roles?: {
+    admin_public?: string;
     funder_public?: string;
     msme_public?: string;
   };
   contracts?: {
     axial_swap?: string | null;
+    receivable_token?: string | null;
+    payroll_split?: string | null;
     usdc_token?: string | null;
   };
 };

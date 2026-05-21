@@ -76,6 +76,26 @@ Build **L1 first**. L1 alone is a complete, judge-able submission. L2 enriches t
 
 **Carlos owns:** PDAX Connect outreach (this week), demo narrative, judge-facing slides, the multi-anchor architecture story.
 
+### Implementation status (May 2026)
+
+Snapshot of what ships in **`web/`** today vs locked product vision. Visual tab map and sequence diagrams: **`docs/flow.md`**.
+
+| Area | Status | Notes |
+|------|--------|-------|
+| Soroban L1 (mint, swap, payroll) | ✅ Testnet | Happy path wired from Liquidity + Compliance |
+| BIR EIS oracle (20 fields, JWS mock, memo) | ✅ | Supabase `eis_submissions`; API-triggered on chain events |
+| Factoring book | ✅ | `factoring_invoices` + `/api/invoices` pagination; OCR parse persists rows |
+| MSME trust (payer confirm, lockbox) | 🟡 Demo | PATCH + UI trust strip; no real payer portal or on-chain lockbox |
+| Overview / Liquidity metrics | ✅ | `GET /api/dashboard/summary` — book face PHP, treasury USDC, contract count |
+| Testnet treasury card | ✅ | `GET /api/wallets/balances` on Overview |
+| PDAX ramp (L2) | ✅ UI | Settings demo card; no Connect API |
+| Mainnet + Circle USDC | ⬜ | Still testnet; issuer/trustlines per hackathon plan |
+| T+3 submission worker | ⬜ | Immediate oracle submit only |
+| Leakage freeze / reconciliation worker | ⬜ | Documented in settlement-integrity review; not automated |
+| Closed-loop collection contract | ⬜ | `mark_collected` demo only |
+
+**Demo order:** Overview (treasury) → Liquidity (upload or seed row → confirm payer → tokenize & swap) → Compliance (payroll + EIS) → Settings (PDAX toast).
+
 ### Open questions for the dev team
 
 Decisions Carlos doesn't have a strong opinion on. Resolve early so they don't bottleneck later. **Pick one and move** — bias toward decisions you can reverse cheaply.

@@ -8,6 +8,11 @@ Liquidity and compliance engine for Philippine MSMEs — **Build on Stellar Phil
 | Web UI (Next.js) | [`web/`](web/) | Four-tab app |
 | Soroban contracts | [`soroban/`](soroban/) | Workspace scaffold (3 crates) |
 
+## Deploy (Vercel)
+
+- **Root directory:** `web`
+- **Environment variables:** [`docs/vercel-deployment.md`](docs/vercel-deployment.md) · template [`web/.env.example`](web/.env.example)
+
 ## Quick start
 
 **Frontend** (from `web/`):

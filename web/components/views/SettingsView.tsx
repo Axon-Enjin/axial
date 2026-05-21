@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { PdaxRampCard } from "@/components/settings/PdaxRampCard";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { Icon } from "@/components/ui/Icon";
@@ -230,6 +231,8 @@ export function SettingsView() {
           </Card>
         </div>
       </div>
+
+      <PdaxRampCard />
 
       <div>
         <h3 className="mb-4 font-headline-md text-headline-md text-on-surface">Automation Logic</h3>

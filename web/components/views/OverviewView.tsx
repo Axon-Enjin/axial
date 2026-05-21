@@ -1,11 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import Link from "next/link";
+import { useCallback, useEffect, useState } from "react";
 import { useApp } from "@/components/providers/AppProvider";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { CardHeader } from "@/components/ui/CardHeader";
 import { Icon } from "@/components/ui/Icon";
+import { TestnetTreasuryCard } from "@/components/overview/TestnetTreasuryCard";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 
 type BarSpec = { h: number; active?: boolean };
@@ -35,12 +37,104 @@ const labels90 = [
   "Nov 30",
 ];
 
-const recentActions = [
-  { icon: "receipt_long", title: "Invoice #402 tokenized", sub: "Supplier A · ₱150,000", time: "2m ago", accent: false },
-  { icon: "cloud_done", title: "BIR Payload accepted", sub: "Automated Sync", time: "15m ago", accent: true },
-  { icon: "account_balance", title: "Yield distributed", sub: "Treasury Vault A", time: "1h ago", accent: false },
-  { icon: "security", title: "Smart Contract Audited", sub: "System Routine", time: "3h ago", accent: false },
-];
+type ChainStatus = {
+  network: string;
+  onChainReady?: boolean;
+  payrollReady?: boolean;
+  eisStore?: string;
+};
+
+type DashboardSummary = {
+  book?: {
+    totalInvoices: number;
+    totalFacePhp: number;
+    fundableCount: number;
+    settledCount: number;
+  };
+  treasury?: { funderUsdc: string | null; msmeUsdc: string | null };
+  eis?: { total: number; synchronized: number };
+  contractsDeployed?: number;
+};
+
+type EisStats = {
+  pending: number;
+  synchronized: number;
+  total: number;
+};
+
+type EisSubmissionRow = {
+  id: string;
+  date: string;
+  ref: string;
+  status: string;
+  eventKind?: string;
+  referenceId?: string;
+};
+
+type RecentAction = {
+  icon: string;
+  title: string;
+  sub: string;
+  time: string;
+  accent: boolean;
+};
+
+function eventToAction(row: EisSubmissionRow): RecentAction {
+  const ref = row.referenceId ?? row.id;
+  switch (row.eventKind) {
+    case "receivable_minted":
+      return {
+        icon: "receipt_long",
+        title: `${ref} tokenized`,
+        sub: row.status === "Synchronized" ? `BIR ${row.ref}` : "EIS bridging",
+        time: row.date,
+        accent: row.status === "Synchronized",
+      };
+    case "swap_executed":
+      return {
+        icon: "swap_horiz",
+        title: "USDC advance executed",
+        sub: ref,
+        time: row.date,
+        accent: row.status === "Synchronized",
+      };
+    case "payroll_routed":
+      return {
+        icon: "call_split",
+        title: "Payroll routed on Stellar",
+        sub: row.status === "Synchronized" ? `BIR ${row.ref}` : "Statutory split",
+        time: row.date,
+        accent: row.status === "Synchronized",
+      };
+    default:
+      return {
+        icon: "cloud_done",
+        title: "EIS payload queued",
+        sub: row.id,
+        time: row.date,
+        accent: false,
+      };
+  }
+}
+
+function birPulseCopy(stats: EisStats, store?: string): { subtitle: string; status: string } {
+  if (stats.total === 0) {
+    return {
+      subtitle: "Oracle ready · no submissions yet",
+      status: "Run Liquidity or Compliance to sync",
+    };
+  }
+  if (stats.pending > 0) {
+    return {
+      subtitle: `T+3 window active · ${stats.pending} bridging`,
+      status: `${stats.synchronized} synchronized · ${store ?? "store"}`,
+    };
+  }
+  return {
+    subtitle: `${stats.synchronized} payload${stats.synchronized === 1 ? "" : "s"} synchronized`,
+    status: "BIR EIS accepted · memo on Stellar",
+  };
+}
 
 function PulseRow({
   icon,
@@ -75,10 +169,73 @@ function PulseRow({
 export function OverviewView() {
   const { dispatch } = useApp();
   const [range, setRange] = useState<"30D" | "90D">("30D");
+  const [chain, setChain] = useState<ChainStatus | null>(null);
+  const [eisStats, setEisStats] = useState<EisStats>({
+    pending: 0,
+    synchronized: 0,
+    total: 0,
+  });
+  const [eisStore, setEisStore] = useState<string>("file");
+  const [recentActions, setRecentActions] = useState<RecentAction[]>([]);
+  const [summary, setSummary] = useState<DashboardSummary | null>(null);
 
+  const loadLiveStatus = useCallback(() => {
+    fetch("/api/dashboard/summary")
+      .then((r) => r.json())
+      .then((d) => setSummary(d as DashboardSummary))
+      .catch(() => setSummary(null));
+
+    fetch("/api/soroban/status")
+      .then((r) => r.json())
+      .then((d) => setChain(d as ChainStatus))
+      .catch(() => setChain(null));
+
+    fetch("/api/eis/submissions")
+      .then((r) => r.json())
+      .then((d) => {
+        if (d.stats) setEisStats(d.stats as EisStats);
+        if (d.store) setEisStore(d.store as string);
+        const rows = Array.isArray(d.submissions) ? (d.submissions as EisSubmissionRow[]) : [];
+        setRecentActions(rows.slice(0, 4).map(eventToAction));
+      })
+      .catch(() => {
+        setEisStats({ pending: 0, synchronized: 0, total: 0 });
+        setRecentActions([]);
+      });
+  }, []);
+
+  useEffect(() => {
+    loadLiveStatus();
+    const id = window.setInterval(loadLiveStatus, 30_000);
+    return () => window.clearInterval(id);
+  }, [loadLiveStatus]);
+
+  const birPulse = birPulseCopy(eisStats, eisStore);
+  const networkLabel = chain?.network
+    ? `Stellar ${chain.network}${chain.onChainReady ? "" : " · setup"}`
+    : "Network Active";
+
+  const eisActivity = Math.min(100, 28 + (eisStats.synchronized + 1) * 12);
   const bars =
-    range === "30D" ? bars30 : [...bars30, ...bars30.slice(0, 4).reverse()];
+    range === "30D"
+      ? bars30.map((b, i) => ({
+          ...b,
+          h: i === 3 ? eisActivity : b.h,
+          active: i === 3,
+        }))
+      : [...bars30, ...bars30.slice(0, 4).reverse()].map((b, i) => ({
+          ...b,
+          h: Math.min(100, b.h + eisStats.synchronized * 2),
+          active: i === 6,
+        }));
   const labels = range === "30D" ? labels30 : labels90;
+
+  const faceDisplay = summary?.book?.totalFacePhp
+    ? summary.book.totalFacePhp.toLocaleString()
+    : "—";
+  const bookSub = summary?.book
+    ? `${summary.book.totalInvoices} invoices · ${summary.book.fundableCount} fundable · ${summary.book.settledCount} funded`
+    : "Loading book from API…";
 
   return (
     <main className="mx-auto max-w-container-max px-margin-mobile py-7 md:px-margin-desktop">
@@ -96,21 +253,29 @@ export function OverviewView() {
                 </div>
                 <div className="mt-4 flex items-baseline gap-1">
                   <span className="font-headline-xl text-headline-xl tracking-tight text-on-surface">
-                    ₱24,500,000
+                    ₱{faceDisplay}
                   </span>
                   <span className="font-body-lg text-body-lg text-on-surface-variant">.00</span>
                 </div>
-                <p className="mt-2 flex items-center gap-1 font-body-md text-body-md text-primary">
-                  <Icon name="trending_up" size={16} />
-                  +4.2% vs last 30 days
+                <p className="mt-2 font-body-md text-body-md text-on-surface-variant">
+                  {bookSub}
                 </p>
+                {summary?.treasury?.funderUsdc ? (
+                  <p className="mt-1 font-label-sm text-label-sm text-[#2DD4BF]">
+                    Treasury USDC {summary.treasury.funderUsdc} · testnet
+                  </p>
+                ) : null}
               </div>
-              <StatusBadge kind="active">Network Active</StatusBadge>
+              <StatusBadge kind={chain?.onChainReady ? "active" : "scanning"}>
+                {networkLabel}
+              </StatusBadge>
             </div>
             <div className="relative mt-12 flex gap-3.5">
-              <Button variant="primary" size="lg" onClick={() => dispatch("unlock")}>
-                Unlock Capital
-              </Button>
+              <Link href="/liquidity">
+                <Button variant="primary" size="lg" onClick={() => dispatch("unlock")}>
+                  Unlock Capital
+                </Button>
+              </Link>
               <Button
                 variant="secondary"
                 size="lg"
@@ -123,7 +288,8 @@ export function OverviewView() {
           </Card>
         </div>
 
-        <div className="md:col-span-4">
+        <div className="flex flex-col gap-gutter md:col-span-4">
+          <TestnetTreasuryCard />
           <Card className="h-full">
             <CardHeader
               icon="policy"
@@ -134,14 +300,20 @@ export function OverviewView() {
               <PulseRow
                 icon="cloud_done"
                 title="BIR EIS Sync"
-                subtitle="T+3 Settlement Verified"
-                status="Perfect Compliance"
+                subtitle={birPulse.subtitle}
+                status={birPulse.status}
               />
               <PulseRow
                 icon="call_split"
                 title="Statutory Splitting"
-                subtitle="Automated VAT/WHT"
-                status="12 Active Rules"
+                subtitle={
+                  chain?.payrollReady
+                    ? "SSS · PhilHealth · Pag-IBIG on-chain"
+                    : "Demo split — deploy payroll_split"
+                }
+                status={
+                  chain?.payrollReady ? "Payroll router live" : "Preview in Compliance"
+                }
               />
             </div>
           </Card>
@@ -151,7 +323,7 @@ export function OverviewView() {
           <Card className="flex min-h-[380px] flex-col">
             <CardHeader
               icon="monitoring"
-              label="Operational Runway"
+              label="EIS activity"
               action={
                 <div className="flex gap-1.5">
                   {(["30D", "90D"] as const).map((r) => (
@@ -216,15 +388,21 @@ export function OverviewView() {
               icon="history"
               label="Recent Actions"
               action={
-                <button
-                  type="button"
+                <Link
+                  href="/compliance"
                   className="bg-transparent font-label-sm text-label-sm text-primary hover:underline"
                 >
                   View All
-                </button>
+                </Link>
               }
             />
             <div className="flex flex-col">
+              {recentActions.length === 0 ? (
+                <p className="py-6 text-center font-body-md text-body-md text-on-surface-variant">
+                  No ledger events yet — tokenize a receivable or route payroll to populate
+                  this feed.
+                </p>
+              ) : null}
               {recentActions.map((row, i, arr) => (
                 <div
                   key={row.title}
