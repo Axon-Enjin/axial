@@ -114,7 +114,17 @@ curl -X POST "https://YOUR_APP.vercel.app/api/eis/seed"
 | Swap | Confirm payer → Tokenize & Swap (funder needs testnet USDC) |
 | Compliance | `GET /api/eis/submissions` → rows after swap |
 
-**OCR upload** (`POST /api/invoices/parse`) uses Tesseract + pdf-parse; `maxDuration` is 60s in `vercel.json`. Hobby plan may cap lower — use image uploads if PDF parse times out.
+**Invoice upload / OCR**
+
+| Route | Vercel Hobby | Notes |
+|-------|----------------|-------|
+| `POST /api/invoices/parse-sample` | ✅ Works | Demo path — no Tesseract; use **sample invoice** in UI |
+| `POST /api/invoices/parse` (PDF text) | 🟡 Often OK | `pdf-parse` only; needs selectable text in PDF |
+| `POST /api/invoices/parse` (PNG/JPEG) | ❌ Usually fails | **Tesseract** cold start ~15–30s; Hobby **10s** function cap |
+
+Image OCR is **off by default** when `VERCEL=1`. To force it on Pro: set `AXIAL_OCR_ENABLED=true` and use a Pro plan (60s `maxDuration` in `web/vercel.json`).
+
+Other **502** routes (`/api/wallets/balances`, `/api/dashboard/summary`) are usually **Stellar RPC timeouts**, not Tesseract.
 
 ---
 
