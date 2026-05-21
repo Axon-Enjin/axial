@@ -1,0 +1,44 @@
+export type InvoiceStatus = "awaiting_payer" | "fundable" | "settled";
+
+export type CollectionStatus = "awaiting_payer" | "open" | "collected";
+
+export type FactoringInvoice = {
+  id: string;
+  party: string;
+  terms: string;
+  face: number;
+  immediate: number | null;
+  status: InvoiceStatus;
+  payerConfirmed: boolean;
+  noaAcknowledged: boolean;
+  lockboxAddress: string | null;
+  lockboxMemo: string | null;
+  collectionStatus: CollectionStatus;
+  mintTxHash: string | null;
+  swapTxHash: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type FactoringInvoiceClient = FactoringInvoice & {
+  trust: {
+    payerConfirmed: boolean;
+    noaAcknowledged: boolean;
+    lockboxAddress: string | null;
+    lockboxMemo: string | null;
+    collectionStatus: CollectionStatus;
+  };
+};
+
+export function toClientInvoice(inv: FactoringInvoice): FactoringInvoiceClient {
+  return {
+    ...inv,
+    trust: {
+      payerConfirmed: inv.payerConfirmed,
+      noaAcknowledged: inv.noaAcknowledged,
+      lockboxAddress: inv.lockboxAddress,
+      lockboxMemo: inv.lockboxMemo,
+      collectionStatus: inv.collectionStatus,
+    },
+  };
+}

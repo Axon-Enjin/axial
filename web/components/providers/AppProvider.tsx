@@ -5,55 +5,118 @@ import {
   useCallback,
   useContext,
   useMemo,
+  useRef,
   useState,
 } from "react";
+import { AppToast, type ToastState } from "@/components/ui/AppToast";
 import { demoActionMessage, type DemoActionKind } from "@/lib/demo-actions";
 
 type AppContextValue = {
   walletConnected: boolean;
   toggleWallet: () => void;
-  toast: string | null;
+  toast: ToastState | null;
+  /** Last on-chain swap advance (PHP units) — drives payroll default budget. */
+  lastSwapAdvancePhp: number | null;
+  setLastSwapAdvancePhp: (amount: number | null) => void;
+  /** Short success toast (auto-dismiss). */
   dispatch: (kind: DemoActionKind, payload?: string) => void;
+  /** Sticky toast with spinner + bar — updates in place until cleared. */
+  setProgressToast: (
+    message: string,
+    opts?: { progress?: number; stepLabel?: string },
+  ) => void;
+  dismissToast: () => void;
 };
 
 const AppContext = createContext<AppContextValue | null>(null);
 
 export function AppProvider({ children }: { children: React.ReactNode }) {
   const [walletConnected, setWalletConnected] = useState(false);
-  const [toast, setToast] = useState<string | null>(null);
+  const [toast, setToast] = useState<ToastState | null>(null);
+  const [lastSwapAdvancePhp, setLastSwapAdvancePhp] = useState<number | null>(null);
+  const dismissTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const dispatch = useCallback((kind: DemoActionKind, payload?: string) => {
-    const message = demoActionMessage(kind, payload);
-    setToast(message);
-    window.setTimeout(() => setToast(null), 3200);
+  const clearDismissTimer = useCallback(() => {
+    if (dismissTimerRef.current) {
+      clearTimeout(dismissTimerRef.current);
+      dismissTimerRef.current = null;
+    }
   }, []);
+
+  const dismissToast = useCallback(() => {
+    clearDismissTimer();
+    setToast(null);
+  }, [clearDismissTimer]);
+
+  const showToast = useCallback(
+    (next: ToastState, autoDismissMs?: number) => {
+      clearDismissTimer();
+      setToast(next);
+      if (autoDismissMs != null && autoDismissMs > 0) {
+        dismissTimerRef.current = setTimeout(() => setToast(null), autoDismissMs);
+      }
+    },
+    [clearDismissTimer],
+  );
+
+  const setProgressToast = useCallback(
+    (message: string, opts?: { progress?: number; stepLabel?: string }) => {
+      showToast({
+        message,
+        variant: "progress",
+        progress: opts?.progress,
+        stepLabel: opts?.stepLabel,
+      });
+    },
+    [showToast],
+  );
+
+  const dispatch = useCallback(
+    (kind: DemoActionKind, payload?: string) => {
+      const message = demoActionMessage(kind, payload);
+      const isError =
+        payload != null &&
+        (payload.includes("failed") ||
+          payload.includes("Failed") ||
+          payload.includes("before funding"));
+      showToast(
+        { message, variant: isError ? "error" : "success" },
+        isError ? 4500 : 3200,
+      );
+    },
+    [showToast],
+  );
 
   const toggleWallet = useCallback(() => {
     setWalletConnected((w) => !w);
   }, []);
 
   const value = useMemo(
-    () => ({ walletConnected, toggleWallet, toast, dispatch }),
-    [walletConnected, toggleWallet, toast, dispatch],
+    () => ({
+      walletConnected,
+      toggleWallet,
+      toast,
+      lastSwapAdvancePhp,
+      setLastSwapAdvancePhp,
+      dispatch,
+      setProgressToast,
+      dismissToast,
+    }),
+    [
+      walletConnected,
+      toggleWallet,
+      toast,
+      lastSwapAdvancePhp,
+      dispatch,
+      setProgressToast,
+      dismissToast,
+    ],
   );
 
   return (
     <AppContext.Provider value={value}>
       {children}
-      {toast ? (
-        <div
-          className="fixed bottom-7 right-7 z-[200] flex max-w-sm items-start gap-2.5 rounded-xl border border-[#2DD4BF]/30 bg-surface-container-high/90 p-4 shadow-[0_12px_40px_rgba(0,0,0,0.45),0_0_15px_rgba(45,212,191,0.18)] backdrop-blur-xl"
-          role="status"
-        >
-          <span
-            className="material-symbols-outlined fill text-[18px] text-[#2DD4BF]"
-            style={{ fontVariationSettings: "'FILL' 1" }}
-          >
-            check_circle
-          </span>
-          <p className="font-label-md text-label-md text-on-surface">{toast}</p>
-        </div>
-      ) : null}
+      {toast ? <AppToast toast={toast} /> : null}
     </AppContext.Provider>
   );
 }

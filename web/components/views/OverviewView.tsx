@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { CardHeader } from "@/components/ui/CardHeader";
 import { Icon } from "@/components/ui/Icon";
+import { TestnetTreasuryCard } from "@/components/overview/TestnetTreasuryCard";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 
 type BarSpec = { h: number; active?: boolean };
@@ -41,6 +42,18 @@ type ChainStatus = {
   onChainReady?: boolean;
   payrollReady?: boolean;
   eisStore?: string;
+};
+
+type DashboardSummary = {
+  book?: {
+    totalInvoices: number;
+    totalFacePhp: number;
+    fundableCount: number;
+    settledCount: number;
+  };
+  treasury?: { funderUsdc: string | null; msmeUsdc: string | null };
+  eis?: { total: number; synchronized: number };
+  contractsDeployed?: number;
 };
 
 type EisStats = {
@@ -164,8 +177,14 @@ export function OverviewView() {
   });
   const [eisStore, setEisStore] = useState<string>("file");
   const [recentActions, setRecentActions] = useState<RecentAction[]>([]);
+  const [summary, setSummary] = useState<DashboardSummary | null>(null);
 
   const loadLiveStatus = useCallback(() => {
+    fetch("/api/dashboard/summary")
+      .then((r) => r.json())
+      .then((d) => setSummary(d as DashboardSummary))
+      .catch(() => setSummary(null));
+
     fetch("/api/soroban/status")
       .then((r) => r.json())
       .then((d) => setChain(d as ChainStatus))
@@ -187,7 +206,7 @@ export function OverviewView() {
 
   useEffect(() => {
     loadLiveStatus();
-    const id = window.setInterval(loadLiveStatus, 12_000);
+    const id = window.setInterval(loadLiveStatus, 30_000);
     return () => window.clearInterval(id);
   }, [loadLiveStatus]);
 
@@ -196,9 +215,27 @@ export function OverviewView() {
     ? `Stellar ${chain.network}${chain.onChainReady ? "" : " · setup"}`
     : "Network Active";
 
+  const eisActivity = Math.min(100, 28 + (eisStats.synchronized + 1) * 12);
   const bars =
-    range === "30D" ? bars30 : [...bars30, ...bars30.slice(0, 4).reverse()];
+    range === "30D"
+      ? bars30.map((b, i) => ({
+          ...b,
+          h: i === 3 ? eisActivity : b.h,
+          active: i === 3,
+        }))
+      : [...bars30, ...bars30.slice(0, 4).reverse()].map((b, i) => ({
+          ...b,
+          h: Math.min(100, b.h + eisStats.synchronized * 2),
+          active: i === 6,
+        }));
   const labels = range === "30D" ? labels30 : labels90;
+
+  const faceDisplay = summary?.book?.totalFacePhp
+    ? summary.book.totalFacePhp.toLocaleString()
+    : "—";
+  const bookSub = summary?.book
+    ? `${summary.book.totalInvoices} invoices · ${summary.book.fundableCount} fundable · ${summary.book.settledCount} funded`
+    : "Loading book from API…";
 
   return (
     <main className="mx-auto max-w-container-max px-margin-mobile py-7 md:px-margin-desktop">
@@ -216,14 +253,18 @@ export function OverviewView() {
                 </div>
                 <div className="mt-4 flex items-baseline gap-1">
                   <span className="font-headline-xl text-headline-xl tracking-tight text-on-surface">
-                    ₱24,500,000
+                    ₱{faceDisplay}
                   </span>
                   <span className="font-body-lg text-body-lg text-on-surface-variant">.00</span>
                 </div>
-                <p className="mt-2 flex items-center gap-1 font-body-md text-body-md text-primary">
-                  <Icon name="trending_up" size={16} />
-                  +4.2% vs last 30 days
+                <p className="mt-2 font-body-md text-body-md text-on-surface-variant">
+                  {bookSub}
                 </p>
+                {summary?.treasury?.funderUsdc ? (
+                  <p className="mt-1 font-label-sm text-label-sm text-[#2DD4BF]">
+                    Treasury USDC {summary.treasury.funderUsdc} · testnet
+                  </p>
+                ) : null}
               </div>
               <StatusBadge kind={chain?.onChainReady ? "active" : "scanning"}>
                 {networkLabel}
@@ -247,7 +288,8 @@ export function OverviewView() {
           </Card>
         </div>
 
-        <div className="md:col-span-4">
+        <div className="flex flex-col gap-gutter md:col-span-4">
+          <TestnetTreasuryCard />
           <Card className="h-full">
             <CardHeader
               icon="policy"
@@ -281,7 +323,7 @@ export function OverviewView() {
           <Card className="flex min-h-[380px] flex-col">
             <CardHeader
               icon="monitoring"
-              label="Operational Runway"
+              label="EIS activity"
               action={
                 <div className="flex gap-1.5">
                   {(["30D", "90D"] as const).map((r) => (

@@ -3,6 +3,8 @@
 **Hackathon build:** testnet · May 2026  
 **Legend:** `✅` built & wired · `🟡` UI/mock or partial · `⬜` planned (docs) · `❌` won't ship v1
 
+**Aligned with:** `web/` app · `GET /api/dashboard/summary` · Supabase `ifzyntqwymmgimnxtguz`
+
 ---
 
 ## 1. Four tabs — what lives where
@@ -19,14 +21,17 @@ flowchart TB
   OV --> OV1["✅ BIR EIS pulse — live API"]
   OV --> OV2["✅ Statutory pulse — chain status"]
   OV --> OV3["✅ Recent Actions — EIS feed"]
-  OV --> OV4["🟡 Liquidity headline ₱24.5M — static"]
-  OV --> OV5["🟡 Runway chart — static"]
+  OV --> OV4["✅ Liquidity headline — book from summary API"]
+  OV --> OV5["🟡 Runway chart — demo bars + EIS activity hint"]
+  OV --> OV6["✅ Testnet treasury — USDC/XLM balances"]
 
-  LQ --> LQ1["🟡 Upload PDF/XML — toast only"]
-  LQ --> LQ2["🟡 Invoice table — 3 demo rows"]
-  LQ --> LQ3["✅ Tokenize & Swap — testnet"]
-  LQ --> LQ4["✅ Swap quote API — 85% advance"]
-  LQ --> LQ5["🟡 Pipeline OCR steps — decoration"]
+  LQ --> LQ1["✅ Upload PDF/XML — OCR parse + persist"]
+  LQ --> LQ2["✅ Invoice table — Supabase/file + pagination"]
+  LQ --> LQ3["🟡 Payer confirm + lockbox — demo buttons"]
+  LQ --> LQ4["✅ Tokenize & Swap — testnet"]
+  LQ --> LQ5["✅ Swap quote API — 85% advance"]
+  LQ --> LQ6["✅ Pipeline progress — toast + sidebar"]
+  LQ --> LQ7["✅ Stat tiles — treasury USDC + book + contracts"]
 
   CP --> CP1["✅ Payroll quote — contract math"]
   CP --> CP2["✅ Route Payroll — testnet*"]
@@ -36,15 +41,14 @@ flowchart TB
 
   ST --> ST1["🟡 Org / TIN forms — local UI"]
   ST --> ST2["🟡 Auto-route toggle — no backend"]
-  ST --> ST3["⬜ PDAX ramp — L2 placeholder"]
+  ST --> ST3["✅ PDAX ramp — L2 demo card + toast"]
 
-  style LQ1 fill:#3d3520
-  style LQ2 fill:#3d3520
-  style OV4 fill:#3d3520
+  style LQ3 fill:#3d3520
   style OV5 fill:#3d3520
+  style CP5 fill:#3d3520
 ```
 
-\* Payroll route needs enough USDC on MSME wallet for demo gross (₱1.25M); mint/swap advance is smaller.
+\* Payroll uses `lastSwapAdvancePhp` from context after swap (not full ₱1.25M demo gross).
 
 ---
 
@@ -55,11 +59,11 @@ What Axial is **designed** to do per `Axial.md`, `prd-axial.md`, `rfc-axial-clos
 ```mermaid
 flowchart LR
   subgraph phaseA [A — Intake & trust]
-    A1["⬜ Upload invoice PDF/XML"]
-    A2["⬜ OCR + validate metadata"]
+    A1["✅ Upload invoice PDF/XML"]
+    A2["✅ OCR + validate metadata — parse API"]
     A3["⬜ Payer KYB onboard"]
-    A4["⬜ Payer confirms invoice"]
-    A5["⬜ Notice of Assignment e-ack"]
+    A4["🟡 Payer confirms invoice — demo PATCH"]
+    A5["🟡 Notice of Assignment e-ack — demo flag"]
   end
 
   subgraph phaseB [B — Liquidity — HACKATHON CORE]
@@ -82,14 +86,14 @@ flowchart LR
   end
 
   subgraph phaseE [E — Collection — post-hackathon]
-    E1["⬜ Payer pays lockbox"]
+    E1["🟡 Payer pays lockbox — demo mark collected"]
     E2["⬜ Settlement contract"]
     E3["⬜ Funder repaid + reserve release"]
     E4["⬜ Reconciliation worker"]
   end
 
   subgraph phaseF [F — Fiat edge — L2/L3]
-    F1["⬜ PDAX mock UI"]
+    F1["✅ PDAX mock UI — Settings"]
     F2["❌ Real PDAX API"]
   end
 
@@ -116,14 +120,24 @@ sequenceDiagram
   participant DB as Supabase
   participant BIR as Mock BIR
 
-  Note over MSME,UI: Skip upload — pick demo row INV-2023-8901
+  opt Upload new invoice
+    MSME->>UI: Liquidity → Upload PDF/XML
+    UI->>API: POST /api/invoices/parse
+    API->>DB: upsert factoring_invoices
+    API-->>UI: row + toast pipeline
+  end
 
-  MSME->>UI: Liquidity → Tokenize & Swap
+  MSME->>UI: Confirm payer (demo)
+  UI->>API: PATCH /api/invoices/:id confirm_payer
+  API->>DB: status=fundable
+  API-->>UI: row updated in place
+
+  MSME->>UI: Tokenize & Swap
   UI->>API: POST /api/receivable/mint
   API->>SC: mint SAC
   SC-->>API: txHash
   API->>OR: triggerEis receivable_minted
-  API-->>UI: success
+  API-->>UI: success + toast
 
   UI->>API: POST /api/swap/execute
   API->>SC: execute_advance USDC
@@ -150,36 +164,33 @@ sequenceDiagram
   API->>OR: triggerEis payroll_routed
 
   MSME->>UI: Overview
-  UI->>API: poll status + submissions
-  API-->>UI: Recent Actions updated
+  UI->>API: GET /api/dashboard/summary
+  API->>DB: book totals + EIS counts
+  API->>SC: wallet USDC balances
+  API-->>UI: ₱ face, treasury USDC, contracts live
 ```
 
 ---
 
-## 4. If upload worked (intended — not built)
+## 4. Upload → fund path (built for demo)
 
 ```mermaid
 flowchart TD
-  U["MSME uploads PDF/XML"] --> P["⬜ Parse: invoice #, buyer, amount, due"]
-  P --> R["⬜ Row in Liquidity table status=scanning"]
-  R --> V["⬜ Verified"]
-  V --> PC["⬜ Payer confirms in portal"]
-  PC --> NOA["⬜ NoA acknowledged"]
+  U["MSME uploads PDF/XML"] --> P["✅ Parse: invoice #, buyer, amount, due"]
+  P --> R["✅ Row in Liquidity table — Supabase or file fallback"]
+  R --> PC["🟡 Confirm payer — PATCH demo"]
+  PC --> NOA["🟡 NoA acknowledged — trust strip demo"]
   NOA --> OK["✅ Fundable — Tokenize & Swap enabled"]
   OK --> M["✅ Mint on Soroban"]
   M --> S["✅ Swap USDC"]
   S --> EIS["✅ EIS oracle auto-run"]
   EIS --> UI2["✅ Compliance + Overview update"]
 
-  style U fill:#2a2a3a
-  style P fill:#2a2a3a
-  style R fill:#2a2a3a
-  style V fill:#2a2a3a
-  style PC fill:#2a2a3a
-  style NOA fill:#2a2a3a
+  style PC fill:#3d3520
+  style NOA fill:#3d3520
 ```
 
-**Today:** arrow from Upload goes nowhere — jump straight to **OK** using hardcoded rows.
+**Not built:** real payer portal, KYB, on-chain lockbox enforcement, leakage freeze worker.
 
 ---
 
@@ -192,6 +203,9 @@ flowchart TB
   end
 
   subgraph next [web/ — Next.js API routes]
+    D0["GET /api/dashboard/summary"]
+    I1["GET/PATCH /api/invoices · POST parse/seed"]
+    W1["GET /api/wallets/balances"]
     S1["GET /api/soroban/status"]
     S2["GET /api/swap/quote"]
     S3["POST /api/swap/execute"]
@@ -204,10 +218,11 @@ flowchart TB
   end
 
   subgraph libs [web/lib]
-    CFG["soroban/config"]
-    INV["invoke-receivable · swap · payroll"]
+    CFG["soroban/config · balances"]
+    INV["invoices/store · msme/invoice-trust"]
+    CHAIN["invoke-receivable · swap · payroll"]
     EIS["eis/oracle · schema · jws · memo"]
-    SB["supabase/eis-store"]
+    SB["supabase/eis-store · invoices-store"]
   end
 
   subgraph chain [Stellar Testnet]
@@ -218,15 +233,16 @@ flowchart TB
   end
 
   subgraph data [Persistence]
-    PG[("Supabase eis_submissions")]
-    FILE[("fallback JSON file")]
+    PG[("Supabase eis_submissions + factoring_invoices")]
+    FILE[("fallback JSON files")]
   end
 
   TABS --> next
   next --> libs
-  INV --> RT & AS & PS & USDC
+  CHAIN --> RT & AS & PS & USDC
   EIS --> PG
-  EIS -.-> FILE
+  INV --> PG
+  INV -.-> FILE
   EIS --> chain
 ```
 
@@ -257,18 +273,20 @@ stateDiagram-v2
 
 | Feature | PRD priority | Hackathon L1 | Status |
 |---------|--------------|--------------|--------|
-| Payer KYB + confirm invoice | Must | ⬜ | Not built |
-| NoA e-acknowledgement | Must | ⬜ | Not built |
-| Invoice upload + OCR | Implied UI | ⬜ | Mock UI only |
+| Payer KYB + confirm invoice | Must | 🟡 | Demo PATCH only |
+| NoA e-acknowledgement | Must | 🟡 | Client trust strip + flags |
+| Invoice upload + OCR | Implied UI | ✅ | Parse API + persist |
+| Factoring book + pagination | Should | ✅ | Supabase `factoring_invoices` |
 | SAC mint / receivable token | Must | ✅ | Testnet |
 | Atomic USDC swap | Must | ✅ | Testnet |
 | Payroll statutory split | Must | ✅ | Testnet |
 | BIR EIS oracle 20 fields | Must | ✅ | Mock BIR + real pipeline |
 | JWS + memo write-back | Must | ✅ | Mock JWS |
-| Supabase / audit log | Should | ✅ | `eis_submissions` |
-| Overview health dashboard | Must | 🟡 | Live EIS; static liquidity chart |
-| Closed-loop lockbox settlement | Must | ⬜ | Docs only |
-| PDAX PHP ramp UI | L2 | ⬜ | Not built |
+| Supabase / audit log | Should | ✅ | `eis_submissions` + invoices |
+| Overview health dashboard | Must | ✅ | Live EIS + summary API + treasury |
+| Liquidity stat tiles | Should | ✅ | Summary API |
+| Closed-loop lockbox settlement | Must | 🟡 | Demo collect; no on-chain enforcement |
+| PDAX PHP ramp UI | L2 | ✅ | Settings `PdaxRampCard` |
 | Mainnet deploy | L1 | ⬜ | Testnet only |
 | T+3 worker / due_by | SDD | ⬜ | Immediate submit only |
 | Horizon event subscription | SDD | ⬜ | API hooks only |
@@ -286,12 +304,13 @@ flowchart LR
     L1b["✅ Swap + mint + payroll UI"]
     L1c["✅ EIS oracle + Compliance UI"]
     L1d["⬜ Mainnet + Circle USDC"]
-    L1e["🟡 Fiat placeholder screens"]
+    L1e["🟡 Fiat placeholder — treasury card"]
   end
 
   subgraph L2 [L2 Nice to have]
-    L2a["⬜ PDAX mock screens"]
-    L2b["⬜ Upload → table stub"]
+    L2a["✅ PDAX mock screens"]
+    L2b["✅ Upload → table + OCR"]
+    L2c["🟡 Payer/lockbox demo UX"]
   end
 
   subgraph L3 [L3 Bonus]
@@ -308,24 +327,25 @@ flowchart LR
 ```mermaid
 flowchart TB
   MSME["MSME Founder"]
-  PAYER["B2B Payer — ⬜ not in app yet"]
-  FUNDER["Funder / Treasury — ⬜ not in app yet"]
+  PAYER["B2B Payer — 🟡 demo confirm only"]
+  FUNDER["Funder / Treasury — ✅ demo wallet USDC"]
   BIRG["BIR — mock endpoint"]
   STELLAR["Stellar / Soroban"]
 
-  MSME -->|"🟡 upload"| AXIAL["Axial UI"]
+  MSME -->|"✅ upload + parse"| AXIAL["Axial UI"]
+  MSME -->|"🟡 confirm payer"| AXIAL
   MSME -->|"✅ tokenize & swap"| AXIAL
   MSME -->|"✅ route payroll"| AXIAL
   MSME -->|"✅ view compliance"| AXIAL
 
-  PAYER -.->|"⬜ confirm + pay lockbox"| AXIAL
+  PAYER -.->|"⬜ real portal + pay lockbox"| AXIAL
 
   AXIAL -->|"✅ contracts"| STELLAR
   AXIAL -->|"✅ EIS submit"| BIRG
   BIRG -->|"✅ ack ref"| AXIAL
   AXIAL -->|"✅ memo"| STELLAR
 
-  FUNDER -.->|"✅ USDC advance via swap"| STELLAR
+  FUNDER -->|"✅ USDC advance via swap"| STELLAR
 ```
 
 ---
@@ -334,7 +354,13 @@ flowchart TB
 
 | Method | Path | Role |
 |--------|------|------|
-| GET | `/api/soroban/status` | Chain + `eisStore` |
+| GET | `/api/dashboard/summary` | Book totals, treasury USDC, EIS counts, contracts |
+| GET | `/api/wallets/balances` | Per-wallet XLM + USDC (Overview treasury) |
+| GET | `/api/invoices?page=&pageSize=` | Paginated factoring book |
+| PATCH | `/api/invoices/[id]` | `confirm_payer`, `settle`, `mark_collected` |
+| POST | `/api/invoices/parse` | OCR + upsert row |
+| POST | `/api/invoices/seed?force=true` | Dev seed 12 rows |
+| GET | `/api/soroban/status` | Chain + `eisStore` + contract IDs |
 | GET | `/api/swap/quote?face=` | Advance math |
 | POST | `/api/receivable/mint` | SAC mint |
 | POST | `/api/swap/execute` | USDC advance |
@@ -347,4 +373,4 @@ flowchart TB
 
 ---
 
-*Update this doc when Mainnet, upload, or payer portal land.*
+*Update this doc when Mainnet, real payer portal, or T+3 worker land.*

@@ -1,11 +1,19 @@
 # Supabase (Axial backend)
 
-PostgreSQL backing for the **BIR EIS oracle** and future app projections.
+**Project ref:** `ifzyntqwymmgimnxtguz`  
+**URL:** `https://ifzyntqwymmgimnxtguz.supabase.co`
+
+Must match `web/.env.local` and `.cursor/mcp.json` (`project_ref=ifzyntqwymmgimnxtguz`).  
+If Cursor MCP shows a different project URL, disconnect and re-auth Supabase MCP, then pick this project.
+
+PostgreSQL backing for **BIR EIS**, **Active Factoring** (paginated invoices), and future projections.
 
 ## Setup (one time)
 
-1. Create a project at [supabase.com](https://supabase.com).
-2. **SQL Editor** → run [`migrations/001_eis_submissions.sql`](migrations/001_eis_submissions.sql).
+1. Open [dashboard](https://supabase.com/dashboard/project/ifzyntqwymmgimnxtguz).
+2. **SQL Editor** → run, in order:
+   - [`migrations/001_eis_submissions.sql`](migrations/001_eis_submissions.sql)
+   - [`migrations/002_factoring_invoices.sql`](migrations/002_factoring_invoices.sql)
 3. **Project Settings → API** → copy:
    - Project URL → `SUPABASE_URL`
    - **service_role** key (secret) → `SUPABASE_SERVICE_ROLE_KEY`  
@@ -29,6 +37,9 @@ curl -s http://localhost:3000/api/soroban/status | jq .eisStore
 
 curl -s http://localhost:3000/api/eis/submissions | jq .store
 # "supabase"
+
+curl -s "http://localhost:3000/api/invoices?page=1&pageSize=5" | jq '{store, total, totalPages}'
+# store: "supabase", total: 12 after auto-seed
 ```
 
 Run a Liquidity swap, then check **Compliance → BIR EIS Connect** or the `eis_submissions` table in Supabase Table Editor.

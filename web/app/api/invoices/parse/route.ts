@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { extractInvoiceFields } from "@/lib/invoices/extract-fields";
 import { extractTextFromBuffer } from "@/lib/invoices/ocr";
+import { upsertFromParse } from "@/lib/invoices/store";
+import { toClientInvoice } from "@/lib/invoices/types";
 
 export const runtime = "nodejs";
 
@@ -59,8 +61,16 @@ export async function POST(request: Request) {
       );
     }
 
+    const saved = await upsertFromParse({
+      invoiceId: parsed.invoiceId,
+      party: parsed.party,
+      terms: parsed.terms,
+      face: parsed.face,
+    });
+
     return NextResponse.json({
       parsed,
+      invoice: toClientInvoice(saved),
       rawTextPreview: rawText.slice(0, 800),
       charCount: rawText.length,
     });

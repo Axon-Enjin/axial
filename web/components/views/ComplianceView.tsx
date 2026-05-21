@@ -9,7 +9,8 @@ import { Icon } from "@/components/ui/Icon";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import type { BirEisPayload } from "@/lib/eis/types";
 
-const DEFAULT_GROSS = 1_250_000;
+/** Demo payroll pool when no swap yet — matches ~85% advance on ₱125k invoice. */
+const FALLBACK_GROSS = 106_250;
 
 function formatAmount(n: number) {
   return n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -150,7 +151,7 @@ type ChainStatus = {
 };
 
 export function ComplianceView() {
-  const { dispatch } = useApp();
+  const { dispatch, lastSwapAdvancePhp } = useApp();
   const [chain, setChain] = useState<ChainStatus | null>(null);
   const [quote, setQuote] = useState<PayrollQuote | null>(null);
   const [routing, setRouting] = useState(false);
@@ -164,7 +165,7 @@ export function ComplianceView() {
     total: 0,
   });
 
-  const gross = DEFAULT_GROSS;
+  const gross = lastSwapAdvancePhp ?? FALLBACK_GROSS;
   const explorerTx =
     chain?.explorerTxBase ?? "https://stellar.expert/explorer/testnet/tx";
 
@@ -518,6 +519,9 @@ export function ComplianceView() {
             <h3 className="font-headline-md text-headline-md text-on-surface">Statutory Splitter</h3>
             <p className="mt-1 font-body-md text-body-md text-on-surface-variant">
               Demo rates: SSS 11% · PhilHealth 5% · Pag-IBIG 2% · Net 82%
+              {lastSwapAdvancePhp
+                ? " · Pool sized to your last swap advance (USDC on wallet)."
+                : " · Run Tokenize & Swap on Liquidity first for an on-chain payroll budget."}
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-3">

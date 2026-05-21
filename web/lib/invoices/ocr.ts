@@ -22,15 +22,20 @@ export async function extractTextFromBuffer(
 }
 
 async function extractPdfText(buffer: Buffer): Promise<string> {
-  const pdfParse = (await import("pdf-parse")).default;
-  const result = await pdfParse(buffer);
-  const text = (result.text ?? "").trim();
-  if (text.length >= 40) {
-    return text;
+  const { PDFParse } = await import("pdf-parse");
+  const parser = new PDFParse({ data: buffer });
+  try {
+    const result = await parser.getText();
+    const text = (result.text ?? "").trim();
+    if (text.length >= 40) {
+      return text;
+    }
+    throw new Error(
+      "PDF has little extractable text — export as PNG/JPEG or use a text-based PDF.",
+    );
+  } finally {
+    await parser.destroy();
   }
-  throw new Error(
-    "PDF has little extractable text — export as PNG/JPEG or use a text-based PDF.",
-  );
 }
 
 async function runTesseract(buffer: Buffer): Promise<string> {

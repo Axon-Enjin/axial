@@ -3,6 +3,7 @@ export type DemoActionKind =
   | "transfer"
   | "browse-files"
   | "invoice-parsed"
+  | "payer-confirmed"
   | "swap-executed"
   | "payroll-routed";
 
@@ -14,6 +15,10 @@ const MESSAGES: Record<DemoActionKind, string | ((payload?: string) => string)> 
     payload
       ? `Invoice read: ${payload}`
       : "Invoice extracted — review the new row in Active Factoring.",
+  "payer-confirmed": (payload) =>
+    payload
+      ? `${payload} — lockbox issued; receivable is fundable.`
+      : "Payer confirmed invoice and acknowledged NoA. You may tokenize.",
   "swap-executed": (payload) => {
     if (!payload) {
       return "Atomic swap executed. USDC settling on Stellar.";
