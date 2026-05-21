@@ -79,10 +79,12 @@ function UploadZone({
   parsing,
   parseError,
   onFiles,
+  onTrySample,
 }: {
   parsing: boolean;
   parseError: string | null;
   onFiles: (files: FileList | File[]) => void;
+  onTrySample: () => void;
 }) {
   const [hover, setHover] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -155,15 +157,16 @@ function UploadZone({
           {parsing ? "Reading invoice…" : "Browse Files"}
         </Button>
         <p className="mt-4 font-label-sm text-label-sm text-on-surface-variant">
-          Try{" "}
-          <a
-            href="/samples/invoices/invoice-inv-2023-8901.png"
-            target="_blank"
-            rel="noreferrer"
-            className="text-[#2DD4BF] hover:underline"
+          On Vercel, use{" "}
+          <button
+            type="button"
+            disabled={parsing}
+            onClick={onTrySample}
+            className="text-[#2DD4BF] hover:underline disabled:opacity-50"
           >
             sample invoice
-          </a>
+          </button>{" "}
+          (no OCR) or a text-based PDF.
         </p>
       </div>
     </Card>
@@ -264,6 +267,60 @@ export function LiquidityView() {
     void loadInvoices(page);
   }, [page, loadInvoices]);
 
+  const finishParsed = useCallback(
+    async (parsed: {
+      invoiceId: string;
+      face: number;
+      confidence: string;
+    }) => {
+      setPipelineStage("parsed");
+      if (page === 1) {
+        await loadInvoices(1, true);
+      } else {
+        setPage(1);
+      }
+      dispatch(
+        "invoice-parsed",
+        `${parsed.invoiceId} · ₱${parsed.face.toLocaleString()} · ${parsed.confidence} confidence`,
+      );
+    },
+    [dispatch, loadInvoices, page],
+  );
+
+  const loadSampleInvoice = useCallback(async () => {
+    setParsing(true);
+    setParseError(null);
+    setPipelineStage("reading");
+    try {
+      const res = await fetch("/api/invoices/parse-sample?id=8901", {
+        method: "POST",
+      });
+      const data = (await res.json()) as {
+        parsed?: {
+          invoiceId: string;
+          face: number;
+          confidence: string;
+        };
+        error?: string;
+      };
+      if (!res.ok || !data.parsed) {
+        setParseError(data.error ?? `Sample import failed (${res.status})`);
+        setPipelineStage("idle");
+        dismissToast();
+        return;
+      }
+      await finishParsed(data.parsed);
+    } catch (err) {
+      setParseError(
+        err instanceof Error ? err.message : "Sample import failed",
+      );
+      setPipelineStage("idle");
+      dismissToast();
+    } finally {
+      setParsing(false);
+    }
+  }, [dismissToast, finishParsed]);
+
   const parseInvoiceFiles = useCallback(
     async (files: FileList | File[]) => {
       const file = files[0];
@@ -278,7 +335,7 @@ export function LiquidityView() {
         body.append("file", file);
 
         const res = await fetch("/api/invoices/parse", { method: "POST", body });
-        const data = (await res.json()) as {
+        let data: {
           parsed?: {
             invoiceId: string;
             party: string;
@@ -288,6 +345,14 @@ export function LiquidityView() {
           };
           error?: string;
         };
+        try {
+          data = (await res.json()) as typeof data;
+        } catch {
+          setParseError(`Server error (${res.status}) — check Vercel logs`);
+          setPipelineStage("idle");
+          dismissToast();
+          return;
+        }
 
         if (!res.ok || !data.parsed) {
           setParseError(data.error ?? `Parse failed (${res.status})`);
@@ -296,27 +361,20 @@ export function LiquidityView() {
           return;
         }
 
-        const { invoiceId, face, confidence } = data.parsed;
-
-        setPipelineStage("parsed");
-        if (page === 1) {
-          await loadInvoices(1, true);
-        } else {
-          setPage(1);
-        }
-        dispatch(
-          "invoice-parsed",
-          `${invoiceId} · ₱${face.toLocaleString()} · ${confidence} confidence`,
+        await finishParsed(data.parsed);
+      } catch (err) {
+        setParseError(
+          err instanceof Error
+            ? err.message
+            : "Could not read invoice — try sample invoice or a PDF.",
         );
-      } catch {
-        setParseError("Could not read invoice — try another file or sample PNG.");
         setPipelineStage("idle");
         dismissToast();
       } finally {
         setParsing(false);
       }
     },
-    [dispatch, dismissToast, loadInvoices, page],
+    [dismissToast, finishParsed],
   );
 
   useEffect(() => {
@@ -500,6 +558,7 @@ export function LiquidityView() {
             parsing={parsing}
             parseError={parseError}
             onFiles={(files) => void parseInvoiceFiles(files)}
+            onTrySample={() => void loadSampleInvoice()}
           />
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
             <StatTile

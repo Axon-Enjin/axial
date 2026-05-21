@@ -1,10 +1,12 @@
 import { NextResponse } from "next/server";
 import { extractInvoiceFields } from "@/lib/invoices/extract-fields";
+import { resolveUploadMimeType } from "@/lib/invoices/mime";
 import { extractTextFromBuffer } from "@/lib/invoices/ocr";
 import { upsertFromParse } from "@/lib/invoices/store";
 import { toClientInvoice } from "@/lib/invoices/types";
 
 export const runtime = "nodejs";
+export const maxDuration = 60;
 
 const ALLOWED = new Set([
   "image/png",
@@ -27,7 +29,8 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "file field is required" }, { status: 400 });
   }
 
-  const mimeType = file.type || "application/octet-stream";
+  const name = file instanceof File ? file.name : undefined;
+  const mimeType = resolveUploadMimeType(file.type || "", name);
   if (!ALLOWED.has(mimeType)) {
     return NextResponse.json(
       { error: "Use PNG, JPEG, WebP, or PDF" },
@@ -76,7 +79,11 @@ export async function POST(request: Request) {
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Invoice parse failed";
-    console.error("[invoices/parse]", message);
-    return NextResponse.json({ error: message }, { status: 502 });
+    console.error("[invoices/parse]", message, err);
+    const isTimeout =
+      /timed out|timeout|FUNCTION_INVOCATION_TIMEOUT/i.test(message);
+    const isOcrDisabled = /OCR is disabled/i.test(message);
+    const status = isTimeout ? 504 : isOcrDisabled ? 503 : 502;
+    return NextResponse.json({ error: message }, { status });
   }
 }
