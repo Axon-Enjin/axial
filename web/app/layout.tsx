@@ -15,6 +15,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(
+    process.env.NEXT_PUBLIC_BASE_URL ?? "https://axial-phi.vercel.app"
+  ),
   title: {
     default: "Axial — Instant Capital, Invisible Compliance",
     template: "%s · Axial",
@@ -22,6 +25,19 @@ export const metadata: Metadata = {
   description:
     "Liquidity and compliance engine for Philippine MSMEs. Unlock cash from tokenized receivables on Stellar while BIR EIS compliance runs automatically.",
   applicationName: "Axial",
+  openGraph: {
+    type: "website",
+    siteName: "Axial",
+    title: "Axial — Instant Capital, Invisible Compliance",
+    description:
+      "Liquidity and compliance engine for Philippine MSMEs. Tokenize receivables on Stellar, fund payroll instantly, automate BIR EIS compliance.",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Axial — Instant Capital, Invisible Compliance",
+    description:
+      "Liquidity and compliance engine for Philippine MSMEs. Tokenize receivables on Stellar, fund payroll instantly, automate BIR EIS compliance.",
+  },
 };
 
 /** Same Material Symbols axes as Stitch code.html exports (variable wght and FILL). */
