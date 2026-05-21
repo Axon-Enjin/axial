@@ -302,7 +302,7 @@ The demo follows this order to showcase the full pipeline:
 
 | Phase | Focus | Status |
 | --- | --- | --- |
-| **Phase 1 — Wedge** | MVP on Stellar Testnet/Mainnet. Onboard software/creative agencies. | 🔄 Current |
+| **Phase 1 — Wedge** | Production build on Stellar Testnet/Mainnet. Onboard software/creative agencies. | 🔄 Current |
 | **Phase 2 — Validation** | Real operational deployment. Atomic swaps, EIS oracle, and statutory flows in production. | ⬜ Next |
 | **Phase 3 — Expansion** | F&B suppliers and distributors. Larger invoice throughput. | ⬜ Planned |
 | **Phase 4 — Ad Tax Module** | Programmable treasury for BIR RMC 5-2024 (digital ad tax compliance). | ⬜ Future |

@@ -532,7 +532,7 @@ Three tabs would force bias (Overview becomes either Liquidity or Compliance's h
 
 | Phase | Entry Criteria | Goal |
 |---|---|---|
-| **Phase 1 — Wedge** | MVP pilot-capable on Stellar Testnet/Mainnet | Onboard software/creative agencies; maximize UX and reliability feedback |
+| **Phase 1 — Wedge** | Pilot-capable on Stellar Testnet/Mainnet | Onboard software/creative agencies; maximize UX and reliability feedback |
 | **Phase 2 — Validation** | No P0 reliability gaps on core bridge; Phase 1 milestones met | Prove atomic swaps, oracle/EIS, and statutory flows in real operations; activate founder referrals |
 | **Phase 3 — Expansion** | Stable Phase 2 metrics | F&B suppliers and distributors; larger invoice throughput for liquidity side |
 | **Phase 4 — Ad Tax Module** | Core infrastructure stable | Launch Candidate 2 (programmable treasury for RMC 5-2024) as a vertical add-on |

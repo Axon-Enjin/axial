@@ -15,8 +15,13 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Axial MVP",
-  description: "Liquidity and compliance engine for Philippine MSMEs",
+  title: {
+    default: "Axial — Instant Capital, Invisible Compliance",
+    template: "%s · Axial",
+  },
+  description:
+    "Liquidity and compliance engine for Philippine MSMEs. Unlock cash from tokenized receivables on Stellar while BIR EIS compliance runs automatically.",
+  applicationName: "Axial",
 };
 
 /** Same Material Symbols axes as Stitch code.html exports (variable wght and FILL). */

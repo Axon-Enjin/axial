@@ -1,4 +1,4 @@
-# RFC: BIR EIS Oracle (Hackathon MVP)
+# RFC: BIR EIS Oracle
 
 Off-chain service that maps Stellar ledger-final events to BIR EIS JSON, signs with mock JWS, submits to a mock BIR endpoint, and writes the acknowledgement reference to a Stellar memo.
 

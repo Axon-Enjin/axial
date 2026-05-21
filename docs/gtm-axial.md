@@ -123,7 +123,7 @@ Aligned with [Axial.md §8.3](../Axial.md):
 
 | Phase | Entry Criteria | Target | Goal |
 |---|---|---|---|
-| **Phase 1 — Wedge** | MVP pilot-capable on Stellar Testnet + Mainnet; EIS oracle in mock/staging mode | Hackathon (May 2026) + immediate post-hackathon | Onboard software/creative agencies; maximize UX and reliability feedback |
+| **Phase 1 — Wedge** | Pilot-capable on Stellar Testnet + Mainnet; EIS oracle in mock/staging mode | Hackathon (May 2026) + immediate post-hackathon | Onboard software/creative agencies; maximize UX and reliability feedback |
 | **Phase 2 — Validation** | Phase 1 milestones met; no P0 reliability gaps on core bridge (swap + payroll + EIS) | TBD post-hackathon | Prove atomic swaps, oracle/EIS, and statutory flows in real production operations; activate founder referrals |
 | **Phase 3 — Expansion** | Stable Phase 2 metrics; ≥95% EIS success rate sustained; NPS ≥40 | TBD | F&B suppliers and distributors; larger invoice throughput; grow liquidity provider pool |
 | **Phase 4 — Ad Tax Module** | Core infrastructure stable; clear demand signal from marketing-agency segment | TBD | Launch RMC 5-2024 programmable treasury as a vertical add-on (Candidate 2 from [Axial.md §3](../Axial.md)) |

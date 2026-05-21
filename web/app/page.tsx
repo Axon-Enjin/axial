@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { Logo, LogoMark } from "@/components/ui/Logo";
 
 export const metadata: Metadata = {
-  title: "Axial — Instant Capital, Invisible Compliance",
+  title: { absolute: "Axial — Instant Capital, Invisible Compliance" },
   description:
     "Liquidity and compliance engine for Philippine MSMEs. Unlock cash from tokenized receivables on Stellar while BIR EIS submissions happen automatically.",
 };
@@ -41,15 +42,8 @@ export default function LandingPage() {
       {/* ── Nav ── */}
       <header className="mx-auto flex max-w-[1440px] items-center justify-between px-[64px] py-8">
         <div className="flex items-center gap-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg border border-outline-variant/20 bg-surface-container shadow-[0_0_15px_rgba(190,198,224,0.08)]">
-            <span className="material-symbols-outlined text-[18px] text-primary">
-              architecture
-            </span>
-          </div>
-          <span className="font-headline-md text-headline-md font-bold tracking-tight text-primary">
-            Axial
-          </span>
-          <span className="ml-1 inline-flex items-center rounded-full border border-[#2DD4BF]/30 px-1.5 py-px font-label-sm text-label-sm uppercase tracking-wider text-[#2DD4BF]">
+          <Logo size={36} />
+          <span className="inline-flex items-center rounded-full border border-[#2DD4BF]/30 px-1.5 py-px font-label-sm text-label-sm uppercase tracking-wider text-[#2DD4BF]">
             testnet
           </span>
         </div>
@@ -178,8 +172,9 @@ export default function LandingPage() {
       {/* ── Footer ── */}
       <footer className="border-t border-outline-variant/10">
         <div className="mx-auto flex max-w-[1440px] items-center justify-between px-[64px] py-6">
-          <span className="font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant">
-            Axial · Hackathon build · Stellar testnet · May 2026
+          <span className="flex items-center gap-2 font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant">
+            <LogoMark size={16} />
+            Axial · Stellar · 2026
           </span>
           <span className="font-label-sm text-label-sm text-on-surface-variant">
             USDC on Stellar · BIR EIS Phase 1 · Philippines

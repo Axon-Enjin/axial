@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { LogoMark } from "@/components/ui/Logo";
 
 const NAV = [
   { href: "/app", label: "Command Center", icon: "dashboard" },
@@ -51,14 +52,12 @@ export function AppSidebar({ network, onNewTransaction }: AppSidebarProps) {
   return (
     <nav className="fixed left-0 top-0 z-50 hidden h-screen w-64 flex-col gap-4 border-r border-outline-variant/10 bg-surface-container-lowest/40 py-8 backdrop-blur-2xl md:flex">
       <div className="mb-4 flex items-center gap-3 px-6">
-        <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-outline-variant/20 bg-surface-container shadow-[0_0_15px_rgba(190,198,224,0.1)]">
-          <span className="material-symbols-outlined text-[20px] text-primary">
-            architecture
-          </span>
+        <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-outline-variant/20 bg-surface-container text-primary shadow-[0_0_15px_rgba(190,198,224,0.1)]">
+          <LogoMark size={22} />
         </div>
         <div>
           <h1 className="font-headline-md text-headline-md font-bold tracking-tight text-primary">
-            Axial MVP
+            Axial
           </h1>
           <div className="mt-1 flex items-center gap-2">
             <p className="font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant">

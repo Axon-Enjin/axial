@@ -16,11 +16,12 @@ This is the working task board for Axial, derived from the **CTO/auditor review 
 
 ## How to use this file
 
-- Tasks are grouped by horizon: **Sprint 0** (hackathon close, May 23–24) and
-  **Backlog** (post-hackathon).
+- Tasks are grouped by horizon: **Sprint 0** (hackathon close, May 23–24) and the
+  **Production Roadmap** — the committed post-hackathon build to a fully
+  production-ready system.
 - Each task lists **Priority · Owner · Status** and a **References** block linking
   the docs and code paths needed to do it. Start from the References.
-- Status values: `🔴 todo` · `🟡 in progress` · `✅ done` · `⬜ backlog` · `❌ dropped`.
+- Status values: `🔴 todo` · `🟡 in progress` · `✅ done` · `📋 committed` (roadmap — scoped, not started) · `❌ dropped`.
 - Priority: `P0` blocker · `P1` important · `P2` nice-to-have.
 
 ---
@@ -184,55 +185,92 @@ implementation status table once all S0 tasks land; update `flow.md` if routing
 change affects the diagrams (route labels only — no functional change).
 - **References:** [`Axial.md`](Axial.md), [`flow.md`](flow.md), [`../CLAUDE.md`](../CLAUDE.md)
 
+### S0-8 · Brand identity — logo & favicon · `P1` · 🟡 in progress
+Official Axial logo created: an open-apex "A" — two structural beams bridged by a
+teal axial crossbar (the *axis* in Axial; the live/active accent). Single source of
+truth in `web/components/ui/Logo.tsx` (`LogoMark` + boxed `Logo` lockup).
+
+**Done:**
+- `LogoMark` / `Logo` components · favicon `web/app/icon.svg` (replaces the Next.js default)
+- Wired into the sidebar header, landing nav, and landing footer
+- "Axial MVP" → "Axial" across UI + docs · root metadata upgraded with a title template
+
+**Remaining — logo/favicon rollout:**
+- `web/app/apple-icon.tsx` — 180×180 Apple touch icon via `next/og` `ImageResponse`
+- `web/app/opengraph-image.tsx` — 1200×630 social share card; add `metadataBase` to root layout
+- `web/app/manifest.ts` — PWA manifest (name, theme color `#0B0E14`, icon references)
+- Multi-resolution `favicon.ico` for legacy browsers (optional — SVG covers modern browsers)
+- Remove unused Next.js scaffolding from `web/public/` (`next.svg`, `vercel.svg`, `file.svg`, `globe.svg`, `window.svg`)
+- Add the logo + a brand-assets section to `README.md` and `docs/dsd-axial.md`
+- **References:** [`../web/components/ui/Logo.tsx`](../web/components/ui/Logo.tsx), [`../web/app/icon.svg`](../web/app/icon.svg), [`dsd-axial.md`](dsd-axial.md)
+
 ---
 
-## Backlog — Post-hackathon
+## Production Roadmap
 
-> Theme: make the **closed-loop settlement model real** and remove custodial risk.
-> This is what turns the L1 demo into a production-credible product.
+> **Commitment:** Axial ships as a fully production-ready system — not a hackathon
+> artifact. Every item below is scoped and committed, not optional. The roadmap
+> closes the gap between the current testnet demo and a production-credible
+> liquidity-and-compliance platform: real settlement integrity, self-custody,
+> event-driven compliance, and multi-tenancy.
+>
+> Development is agent-driven and spec-first — directives in `docs/`, deterministic
+> execution, self-annealing on every failure. Aggressive scope is the default; we
+> do not downgrade the product to fit a timeline.
 
-### B-1 · Payer portal — KYB onboard + invoice confirm + NoA e-acknowledgement · `P0` · ⬜ backlog
+**Roadmap phases** — items below keep their `B-n` IDs; this table is the build order:
+
+| Phase | Theme | Items |
+|---|---|---|
+| **P1 — Settlement integrity** | Close the payment-redirection gap; make the closed loop real | B-1 payer portal · B-2 on-chain lockbox + reconciliation |
+| **P2 — Self-custody & compliance** | Remove custodial risk; event-driven, real BIR submission | B-3 Freighter · B-4 T+3 worker + Horizon subscription · B-7 real BIR EIS (PTT) |
+| **P3 — Platform & scale** | Multi-tenant platform, live FX, fiat rails | B-6 auth + multi-tenancy · B-5 Reflector FX · B-8 SDD reconcile · B-9 PDAX (gated on access) |
+
+> External gating, tracked but not blocking: B-7 needs a BIR Permit to Transmit;
+> B-9 needs PDAX sandbox access. The rest of the build proceeds independently.
+
+### B-1 · Payer portal — KYB onboard + invoice confirm + NoA e-acknowledgement · `P0` · 📋 committed
 Step 0 of the core workflow. Today the MSME clicks "confirm payer" on its own behalf —
 that *is* the payment-redirection fraud the settlement-integrity review exists to
 close. Build a real payer-facing surface: payer KYB onboarding, invoice confirmation,
 and NoA e-acknowledgement, signed from the payer's own session.
 - **References:** [`rfc-axial-closed-loop-settlement.md`](rfc-axial-closed-loop-settlement.md), [`clr-axial.md`](clr-axial.md) (NoA legal text), `Axial.md` §7.1 Step 0, `../web/lib/msme/invoice-trust.ts`, `../web/app/api/invoices/[id]/route.ts`
 
-### B-2 · On-chain lockbox / settlement contract + reconciliation worker · `P0` · ⬜ backlog
+### B-2 · On-chain lockbox / settlement contract + reconciliation worker · `P0` · 📋 committed
 Replace the `mark_collected` demo PATCH with a real collection path: a designated
 lockbox address per invoice, a `settlement` Soroban contract (repay funder, release
 reserve, return margin), and a reconciliation worker that auto-freezes the MSME and
 escalates on leakage by T+X.
 - **References:** [`soroban/CONTRACTS.md`](../soroban/CONTRACTS.md) (`settlement` crate, P2), [`rfc-axial-closed-loop-settlement.md`](rfc-axial-closed-loop-settlement.md), `../soroban/contracts/`, `../web/app/api/invoices/[id]/route.ts`
 
-### B-3 · Freighter wallet integration (self-custody) · `P1` · ⬜ backlog
+### B-3 · Freighter wallet integration (self-custody) · `P1` · 📋 committed
 Removes the custodial-signing liability (D2). MSME signs its own mint/swap; payer signs
 from the payer portal. Build-unsigned-tx-on-server → sign-in-browser → submit, with
 testnet/mainnet network switching and a real "connected wallets" Settings surface.
 - **References:** `../web/lib/soroban/invoke-receivable.ts`, `invoke-swap.ts`, `invoke-payroll.ts`, `config.ts`, `../web/components/views/SettingsView.tsx`, `Axial.md` Q7
 
-### B-4 · T+3 submission worker + Horizon event subscription · `P1` · ⬜ backlog
+### B-4 · T+3 submission worker + Horizon event subscription · `P1` · 📋 committed
 The oracle currently submits immediately and is triggered by API hooks. Add a real T+3
 scheduled submission worker and a Horizon/RPC ledger-event subscription so compliance
 is event-driven, not request-driven.
 - **References:** `../web/lib/eis/oracle.ts`, `../web/lib/eis/trigger.ts`, [`rfc-axial-eis-oracle.md`](rfc-axial-eis-oracle.md), [`sdd-axial.md`](sdd-axial.md) §5
 
-### B-5 · Reflector FX oracle — replace hardcoded rate · `P2` · ⬜ backlog
+### B-5 · Reflector FX oracle — replace hardcoded rate · `P2` · 📋 committed
 The PHP/USDC rate is hardcoded (`DEMO_RATE = 56.5`). Wire the Reflector price oracle
 and write the rate used to the contract event log so it is auditable (Axial.md §13.8).
 - **References:** `../web/components/settings/PdaxRampCard.tsx`, `Axial.md` Q4 + §13.8
 
-### B-6 · Auth + multi-tenancy · `P1` · ⬜ backlog
+### B-6 · Auth + multi-tenancy · `P1` · 📋 committed
 The app is single-org with no real auth — `(app)/layout.tsx` is a visual shell only.
 Add login, org invites (OIDC preferred per Axial.md §11), and tenant scoping.
 - **References:** `../web/app/(app)/layout.tsx`, `../web/components/providers/AppProvider.tsx`, `Axial.md` §11 (Auth mechanism)
 
-### B-7 · Real BIR EIS integration (PTT certification path) · `P2` · ⬜ backlog
+### B-7 · Real BIR EIS integration (PTT certification path) · `P2` · 📋 committed
 Replace the mock BIR endpoint and mock JWS with the real BIR EIS API and a
 vault-mediated signing key once a Permit to Transmit is obtained.
 - **References:** `../web/lib/eis/bir-mock.ts`, `../web/lib/eis/jws.ts`, `../web/app/api/bir/eis/route.ts`, [`clr-axial.md`](clr-axial.md), `Axial.md` §9.1
 
-### B-8 · Reconcile the stale SDD backend architecture · `P2` · ⬜ backlog
+### B-8 · Reconcile the stale SDD backend architecture · `P2` · 📋 committed
 `sdd-axial.md` still describes a modular monolith + Postgres + Redis + BullMQ/Temporal.
 The actual build is Next.js API routes + Supabase + in-process oracle. Update the SDD
 or add a clear "superseded" note so it stops misleading.
