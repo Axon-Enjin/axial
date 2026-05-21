@@ -15,20 +15,28 @@ All regulatory and legal questions are **Philippines-jurisdiction-first**.
 Frontend — from `web/`:
 
 ```bash
-npm run dev     # Start dev server with Turbopack (http://localhost:3000)
-npm run build   # Production build
-npm run lint    # Run ESLint
-npm start       # Start production server
+npm install
+npm run dev     # Dev server with Turbopack (http://localhost:3000)
+npm run build   # Production build (next build --turbopack)
+npm run lint    # ESLint
+npm start       # Production server
 ```
 
-Soroban — from WSL, directory `soroban/` (see `soroban/README.md`, `soroban/CONTRIBUTING.md`, `soroban/CONTRACTS.md`):
+There is no test runner in `web/` — verify changes by running the dev server.
+
+Soroban — build/deploy from **WSL** (Stellar CLI + Rust live there; repo is on the Windows drive). The repo is at `D:\PROJECTS\axial`, i.e. `/mnt/d/PROJECTS/axial` in WSL. See `soroban/README.md`, `soroban/CONTRIBUTING.md`, `soroban/CONTRACTS.md`.
 
 ```bash
-cd /mnt/c/Users/User/CODERIST/axonjn/axial/soroban
-make setup           # first-time: .env, testnet, fund identity
-make build
-make deploy-testnet  # uses STELLAR_SOURCE from soroban/.env
+cd /mnt/d/PROJECTS/axial/soroban
+make setup           # first-time: network + .env + fund test identity
+make build           # all 3 crates → target/wasm32v1-none/release/*.wasm
+make test            # cargo test (host env)
+make fmt             # cargo fmt --all
+make deploy-all      # deploy all crates (after keys funded)
+make testnet-demo    # full testnet deploy + write web env (~3 min)
 ```
+
+A single contract's tests: `cd soroban/contracts/<crate> && cargo test`, or `cargo test -p <crate>` from `soroban/`.
 
 ## Architecture
 
@@ -36,113 +44,107 @@ make deploy-testnet  # uses STELLAR_SOURCE from soroban/.env
 
 ```
 axial/
-├── soroban/            # Soroban workspace (build/deploy from WSL)
-├── web/                # Next.js 15 App Router application
-├── docs/               # Product docs: Axial.md (canonical), brd, prd, sdd, dsd, gtm
-├── initial-docs/       # Founding strategy docs (archived — superseded by docs/)
-└── FMD/                # Document templates (BRD, PRD, SDD, RFC, GTM) — no code
+├── soroban/      # Rust/Soroban workspace — 3 contract crates (build/deploy from WSL)
+├── web/          # Next.js 15 App Router — UI + API routes + backend logic
+├── supabase/     # SQL migrations for the hosted Supabase project
+├── docs/         # Product docs: Axial.md (canonical), brd/prd/sdd/dsd/gtm, rfc-*
+├── FMD/          # Document templates (BRD, PRD, SDD, RFC, GTM) — no code
+├── prototype/    # Early UI scratch (not the live app — ignore)
+└── claude-design/ # Design scratch (not wired into the app)
 ```
 
-### Frontend (Current State: UI Prototype Only)
+### Frontend + Backend live together in `web/`
 
-**Stack:** Next.js 15.5 · React 19 · TypeScript 5 (strict) · Tailwind CSS 4 · Material Symbols Outlined
+The "backend" is **Next.js Route Handlers under `web/app/api/`** — there is no separate server. The SDD's modular-monolith / BullMQ-Temporal plan was not adopted; ignore it as a build target.
 
-**App Router structure (`web/app/`):**
-- `layout.tsx` — Root layout with Geist fonts and Material Symbols
-- `(app)/layout.tsx` — Auth layout containing `AppSidebar`
-- `(app)/page.tsx` — Overview / Command Center
-- `(app)/liquidity/page.tsx` — Tokenized AR and funding workflow
-- `(app)/compliance/page.tsx` — Payroll split and BIR EIS status
-- `(app)/settings/page.tsx` — Account and preferences
+**Stack:** Next.js 15.5 · React 19 · TypeScript 5 (strict) · Tailwind CSS 4 · `@stellar/stellar-sdk` · `@supabase/supabase-js` · `tesseract.js` + `pdf-parse` (invoice OCR). Path alias `@/*` → `web/*`.
 
-**Component pattern:** Pages import from `components/views/` — one view per tab (`OverviewView`, `LiquidityView`, `ComplianceView`, `SettingsView`). Shared shell in `components/layout/` and primitives in `components/ui/`.
+**Pages (`web/app/`):** root `layout.tsx` (Geist fonts + Material Symbols) → `(app)/layout.tsx` (auth shell with `AppSidebar`) → four tabs: `page.tsx` (Overview/Command Center), `liquidity/`, `compliance/`, `settings/`. Each page is a thin wrapper that renders a view from `components/views/` (`OverviewView`, `LiquidityView`, etc.). `components/stitch/` holds older design-export versions of those views — `components/views/` is the live set. Shared shell in `components/layout/`, primitives in `components/ui/`, client state via `components/providers/AppProvider.tsx`.
 
-**Path alias:** `@/*` maps to `web/*` (tsconfig).
+**API routes (`web/app/api/`):** invoices (upload/parse/seed/CRUD), `eis/*` (submissions, process, seed), `bir/eis` (mock BIR endpoint), `swap/*` + `receivable/mint` + `payroll/*` (Soroban invocation + quotes), `soroban/status`, `wallets/balances`, `dashboard/summary`.
 
-### Backend (Planned — not yet implemented)
+### Persistence — dual backend
 
-Per `docs/sdd-axial.md`, the target architecture is a modular monolith → microservices:
+`lib/eis/store.ts` and `lib/invoices/store.ts` pick a backend at runtime: **Supabase** when `SUPABASE_URL` + a service-role/anon key are set, otherwise a **local JSON file fallback** under `web/data/`. Always write store access through these modules — never assume one backend. Supabase schema lives in `supabase/migrations/` (`001_eis_submissions.sql`, `002_factoring_invoices.sql`).
 
-| Layer | Technology |
-|---|---|
-| API Gateway / BFF | REST + OpenAPI (preferred for BIR API parity) or tRPC — decide Day 1 |
-| Database | PostgreSQL (source of truth for UX projections) |
-| Cache / locks | Redis |
-| Job queue | BullMQ or Temporal — decide Day 1; drives T+3 BIR EIS scheduling |
-| Blockchain | Stellar/Soroban — SAC tokenization, atomic swaps, settlement memos |
-| Secrets | Vault / HSM / KMS — never in client code or env files |
+### Compliance pipeline (the EIS oracle)
 
-**Compliance pipeline:** Ledger event → off-chain oracle maps to BIR EIS 20-field schema → JWS sign → T+3 submission worker → PostgreSQL state → success reference memo write-back to Stellar.
+The BIR EIS oracle runs **in-process**, not in an external queue. Flow (`lib/eis/`):
 
-**Statutory engine:** Each payroll event splits SSS, PhilHealth, and Pag-IBIG deductions via a denomination-agnostic Soroban contract (asset address is a parameter).
+1. An on-chain API route (mint/swap/payroll) calls `triggerEisFromChain()` (`trigger.ts`).
+2. That calls `enqueueEisProcessing()` (`oracle.ts`) — a **fire-and-forget** `void processLedgerEvent().catch()`. It does not block the user response.
+3. `processLedgerEvent()`: maps the ledger event to the BIR EIS payload (`schema.ts` / `payload-fields.ts`), JWS-signs it (`jws.ts` — mock signature), submits to the mock BIR endpoint (`bir-mock.ts`), then writes a reference memo back to Stellar (`memo.ts`).
+4. State transitions `queued → submitted → acknowledged → memo_written` (or `failed`), persisted via `store.ts`. Idempotency key = `orgId:stellarTxHash:referenceId`.
+
+### Soroban contracts (`soroban/contracts/`)
+
+Three Rust crates, each with `src/lib.rs` + `src/test.rs`:
+
+| Crate | Responsibility |
+|-------|----------------|
+| `receivable_token` | `initialize`, `mint`, `is_minted`, `get_receivable` — one mint per invoice (SAC-style receivable) |
+| `axial_swap` | `initialize`, `quote`, `execute_advance` — USDC advance vs receivable at configurable `advance_bps` (85% default) |
+| `payroll_split` | `initialize`, `quote`, `route_payroll`, `get_payroll` — USDC split to SSS/PhilHealth/Pag-IBIG + net to employees |
+
+Web talks to chain via `lib/soroban/`: `config.ts` resolves contract IDs and signing keys from env or `soroban/deployments/testnet.json`; `invoke-*.ts` builds and submits transactions; `isSwapChainEnabled` / `isReceivableChainEnabled` / `isPayrollChainEnabled` gate whether a route runs on-chain or returns a mocked result. Deployed contract IDs and signing-key publics are not committed — `testnet.json` is gitignored; copy `testnet.example.json`.
+
+### Environment & deployment
+
+`web/.env.example` is the source of truth for env vars. Required for a working demo: `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, and the three Stellar secrets (`STELLAR_FUNDER_SECRET`, `STELLAR_MSME_SECRET`, `STELLAR_ISSUER_SECRET`). `cd soroban && ./scripts/write-web-env.sh` populates the Stellar values after a deploy. `AXIAL_ALLOW_SEED=true` enables demo seed routes — preview only.
+
+Deployed on Vercel: **Root Directory `web`**, region `sin1`, OCR/balance/summary routes have raised `maxDuration` in `web/vercel.json`. Full guide: `docs/vercel-deployment.md`.
 
 ## Locked Architecture Decisions
 
-These were finalized 2026-05-14 and must not be reopened without updating `docs/Axial.md` first.
+Finalized 2026-05-14 — do not reopen without updating `docs/Axial.md` first.
 
 | Decision | Locked value |
 |---|---|
-| Settlement asset | **USDC on Stellar** — Circle-issued, Mainnet, no external dependencies |
-| USDC issuer address | `GA5ZSEJYB37JRC5AVCIA5MOP4RHTM335X2KGX3IHOJAPP5RE34K4KZVN` |
-| User-facing denomination | **PHP** — all invoices, payroll, and compliance dashboards show pesos |
-| FX conversion | At the edges via Reflector oracle (preferred) or hardcoded rate (acceptable for hackathon) |
-| PHP fiat rail | **PDAX** via PDAX Connect API (SEP-24 interface); Axial never custodies fiat |
-| PHPC | ❌ Retired — PHPC is on Polygon/Ronin, not Stellar; exited BSP sandbox July 2025 |
-| BIR EIS mandate scope | Phase 1 taxpayers only (Large Taxpayers, e-commerce, exporters, ≥₱1B gross sales, CAS/CBA users) — not all MSMEs |
+| Settlement asset | **USDC on Stellar** — Circle-issued |
+| USDC Mainnet issuer | `GA5ZSEJYB37JRC5AVCIA5MOP4RHTM335X2KGX3IHOJAPP5RE34K4KZVN` |
+| User-facing denomination | **PHP** — all invoices, payroll, dashboards show pesos |
+| FX conversion | At the edges via Reflector oracle, or hardcoded rate (acceptable for hackathon) |
+| PHP fiat rail | **PDAX** via PDAX Connect API (SEP-24); Axial never custodies fiat |
+| PHPC | ❌ Retired — on Polygon/Ronin not Stellar; exited BSP sandbox July 2025 |
+| BIR EIS mandate scope | Phase 1 taxpayers only (Large Taxpayers, e-commerce, exporters, ≥₱1B gross sales, CAS/CBA users) |
 
-## Hackathon Build Plan
+**Current deploy reality:** the hackathon build runs the contracts on **Stellar testnet** (`soroban/deployments/testnet.json`, testnet RPC, a testnet USDC SAC). The Mainnet issuer above is the production settlement reference, not where the demo runs.
 
-**Scope hierarchy — build L1 completely before touching L2 or L3:**
+## Build Scope (L1 → L3)
 
-| Layer | What ships | External dependency |
-|---|---|---|
-| **L1 — must ship** | Soroban contracts on Mainnet · real USDC atomic swap · payroll split · BIR EIS oracle · JWS-signed payload · mock BIR endpoint · Stellar memo write-back | None |
-| **L2 — nice to have** | Everything in L1 + mocked PDAX UI screens | None |
-| **L3 — bonus** | Real PDAX Connect API calls | PDAX sandbox access |
+Build L1 completely before L2/L3:
 
-**Work streams:**
-
-| Stream | Owner | Surface area |
-|---|---|---|
-| Smart contracts (Soroban + Rust) | Aidan or Rhandie | Contracts, deploy scripts, Mainnet ops, USDC trustlines |
-| Backend (API routes + oracle + workers) | Gerald | API routes, PostgreSQL, Redis, EIS oracle, mock BIR endpoint |
-| Frontend (UI + design system) | Remaining dev | Four tabs, glassmorphic dark surfaces, microcopy |
-
-**Day 1 decisions to lock immediately** (unresolved decisions block implementation):
-- Q1: BullMQ vs Temporal for the EIS submission worker
-- Q2: REST + OpenAPI vs tRPC for the API layer
-- Q3: Single Soroban contract or several smaller ones
-- Q7: Wallet management for demo (Freighter, Albedo, or custodial backend signing)
-
-Full decision list and rationale in `docs/Axial.md` §11 and "Open questions for the dev team".
+- **L1 (must ship):** Soroban contracts deployed · real USDC atomic swap · payroll split · BIR EIS oracle · JWS-signed payload · mock BIR endpoint · Stellar memo write-back. No external deps.
+- **L2 (nice to have):** L1 + mocked PDAX UI screens.
+- **L3 (bonus):** real PDAX Connect API calls (needs PDAX sandbox access).
 
 ## Design System
 
-Defined in `docs/dsd-axial.md` and wired into `web/tailwind.config.ts`.
+Defined in `docs/dsd-axial.md`, wired into `web/tailwind.config.ts`.
 
-- **Color system:** Material Design 3 — custom obsidian/deep-slate primary, muted teal and soft silver accents. Dark-mode first (`class` strategy).
-- **Typography:** Geist sans-serif. Tailwind utilities: `headline-xl/lg/md`, `body-lg/md`, `label-md/sm`.
-- **Visual language:** Glassmorphism, generous white space, "unrushed" experience. Passive/ambient status indicators — never intrusive alerts.
-- **Icons:** Material Symbols Outlined via Google Fonts (loaded in root layout).
-- **UX principle:** "Silent success" — compliance and liquidity operations confirm completion passively, not via modal interruptions. Never write `URGENT`, never use all-caps in status messages.
+- **Color:** Material Design 3 — obsidian/deep-slate primary, muted teal + soft silver accents. Dark-mode first (`class` strategy).
+- **Typography:** Geist sans-serif. Utilities: `headline-xl/lg/md`, `body-lg/md`, `label-md/sm`.
+- **Visual language:** Glassmorphism, generous white space, an "unrushed" experience. Passive/ambient status — never intrusive alerts.
+- **Icons:** Material Symbols Outlined (loaded in root layout).
+- **UX principle — "Silent success":** compliance and liquidity operations confirm passively, not via modal interruptions. Never write `URGENT`, never use all-caps in status messages.
 
 ## Key Domain Concepts
 
 | Term | Meaning |
 |---|---|
 | SAC | Stellar Asset Contract — on-chain representation of a verified receivable |
-| Atomic swap | USDC on Stellar ↔ receivable token, executed by a denomination-agnostic Soroban contract |
-| BIR EIS | Bureau of Internal Revenue Electronic Invoicing System — JSON + JWS, T+3 window; currently Phase 1 taxpayers only |
+| Atomic swap | USDC ↔ receivable token, executed by a denomination-agnostic Soroban contract |
+| BIR EIS | Bureau of Internal Revenue Electronic Invoicing System — JSON + JWS, T+3 window; Phase 1 taxpayers only |
 | T+3 window | Submission must reach BIR within 3 calendar days of the transaction date |
-| JWS | JSON Web Signature — required signing format for BIR EIS payloads; key lives in vault, never in env files |
+| JWS | JSON Web Signature — required signing format for BIR EIS payloads (mock signature in this build) |
 | Statutory split | Automatic payroll deduction routing to SSS, PhilHealth, Pag-IBIG via Soroban contract |
-| SEP-24 | Stellar anchor interface for PHP on/off-ramp; PDAX is the production driver, Coins.ph can plug in without changing contract logic |
-| Reflector | Stellar-native price oracle used for PHP/USDC FX rate at swap time |
+| SEP-24 | Stellar anchor interface for PHP on/off-ramp; PDAX is the production driver |
+| Reflector | Stellar-native price oracle for PHP/USDC FX rate at swap time |
 
 ## Document Conventions
 
-- **`docs/Axial.md`** is the canonical foundation — origin story, locked decisions, open questions, hackathon submission record. **Update here first, then propagate to derivative docs.**
-- Derivative docs in `docs/`: `brd-axial.md`, `prd-axial.md`, `sdd-axial.md`, `dsd-axial.md`, `gtm-axial.md`.
-- New product/technical docs belong in `docs/` using the pattern `{type}-axial.md` (e.g., `rfc-axial-eis-oracle.md`).
-- Templates for BRD, PRD, DSD, SDD, RFC, QAD, GTM are in `FMD/` — use them as starting points.
+- **`docs/Axial.md`** is the canonical foundation — origin story, locked decisions, open questions, submission record. **Update here first, then propagate to derivative docs.**
+- Derivative docs in `docs/`: `brd-axial.md`, `prd-axial.md`, `sdd-axial.md`, `dsd-axial.md`, `gtm-axial.md`. Note the SDD's backend architecture predates the current `web/app/api/` implementation — trust the code over the SDD where they conflict.
+- New product/technical docs go in `docs/` as `{type}-axial.md` (e.g. `rfc-axial-eis-oracle.md`).
+- Templates for BRD/PRD/DSD/SDD/RFC/QAD/GTM are in `FMD/`.
 - Intermediates and scratch files go in `.tmp/` (not committed).

@@ -1,5 +1,6 @@
 # Cursor / agent skills (local tooling — not product code)
 .agents/
+.cursor/
 skills-lock.json
 
 # Secrets — never commit
@@ -17,3 +18,11 @@ soroban/deployments/mainnet.json
 node_modules/
 .next/
 out/
+
+# Internal working directories (not product code)
+claude-design/
+.tmp/
+
+# OS
+.DS_Store
+Thumbs.db
