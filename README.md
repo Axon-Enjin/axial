@@ -292,9 +292,9 @@ The demo follows this order to showcase the full pipeline:
 | Name | Role | GitHub |
 | --- | --- | --- |
 | Carlos Jerico Dela Torre | Product & Business Architect, Team Lead | [@delatorrecj](https://github.com/delatorrecj) |
-| Aidan Tiu | DevOps Engineer | |
-| Gerald Berongoy | Full Stack Engineer | |
-| Rhandie Sales Jr. | Full Stack Engineer | |
+| Aidan Tiu | DevOps Engineer | [@ymnw.r](https://github.com/aidantiu)  |
+| Gerald Berongoy | Full Stack Engineer | [@geraldsberongoy](https://github.com/geraldsberongoy)  |
+| Rhandie Sales Jr. | Full Stack Engineer | [@r0undy](https://github.com/r0undy) |
 
 ---
 
