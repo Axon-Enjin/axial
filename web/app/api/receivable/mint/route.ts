@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { triggerEisFromChain } from "@/lib/eis/trigger";
-import { getSorobanConfig, isReceivableChainEnabled } from "@/lib/soroban/config";
+import { isReceivableChainEnabled } from "@/lib/soroban/config";
+import { resolveSorobanConfig } from "@/lib/soroban/server-config";
 import { mintReceivableOnChain } from "@/lib/soroban/invoke-receivable";
 
 type Body = {
@@ -35,7 +36,7 @@ export async function POST(request: Request) {
     );
   }
 
-  const cfg = getSorobanConfig();
+  const cfg = await resolveSorobanConfig();
 
   if (!isReceivableChainEnabled(cfg)) {
     return NextResponse.json({

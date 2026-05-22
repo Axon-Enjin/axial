@@ -9,3 +9,4 @@ target
 # Deployed IDs (commit testnet.example.json; share real testnet.json via team channel or private repo)
 deployments/testnet.json
 deployments/mainnet.json
+deployments/*.github-vars.txt

@@ -11,7 +11,8 @@
  * require_auth() check.
  */
 import { NextResponse } from "next/server";
-import { getSorobanConfig, isPayrollBuildEnabled } from "@/lib/soroban/config";
+import { isPayrollBuildEnabled } from "@/lib/soroban/config";
+import { resolveSorobanConfig } from "@/lib/soroban/server-config";
 import { buildPayrollXdr } from "@/lib/soroban/build-tx";
 import { quotePayrollSplit } from "@/lib/soroban/payroll-quote";
 
@@ -50,7 +51,7 @@ export async function POST(request: Request) {
     );
   }
 
-  const cfg = getSorobanConfig();
+  const cfg = await resolveSorobanConfig();
   if (!isPayrollBuildEnabled(cfg)) {
     return NextResponse.json(
       {

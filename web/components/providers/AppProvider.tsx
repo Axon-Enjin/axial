@@ -30,8 +30,10 @@ export type AppUser = {
 type AppContextValue = {
   /** Authenticated user (null if unauthenticated / auth not configured). */
   currentUser: AppUser | null;
+  /** True when Freighter is connected (same as freighterPublicKey set). */
   walletConnected: boolean;
-  toggleWallet: () => void;
+  /** Connect Freighter from the top bar; no-op if already connected. */
+  connectWalletFromShell: () => Promise<void>;
   toast: ToastState | null;
   /** Last on-chain swap advance (PHP units) — drives payroll default budget. */
   lastSwapAdvancePhp: number | null;
@@ -58,7 +60,7 @@ type AppContextValue = {
    * On success, `freighterPublicKey` is set.
    * Throws on user rejection or extension not installed.
    */
-  connectFreighter: () => Promise<void>;
+  connectFreighter: () => Promise<string>;
   /** Disconnect Freighter (clears local state — does not revoke extension access). */
   disconnectFreighter: () => void;
 };
@@ -74,7 +76,6 @@ export function AppProvider({
 }) {
   const [currentUser] = useState<AppUser | null>(initialUser);
   // currentUser is initialised from server-side session (see initialUser prop)
-  const [walletConnected, setWalletConnected] = useState(false);
   const [toast, setToast] = useState<ToastState | null>(null);
   const [lastSwapAdvancePhp, setLastSwapAdvancePhp] = useState<number | null>(null);
   const dismissTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -135,10 +136,6 @@ export function AppProvider({
     [showToast],
   );
 
-  const toggleWallet = useCallback(() => {
-    setWalletConnected((w) => !w);
-  }, []);
-
   // Detect Freighter on mount and auto-restore an existing session
   useEffect(() => {
     const installed = freighterAvailable();
@@ -185,12 +182,19 @@ export function AppProvider({
       }
       setFreighterPublicKey(publicKey);
       setFreighterNetwork(networkDetails);
-      // Promote installed state
       setFreighterInstalled(true);
+      return publicKey;
     } finally {
       setFreighterConnecting(false);
     }
   }, []);
+
+  const walletConnected = Boolean(freighterPublicKey);
+
+  const connectWalletFromShell = useCallback(async () => {
+    if (freighterPublicKey) return;
+    await connectFreighter();
+  }, [freighterPublicKey, connectFreighter]);
 
   const disconnectFreighter = useCallback(() => {
     setFreighterPublicKey(null);
@@ -201,7 +205,7 @@ export function AppProvider({
     () => ({
       currentUser,
       walletConnected,
-      toggleWallet,
+      connectWalletFromShell,
       toast,
       lastSwapAdvancePhp,
       setLastSwapAdvancePhp,
@@ -218,7 +222,7 @@ export function AppProvider({
     [
       currentUser,
       walletConnected,
-      toggleWallet,
+      connectWalletFromShell,
       toast,
       lastSwapAdvancePhp,
       dispatch,

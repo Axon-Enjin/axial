@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { triggerEisFromChain } from "@/lib/eis/trigger";
 import { checkFundingEligibility } from "@/lib/payers/eligibility";
-import { getSorobanConfig, isSwapChainEnabled } from "@/lib/soroban/config";
+import { isSwapChainEnabled } from "@/lib/soroban/config";
+import { resolveSorobanConfig } from "@/lib/soroban/server-config";
 import { executeAdvanceOnChain } from "@/lib/soroban/invoke-swap";
 import { quoteAdvance } from "@/lib/soroban/quote";
 
@@ -67,7 +68,7 @@ export async function POST(request: Request) {
     }
   }
 
-  const cfg = getSorobanConfig();
+  const cfg = await resolveSorobanConfig();
   const quote = quoteAdvance(faceAmount!);
 
   if (!isSwapChainEnabled(cfg)) {

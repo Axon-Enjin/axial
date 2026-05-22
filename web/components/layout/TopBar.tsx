@@ -3,19 +3,33 @@
 import { Avatar } from "@/components/ui/Avatar";
 import { Icon } from "@/components/ui/Icon";
 
+function truncateKey(key: string): string {
+  if (key.length <= 12) return key;
+  return `${key.slice(0, 4)}…${key.slice(-4)}`;
+}
+
 type TopBarProps = {
   title: string;
   subtitle?: string | null;
   walletConnected: boolean;
-  onWalletToggle: () => void;
+  walletPublicKey: string | null;
+  walletConnecting?: boolean;
+  onWalletConnect: () => void;
 };
 
 export function TopBar({
   title,
   subtitle,
   walletConnected,
-  onWalletToggle,
+  walletPublicKey,
+  walletConnecting = false,
+  onWalletConnect,
 }: TopBarProps) {
+  const walletLabel = walletPublicKey
+    ? truncateKey(walletPublicKey)
+    : walletConnecting
+      ? "Connecting…"
+      : "Connect Freighter";
   return (
     <>
       {/* Mobile Top Bar */}
@@ -32,7 +46,8 @@ export function TopBar({
         </div>
         <button
           type="button"
-          onClick={onWalletToggle}
+          onClick={onWalletConnect}
+          disabled={walletConnecting}
           className={`flex items-center gap-1.5 rounded-lg border border-outline-variant/20 bg-surface-container px-2.5 py-1.5 font-label-sm text-[11px] transition-colors hover:bg-surface-variant/50 active:scale-95 ${walletConnected ? "text-[#2DD4BF]" : "text-on-surface-variant"}`}
         >
           <Icon name="account_balance_wallet" size={16} />
@@ -57,11 +72,12 @@ export function TopBar({
       <div className="flex items-center gap-6 text-on-surface-variant">
         <button
           type="button"
-          onClick={onWalletToggle}
+          onClick={onWalletConnect}
+          disabled={walletConnecting}
           className={`flex items-center gap-2 font-label-md text-label-md transition-colors hover:text-primary active:scale-95 ${walletConnected ? "text-[#2DD4BF]" : ""}`}
         >
           <Icon name="account_balance_wallet" size={20} />
-          {walletConnected ? "GC02…X9L4M" : "Wallet Connect"}
+          {walletLabel}
           {walletConnected ? (
             <span className="ml-0.5 h-1.5 w-1.5 rounded-full bg-[#2DD4BF] shadow-[0_0_10px_rgba(45,212,191,0.6)]" />
           ) : null}

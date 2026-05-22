@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
 import { getEisStoreBackend } from "@/lib/eis/store";
-import { getPublicChainStatus } from "@/lib/soroban/config";
+import { resolvePublicChainStatus } from "@/lib/soroban/server-config";
 
 export async function GET() {
   return NextResponse.json({
-    ...getPublicChainStatus(),
+    ...(await resolvePublicChainStatus()),
     eisStore: getEisStoreBackend(),
   });
 }

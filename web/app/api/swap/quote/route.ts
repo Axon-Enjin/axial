@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getSorobanConfig } from "@/lib/soroban/config";
+import { resolveSorobanConfig } from "@/lib/soroban/server-config";
 import { quoteAdvance } from "@/lib/soroban/quote";
 
 export async function GET(request: Request) {
@@ -14,7 +14,7 @@ export async function GET(request: Request) {
     );
   }
 
-  const cfg = getSorobanConfig();
+  const cfg = await resolveSorobanConfig();
   const { advance, reserve, advanceBps } = quoteAdvance(face);
 
   return NextResponse.json({

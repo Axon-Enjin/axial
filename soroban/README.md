@@ -42,11 +42,18 @@ soroban/
 ├── contracts/
 │   ├── receivable_token/     # SAC mint (payer-confirmed receivable)
 │   ├── axial_swap/           # USDC atomic swap + reserve
-│   └── payroll_split/        # SSS / PhilHealth / Pag-IBIG routing
+│   ├── payroll_split/        # SSS / PhilHealth / Pag-IBIG routing
+│   └── settlement/           # lockbox payout (P2 — optional for L1 demo)
+├── deployments/
+│   ├── testnet.json          # gitignored — team shares contract IDs
+│   └── mainnet.json          # gitignored — after mainnet deploy
+├── scripts/
+│   ├── testnet-demo-setup.sh   # one-shot testnet E2E + web/.env.local
+│   ├── mainnet-setup.sh        # sync mainnet env + GCP + GitHub (WSL)
+│   ├── deploy-mainnet.sh       # deploy + init all 4 contracts on mainnet
+│   └── import-mainnet-deployer.sh
 └── target/                   # gitignored — *.wasm after build
 ```
-
-Optional later: `stellar contract init . --name settlement` for lockbox payout (or merge into `axial_swap`).
 
 ## Locked network constants (from `docs/Axial.md`)
 
@@ -54,7 +61,9 @@ Optional later: `stellar contract init . --name settlement` for lockbox payout (
 |------|--------|
 | Settlement asset | **USDC on Stellar** |
 | USDC issuer (Mainnet) | `GA5ZSEJYB37JRC5AVCIA5MOP4RHTM335X2KGX3IHOJAPP5RE34K4KZVN` |
+| USDC SAC contract (Mainnet) | `CCW67TSZV3SSS2HXMBQ5JFGCKJNXKZM7UQUWUZPUTHXSTZLEO7SJMI75` |
 | User-facing denomination | PHP (UI only) |
+| Hackathon L1 on Mainnet | **3 contracts** (receivable + swap + payroll); settlement optional |
 
 ## One-time CLI setup
 
@@ -107,7 +116,10 @@ Expected WASM artifacts after `make build`:
 target/wasm32v1-none/release/receivable_token.wasm
 target/wasm32v1-none/release/axial_swap.wasm
 target/wasm32v1-none/release/payroll_split.wasm
+target/wasm32v1-none/release/settlement.wasm
 ```
+
+**Fast path (recommended):** see [`TESTNET.md`](TESTNET.md) — `./scripts/testnet-demo-setup.sh` deploys all contracts, funds keys, and writes `deployments/testnet.json` + `web/.env.local`.
 
 ## Deploy (testnet)
 
@@ -115,7 +127,7 @@ target/wasm32v1-none/release/payroll_split.wasm
 cd "$AXIAL_ROOT/soroban"
 
 WASM=target/wasm32v1-none/release/axial_swap.wasm
-SOURCE=mainnet-wallet
+SOURCE=admin-key
 NETWORK=testnet
 
 # Upload + install + deploy (CLI prints contract ID)
@@ -204,38 +216,54 @@ stellar contract invoke --id "$PAYROLL_ID" --source-account my-key --network tes
 
 ## Deploy (mainnet)
 
-**Only after testnet E2E works.** Mainnet uses real XLM for fees.
+**Only after testnet E2E works.** Mainnet uses **real XLM** (fees + reserves) and **real USDC** for swaps.
+
+### Cost & funding (hackathon)
+
+Organizers typically fund **~10 XLM** on one deployer account for deploy + init fees.
+
+**One Mainnet account can deploy and run all L1 contracts** if you use it as `mainnet-wallet` (admin + funder + MSME in `deploy-mainnet.sh`). Import Freighter’s secret into CLI:
 
 ```bash
-# Fund deployer with Mainnet XLM (no friendbot) — use your funded account or:
-# stellar keys generate mainnet-wallet --network mainnet
-
-Make sure it's funded on Mainnet. Then run:
-```bash
-stellar contract deploy \
-  --wasm target/wasm32v1-none/release/receivable_token.wasm \
-  --source mainnet-wallet \
-  --network mainnet
-
-# Deploy Swap Contract
-stellar contract deploy \
-  --wasm target/wasm32v1-none/release/axial_swap.wasm \
-  --source mainnet-wallet \
-  --network mainnet
+stellar keys add mainnet-wallet --secret-key   # paste S... once; never commit
 ```
 
-Establish a USDC trustline on the demo account before swap demos:
+### WSL one-command setup (Stellar CLI lives in WSL only)
 
 ```bash
-# USDC asset code + issuer (Mainnet)
+cd soroban
+sed -i 's/\r$//' scripts/*.sh
+./scripts/mainnet-setup.sh          # sync env + GCP + GitHub vars file
+./scripts/mainnet-setup.sh --deploy # fresh deploy + sync
+```
+
+See [docs/mainnet-wsl.md](../docs/mainnet-wsl.md). PowerShell is **not** used for Stellar — only your existing GitHub/Cloud Run deploy workflow.
+
+**L1 demo minimum:** receivable + swap + payroll (settlement optional).
+
+### Wire into Cloud Run / web
+
+1. GitHub **Variables**: `./scripts/apply-github-mainnet-vars.sh` (or `print-github-mainnet-vars.sh`).
+2. **GCP secrets**: uploaded by `mainnet-setup.sh` when `gcloud` is available (WSL or Windows).
+3. App: **Freighter → Mainnet → Connect**, then **Settings → Stellar network → Mainnet**.
+
+> **Freighter:** XLM in Freighter only pays txs **that Freighter (or that same `G...` secret on the server) signs**. It does not fund mint/swap on Cloud Run unless GCP secrets match that account.
+
+### USDC on Mainnet (for swap demo)
+
+Use **Circle USDC on Stellar** — SAC `CCW67TSZV3SSS2HXMBQ5JFGCKJNXKZM7UQUWUZPUTHXSTZLEO7SJMI75` (not the testnet token from `testnet.json`).
+
+Establish a trustline on the **funder** account, then hold a small USDC balance for one demo swap:
+
+```bash
 stellar tx new change-trust \
   --source mainnet-wallet \
   --network mainnet \
   --asset USDC:GA5ZSEJYB37JRC5AVCIA5MOP4RHTM335X2KGX3IHOJAPP5RE34K4KZVN
-# … sign and submit per `stellar tx` help
+# sign and submit per `stellar tx` help
 ```
 
-See [Circle testnet USDC faucet](https://faucet.circle.com/) for test USDC where applicable.
+Test USDC only: [Circle faucet](https://faucet.circle.com/) works on **testnet**, not Mainnet.
 
 ## Inspect & bindings
 
@@ -260,7 +288,9 @@ See **`CONTRACTS.md`** for the full on-chain vs off-chain split.
 4. **Backend** — EIS oracle + mock BIR + memo (not a Soroban crate).
 5. Wire contract IDs into `web/` env — **never commit secret keys**.
 
-Deploy all three to testnet: `make deploy-all` (after keys are funded).
+Deploy all four WASMs to testnet: `make deploy-all` (set `STELLAR_SOURCE` + `STELLAR_NETWORK=testnet` in `.env`; fund keys first).
+
+Share IDs via `deployments/testnet.json` or run `make testnet-demo` for a full team bootstrap.
 
 ## Troubleshooting
 

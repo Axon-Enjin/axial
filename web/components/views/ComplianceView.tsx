@@ -3,6 +3,7 @@
 import { Fragment, useCallback, useEffect, useState } from "react";
 import { EisPayloadPanel } from "@/components/compliance/EisPayloadPanel";
 import { useApp } from "@/components/providers/AppProvider";
+import { FreighterConnectGate } from "@/components/wallet/FreighterConnectGate";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { Icon } from "@/components/ui/Icon";
@@ -151,7 +152,14 @@ type ChainStatus = {
 };
 
 export function ComplianceView() {
-  const { dispatch, lastSwapAdvancePhp, freighterPublicKey, freighterNetwork } = useApp();
+  const {
+    dispatch,
+    lastSwapAdvancePhp,
+    freighterPublicKey,
+    freighterNetwork,
+    connectFreighter,
+  } = useApp();
+  const walletReady = Boolean(freighterPublicKey);
   const [chain, setChain] = useState<ChainStatus | null>(null);
   const [quote, setQuote] = useState<PayrollQuote | null>(null);
   const [routing, setRouting] = useState(false);
@@ -213,17 +221,29 @@ export function ComplianceView() {
   }, [gross]);
 
   const routePayroll = useCallback(async () => {
+    let signer = freighterPublicKey;
+    if (!signer) {
+      try {
+        signer = await connectFreighter();
+      } catch (err) {
+        dispatch(
+          "payroll-routed",
+          err instanceof Error ? err.message : "Connect Freighter before routing payroll",
+        );
+        return;
+      }
+    }
+
     setRouting(true);
     const payrollId = `PAY-${Date.now()}`;
 
     try {
-      // ── Freighter self-custody path ────────────────────────────────────────
-      if (freighterPublicKey) {
+      if (signer) {
         // Step 1: build unsigned XDR on server
         const buildRes = await fetch("/api/payroll/build", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ payrollId, grossAmount: gross, signerPublic: freighterPublicKey }),
+          body: JSON.stringify({ payrollId, grossAmount: gross, signerPublic: signer }),
         });
         const buildData = (await buildRes.json()) as {
           xdr?: string;
@@ -245,7 +265,7 @@ export function ComplianceView() {
               buildData.networkPassphrase ??
               freighterNetwork?.networkPassphrase ??
               "Test SDF Network ; September 2015",
-            accountToSign: freighterPublicKey,
+            accountToSign: signer,
           });
         } catch (signErr) {
           dispatch(
@@ -279,52 +299,11 @@ export function ComplianceView() {
           dispatch("payroll-routed", payrollId);
         }
         window.setTimeout(loadEis, 4000);
-        return;
       }
-
-      // ── Custodial path (server-signed) ─────────────────────────────────────
-      const res = await fetch("/api/payroll/route", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ payrollId, grossAmount: gross }),
-      });
-      const data = (await res.json()) as {
-        mode?: string;
-        txHash?: string;
-        error?: string;
-        sss?: number;
-        philhealth?: number;
-        pagibig?: number;
-        net?: number;
-      };
-
-      if (!res.ok) {
-        dispatch("payroll-routed", data.error ?? `Payroll failed (${res.status})`);
-        return;
-      }
-
-      if (data.sss != null) {
-        setQuote({
-          gross,
-          sss: data.sss,
-          philhealth: data.philhealth ?? 0,
-          pagibig: data.pagibig ?? 0,
-          net: data.net ?? 0,
-        });
-      }
-
-      setRouted(true);
-      if (data.mode === "on-chain" && data.txHash) {
-        setTxHash(data.txHash);
-        dispatch("payroll-routed", `tx:${payrollId}|${data.txHash}`);
-      } else {
-        dispatch("payroll-routed", payrollId);
-      }
-      window.setTimeout(loadEis, 4000);
     } finally {
       setRouting(false);
     }
-  }, [dispatch, gross, loadEis, freighterPublicKey, freighterNetwork]);
+  }, [dispatch, gross, loadEis, freighterPublicKey, freighterNetwork, connectFreighter]);
 
   const sssAmt = quote?.sss ?? 0;
   const philAmt = quote?.philhealth ?? 0;
@@ -607,7 +586,7 @@ export function ComplianceView() {
               <Button
                 variant="teal"
                 size="sm"
-                disabled={routing || !quote}
+                disabled={!walletReady || routing || !quote}
                 onClick={() => void routePayroll()}
               >
                 {routing ? "Routing…" : "Route Payroll"}

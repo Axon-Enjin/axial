@@ -3,13 +3,13 @@ import { fetchDemoWalletBalances } from "@/lib/soroban/balances";
 import { getInvoiceStoreBackend, listInvoices } from "@/lib/invoices/store";
 import { getEisStoreBackend } from "@/lib/eis/store";
 import { listSubmissions } from "@/lib/eis/store";
-import { getPublicChainStatus } from "@/lib/soroban/config";
+import { resolvePublicChainStatus } from "@/lib/soroban/server-config";
 
 export const dynamic = "force-dynamic";
 
 export async function GET() {
   try {
-    const chain = getPublicChainStatus();
+    const chain = await resolvePublicChainStatus();
     const { items, total } = await listInvoices(1, 500);
     const totalFacePhp = items.reduce((sum, inv) => sum + inv.face, 0);
     const fundableCount = items.filter((i) => i.status === "fundable").length;

@@ -18,7 +18,13 @@ export function AppShell({
 }) {
   const pathname = usePathname();
   const meta = PAGE_META[pathname] ?? PAGE_META["/app"];
-  const { walletConnected, toggleWallet, dispatch } = useApp();
+  const {
+    walletConnected,
+    freighterPublicKey,
+    freighterConnecting,
+    connectWalletFromShell,
+    dispatch,
+  } = useApp();
 
   return (
     <div className="min-h-screen overflow-x-hidden bg-surface-container-lowest font-body-md text-body-md text-on-surface selection:bg-primary/20 selection:text-primary">
@@ -32,7 +38,9 @@ export function AppShell({
           title={meta.title}
           subtitle={meta.subtitle}
           walletConnected={walletConnected}
-          onWalletToggle={toggleWallet}
+          walletPublicKey={freighterPublicKey}
+          walletConnecting={freighterConnecting}
+          onWalletConnect={() => void connectWalletFromShell()}
         />
         <div className="flex-1">{children}</div>
       </div>

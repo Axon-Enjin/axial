@@ -6,6 +6,7 @@ import { InvoiceTrustRow } from "@/components/liquidity/InvoiceTrustRow";
 import { PayerPanel } from "@/components/liquidity/PayerPanel";
 import { TokenizationPipeline } from "@/components/liquidity/TokenizationPipeline";
 import { useApp } from "@/components/providers/AppProvider";
+import { FreighterConnectGate } from "@/components/wallet/FreighterConnectGate";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { Icon } from "@/components/ui/Icon";
@@ -83,17 +84,19 @@ function UploadZone({
   parseError,
   onFiles,
   onTrySample,
+  disabled,
 }: {
   parsing: boolean;
   parseError: string | null;
   onFiles: (files: FileList | File[]) => void;
   onTrySample: () => void;
+  disabled?: boolean;
 }) {
   const [hover, setHover] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const handleFiles = (list: FileList | File[] | null) => {
-    if (!list?.length || parsing) return;
+    if (!list?.length || parsing || disabled) return;
     onFiles(list);
   };
 
@@ -104,7 +107,7 @@ function UploadZone({
         type="file"
         accept={ACCEPT_INVOICE}
         className="sr-only"
-        disabled={parsing}
+        disabled={parsing || disabled}
         onChange={(e) => handleFiles(e.target.files)}
       />
       <div
@@ -123,7 +126,7 @@ function UploadZone({
         className={[
           "flex flex-col items-center justify-center rounded-lg sm:rounded-xl border-2 border-dashed px-4 py-8 sm:px-6 sm:py-10 md:py-12 text-center transition-colors duration-200",
           hover ? "border-primary/50" : "border-outline-variant/30",
-          parsing ? "opacity-70" : "",
+          parsing || disabled ? "opacity-70 pointer-events-none" : "",
         ].join(" ")}
       >
         <div
@@ -159,7 +162,7 @@ function UploadZone({
         ) : null}
         <Button
           variant="secondary"
-          disabled={parsing}
+          disabled={parsing || disabled}
           onClick={() => inputRef.current?.click()}
           className="w-full sm:w-auto"
         >
@@ -169,7 +172,7 @@ function UploadZone({
           On Vercel, use{" "}
           <button
             type="button"
-            disabled={parsing}
+            disabled={parsing || disabled}
             onClick={onTrySample}
             className="text-[#2DD4BF] hover:underline disabled:opacity-50"
           >
@@ -210,8 +213,15 @@ type ChainStatus = {
 };
 
 export function LiquidityView() {
-  const { dispatch, setLastSwapAdvancePhp, setProgressToast, dismissToast, freighterPublicKey } =
-    useApp();
+  const {
+    dispatch,
+    setLastSwapAdvancePhp,
+    setProgressToast,
+    dismissToast,
+    freighterPublicKey,
+    connectFreighter,
+  } = useApp();
+  const walletReady = Boolean(freighterPublicKey);
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -313,7 +323,22 @@ export function LiquidityView() {
     [dispatch, loadInvoices, page],
   );
 
+  const ensureWallet = useCallback(async (): Promise<boolean> => {
+    if (freighterPublicKey) return true;
+    try {
+      await connectFreighter();
+      return true;
+    } catch (err) {
+      dispatch(
+        "swap-executed",
+        err instanceof Error ? err.message : "Connect Freighter before continuing",
+      );
+      return false;
+    }
+  }, [freighterPublicKey, connectFreighter, dispatch]);
+
   const loadSampleInvoice = useCallback(async () => {
+    if (!(await ensureWallet())) return;
     setParsing(true);
     setParseError(null);
     setPipelineStage("reading");
@@ -345,12 +370,13 @@ export function LiquidityView() {
     } finally {
       setParsing(false);
     }
-  }, [dismissToast, finishParsed]);
+  }, [dismissToast, finishParsed, ensureWallet]);
 
   const parseInvoiceFiles = useCallback(
     async (files: FileList | File[]) => {
       const file = files[0];
       if (!file) return;
+      if (!(await ensureWallet())) return;
 
       setParsing(true);
       setParseError(null);
@@ -404,7 +430,7 @@ export function LiquidityView() {
         setParsing(false);
       }
     },
-    [dismissToast, finishParsed],
+    [dismissToast, finishParsed, ensureWallet],
   );
 
   useEffect(() => {
@@ -420,6 +446,7 @@ export function LiquidityView() {
 
   const confirmPayerDemo = useCallback(
     async (id: string) => {
+      if (!(await ensureWallet())) return;
       setConfirmingId(id);
       try {
         const res = await fetch(`/api/invoices/${encodeURIComponent(id)}`, {
@@ -438,7 +465,7 @@ export function LiquidityView() {
         setConfirmingId(null);
       }
     },
-    [dispatch, replaceInvoiceInList],
+    [dispatch, replaceInvoiceInList, ensureWallet],
   );
 
   const markCollectedDemo = useCallback(
@@ -458,6 +485,7 @@ export function LiquidityView() {
 
   const executeSwap = useCallback(
     async (id: string, face: number) => {
+      if (!(await ensureWallet())) return;
       const row = invoices.find((r) => r.id === id);
       if (!row || !isFundable(row.trust)) {
         dispatch("swap-executed", "Confirm payer and NoA before funding.");
@@ -550,7 +578,16 @@ export function LiquidityView() {
         setSwapStep("idle");
       }
     },
-    [dispatch, invoices, setLastSwapAdvancePhp, loadInvoices, page, replaceInvoiceInList],
+    [
+      dispatch,
+      invoices,
+      setLastSwapAdvancePhp,
+      loadInvoices,
+      page,
+      replaceInvoiceInList,
+      freighterPublicKey,
+      ensureWallet,
+    ],
   );
 
   return (
@@ -584,11 +621,24 @@ export function LiquidityView() {
           ) : null}
         </div>
       ) : null}
-      <div className="grid grid-cols-1 gap-4 sm:gap-5 md:gap-gutter md:grid-cols-12">
+
+      <FreighterConnectGate
+        title="Connect Freighter first"
+        description="Upload, tokenize, and swap require your wallet. Connect Freighter (Mainnet or Testnet to match Settings), then continue."
+      />
+
+      <div
+        className={[
+          "grid grid-cols-1 gap-4 sm:gap-5 md:gap-gutter md:grid-cols-12",
+          !walletReady ? "pointer-events-none opacity-50" : "",
+        ].join(" ")}
+        aria-hidden={!walletReady}
+      >
         <div className="flex flex-col gap-4 sm:gap-5 md:gap-6 md:col-span-8">
           <UploadZone
             parsing={parsing}
             parseError={parseError}
+            disabled={!walletReady}
             onFiles={(files) => void parseInvoiceFiles(files)}
             onTrySample={() => void loadSampleInvoice()}
           />
@@ -629,6 +679,7 @@ export function LiquidityView() {
         </div>
       </div>
 
+      <div className={!walletReady ? "pointer-events-none opacity-50" : ""}>
       <PayerPanel onPayerRegistered={() => void loadInvoices(page, true)} />
 
       <Card padding="none">
@@ -777,7 +828,7 @@ export function LiquidityView() {
                           <Button
                             variant="teal"
                             size="sm"
-                            disabled={swappingId === row.id}
+                            disabled={!walletReady || swappingId === row.id}
                             onClick={() => void executeSwap(row.id, row.face)}
                             className="whitespace-nowrap"
                           >
@@ -792,7 +843,7 @@ export function LiquidityView() {
                           <Button
                             variant="secondary"
                             size="sm"
-                            disabled={confirmingId === row.id}
+                            disabled={!walletReady || confirmingId === row.id}
                             onClick={() => void confirmPayerDemo(row.id)}
                             className="whitespace-nowrap"
                           >
@@ -851,6 +902,7 @@ export function LiquidityView() {
           </div>
         </div>
       </Card>
+      </div>
     </main>
   );
 }

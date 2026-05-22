@@ -1,14 +1,14 @@
 import { AppShell } from "@/components/layout/AppShell";
 import { AppProvider } from "@/components/providers/AppProvider";
-import { getPublicChainStatus } from "@/lib/soroban/config";
 import { getAuthUser } from "@/lib/supabase/server";
+import { resolvePublicChainStatus } from "@/lib/soroban/server-config";
 
 export default async function AppShellLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const { network } = getPublicChainStatus();
+  const chain = await resolvePublicChainStatus();
   const user = await getAuthUser();
 
   return (
@@ -25,7 +25,7 @@ export default async function AppShellLayout({
           : null
       }
     >
-      <AppShell network={network} user={user}>
+      <AppShell network={chain.network} user={user}>
         {children}
       </AppShell>
     </AppProvider>

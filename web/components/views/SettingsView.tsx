@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { NetworkModeCard } from "@/components/settings/NetworkModeCard";
 import { OrgCard } from "@/components/settings/OrgCard";
 import { PdaxRampCard } from "@/components/settings/PdaxRampCard";
 import { WalletCard } from "@/components/settings/WalletCard";
@@ -159,6 +160,8 @@ export function SettingsView() {
       </p>
 
       <OrgCard />
+
+      <NetworkModeCard />
 
       <div className="grid grid-cols-1 gap-gutter md:grid-cols-12">
         <div className="md:col-span-8">

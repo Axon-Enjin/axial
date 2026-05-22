@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { triggerEisFromChain } from "@/lib/eis/trigger";
-import { getSorobanConfig, isPayrollChainEnabled } from "@/lib/soroban/config";
+import { isPayrollChainEnabled } from "@/lib/soroban/config";
+import { resolveSorobanConfig } from "@/lib/soroban/server-config";
 import { routePayrollOnChain } from "@/lib/soroban/invoke-payroll";
 import { quotePayrollSplit } from "@/lib/soroban/payroll-quote";
 
@@ -30,7 +31,7 @@ export async function POST(request: Request) {
     );
   }
 
-  const cfg = getSorobanConfig();
+  const cfg = await resolveSorobanConfig();
   const quote = quotePayrollSplit(grossAmount!);
 
   if (!isPayrollChainEnabled(cfg)) {

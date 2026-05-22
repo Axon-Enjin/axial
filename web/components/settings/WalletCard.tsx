@@ -5,7 +5,13 @@ import { useApp } from "@/components/providers/AppProvider";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { Icon } from "@/components/ui/Icon";
-import { fundTestnetAccount } from "@/lib/soroban/freighter";
+import {
+  fundTestnetAccount,
+  getFreighterNetworkDetails,
+} from "@/lib/soroban/freighter";
+
+const MAINNET_FREIGHTER_PUBLIC =
+  "GDSCTQZRRGF23F5GWNE3FYLLPEGO23BB3RQ6AYO5756C7A4HJLEXZVTQ";
 
 function truncateKey(key: string): string {
   if (key.length <= 12) return key;
@@ -50,10 +56,19 @@ export function WalletCard() {
     freighterNetwork.network.toLowerCase().includes("testnet") ||
     freighterNetwork.network === "TESTNET";
 
+  const isDeployWallet =
+    freighterPublicKey != null && freighterPublicKey === MAINNET_FREIGHTER_PUBLIC;
+
   const handleConnect = async () => {
     setConnectError(null);
     try {
       await connectFreighter();
+      const details = await getFreighterNetworkDetails();
+      if (!details.networkPassphrase.includes("Public Global")) {
+        setConnectError(
+          "Freighter is on Testnet. In Freighter → Settings → switch to Mainnet, then connect again.",
+        );
+      }
     } catch (err) {
       setConnectError(err instanceof Error ? err.message : "Connection failed");
     }
@@ -134,6 +149,17 @@ export function WalletCard() {
             <div className="mt-2 font-mono text-xs break-all text-on-surface-variant/60">
               {freighterPublicKey}
             </div>
+            {isDeployWallet && !isTestnet ? (
+              <p className="mt-2 font-body-sm text-body-sm text-violet-300/90">
+                Mainnet deploy wallet — matches Axial issuer / funder / MSME config.
+              </p>
+            ) : null}
+            {!isTestnet && freighterPublicKey && !isDeployWallet ? (
+              <p className="mt-2 font-body-sm text-body-sm text-amber-300/90">
+                Connected key differs from configured mainnet deploy wallet (
+                {truncateKey(MAINNET_FREIGHTER_PUBLIC)}).
+              </p>
+            ) : null}
           </div>
 
           <p className="font-body-md text-body-md text-on-surface-variant">
@@ -184,6 +210,11 @@ export function WalletCard() {
             <p className="font-body-md text-body-md text-on-surface-variant">
               Axial holds the funder and MSME keys server-side. Connect Freighter to
               switch to self-custody mode — your wallet, your keys.
+            </p>
+            <p className="mt-2 font-body-sm text-body-sm text-on-surface-variant/80">
+              Mainnet: Freighter → Mainnet, then connect {truncateKey(MAINNET_FREIGHTER_PUBLIC)}.
+              Fund this wallet with XLM (payroll gas) and a USDC trustline (swap advance).
+              Contracts were deployed by a teammate; server mint uses their funder key.
             </p>
           </div>
 

@@ -1,10 +1,16 @@
 import { loadDeployment } from "./deployments";
 import { cleanEnvString } from "./env-sanitize";
+import {
+  defaultPassphrase,
+  defaultRpc,
+  defaultUsdcTokenId,
+  type StellarNetworkId,
+} from "./network";
 
 export type SorobanConfig = {
   rpcUrl: string;
   networkPassphrase: string;
-  network: string;
+  network: StellarNetworkId;
   swapContractId: string | null;
   receivableContractId: string | null;
   payrollContractId: string | null;
@@ -17,48 +23,77 @@ export type SorobanConfig = {
   msmeSecret: string | null;
   msmePublic: string | null;
   configSource: "env" | "deployments" | "mixed" | "default";
+  /** All three L1 contracts present for this network. */
+  l1ContractsDeployed: boolean;
 };
 
-export function getSorobanConfig(): SorobanConfig {
-  const isMainnet =
-    process.env.STELLAR_NETWORK_PASSPHRASE?.includes("Public Global") ||
-    process.env.STELLAR_NETWORK === "mainnet";
-  const deployment = loadDeployment(isMainnet ? "mainnet" : "testnet");
+function envForNetwork(
+  network: StellarNetworkId,
+  key: string,
+): string | null {
+  const prefix = network === "mainnet" ? "MAINNET_" : "TESTNET_";
+  const prefixed = cleanEnvString(process.env[`${prefix}${key}`]);
+  if (prefixed) return prefixed;
+  if (network === "testnet") {
+    return cleanEnvString(process.env[key]);
+  }
+  return null;
+}
+
+function hasL1Contracts(contracts: {
+  receivable?: string | null;
+  swap?: string | null;
+  payroll?: string | null;
+}): boolean {
+  return Boolean(contracts.receivable && contracts.swap && contracts.payroll);
+}
+
+/** Whether soroban/deployments/{network}.json exists with L1 contract IDs. */
+export function isNetworkDeployedInRepo(network: StellarNetworkId): boolean {
+  const deployment = loadDeployment(network);
+  if (!deployment?.contracts) return false;
+  return hasL1Contracts({
+    receivable: deployment.contracts.receivable_token,
+    swap: deployment.contracts.axial_swap,
+    payroll: deployment.contracts.payroll_split,
+  });
+}
+
+export function getSorobanConfig(
+  network: StellarNetworkId = "testnet",
+): SorobanConfig {
+  const deployment = loadDeployment(network);
   const fromFile = Boolean(deployment?.contracts?.axial_swap);
 
-  const swapContractId = cleanEnvString(
-    process.env.AXIAL_SWAP_CONTRACT_ID ?? deployment?.contracts?.axial_swap ?? null,
-  );
-  const receivableContractId = cleanEnvString(
-    process.env.RECEIVABLE_TOKEN_CONTRACT_ID ??
-      deployment?.contracts?.receivable_token ??
-      null,
-  );
-  const payrollContractId = cleanEnvString(
-    process.env.PAYROLL_SPLIT_CONTRACT_ID ??
-      deployment?.contracts?.payroll_split ??
-      null,
-  );
-  const settlementContractId = cleanEnvString(
-    process.env.SETTLEMENT_CONTRACT_ID ?? deployment?.contracts?.settlement ?? null,
-  );
-  const usdcTokenId = cleanEnvString(
-    process.env.SOROBAN_USDC_TOKEN_ID ?? deployment?.contracts?.usdc_token ?? null,
-  );
-  const funderPublic = cleanEnvString(
-    process.env.STELLAR_FUNDER_PUBLIC ?? deployment?.roles?.funder_public ?? null,
-  );
-  const issuerPublic = cleanEnvString(
-    process.env.STELLAR_ISSUER_PUBLIC ?? deployment?.roles?.admin_public ?? null,
-  );
-  const msmePublic = cleanEnvString(
-    process.env.STELLAR_MSME_PUBLIC ?? deployment?.roles?.msme_public ?? null,
-  );
+  const swapContractId = envForNetwork(network, "AXIAL_SWAP_CONTRACT_ID") ??
+    cleanEnvString(deployment?.contracts?.axial_swap ?? null);
+  const receivableContractId =
+    envForNetwork(network, "RECEIVABLE_TOKEN_CONTRACT_ID") ??
+    cleanEnvString(deployment?.contracts?.receivable_token ?? null);
+  const payrollContractId =
+    envForNetwork(network, "PAYROLL_SPLIT_CONTRACT_ID") ??
+    cleanEnvString(deployment?.contracts?.payroll_split ?? null);
+  const settlementContractId =
+    envForNetwork(network, "SETTLEMENT_CONTRACT_ID") ??
+    cleanEnvString(deployment?.contracts?.settlement ?? null);
+  const usdcTokenId =
+    envForNetwork(network, "SOROBAN_USDC_TOKEN_ID") ??
+    cleanEnvString(deployment?.contracts?.usdc_token ?? null) ??
+    defaultUsdcTokenId(network);
+  const funderPublic =
+    envForNetwork(network, "STELLAR_FUNDER_PUBLIC") ??
+    cleanEnvString(deployment?.roles?.funder_public ?? null);
+  const issuerPublic =
+    envForNetwork(network, "STELLAR_ISSUER_PUBLIC") ??
+    cleanEnvString(deployment?.roles?.admin_public ?? null);
+  const msmePublic =
+    envForNetwork(network, "STELLAR_MSME_PUBLIC") ??
+    cleanEnvString(deployment?.roles?.msme_public ?? null);
 
   const hasEnv =
-    Boolean(process.env.AXIAL_SWAP_CONTRACT_ID) ||
-    Boolean(process.env.RECEIVABLE_TOKEN_CONTRACT_ID) ||
-    Boolean(process.env.PAYROLL_SPLIT_CONTRACT_ID);
+    Boolean(envForNetwork(network, "AXIAL_SWAP_CONTRACT_ID")) ||
+    Boolean(envForNetwork(network, "RECEIVABLE_TOKEN_CONTRACT_ID")) ||
+    Boolean(envForNetwork(network, "PAYROLL_SPLIT_CONTRACT_ID"));
   const configSource: SorobanConfig["configSource"] = hasEnv
     ? fromFile
       ? "mixed"
@@ -67,68 +102,83 @@ export function getSorobanConfig(): SorobanConfig {
       ? "deployments"
       : "default";
 
+  const l1ContractsDeployed = hasL1Contracts({
+    receivable: receivableContractId,
+    swap: swapContractId,
+    payroll: payrollContractId,
+  });
+
   return {
     rpcUrl:
-      cleanEnvString(process.env.SOROBAN_RPC_URL) ??
+      envForNetwork(network, "SOROBAN_RPC_URL") ??
       deployment?.rpc ??
-      "https://soroban-testnet.stellar.org",
+      defaultRpc(network),
     networkPassphrase:
-      cleanEnvString(process.env.STELLAR_NETWORK_PASSPHRASE) ??
+      envForNetwork(network, "STELLAR_NETWORK_PASSPHRASE") ??
       deployment?.passphrase ??
-      "Test SDF Network ; September 2015",
-    network: deployment?.network ?? "testnet",
+      defaultPassphrase(network),
+    network,
     swapContractId,
     receivableContractId,
     payrollContractId,
     settlementContractId,
     usdcTokenId,
-    funderSecret: cleanEnvString(process.env.STELLAR_FUNDER_SECRET),
+    funderSecret: envForNetwork(network, "STELLAR_FUNDER_SECRET"),
     funderPublic,
-    issuerSecret: cleanEnvString(process.env.STELLAR_ISSUER_SECRET),
+    issuerSecret: envForNetwork(network, "STELLAR_ISSUER_SECRET"),
     issuerPublic,
-    msmeSecret: cleanEnvString(process.env.STELLAR_MSME_SECRET),
+    msmeSecret: envForNetwork(network, "STELLAR_MSME_SECRET"),
     msmePublic,
     configSource,
+    l1ContractsDeployed,
   };
 }
 
-export function isSwapChainEnabled(cfg: SorobanConfig = getSorobanConfig()) {
+export function isSwapChainEnabled(cfg: SorobanConfig) {
   return Boolean(
-    cfg.swapContractId &&
+    cfg.l1ContractsDeployed &&
+      cfg.swapContractId &&
       cfg.funderSecret &&
       cfg.funderPublic &&
       cfg.msmePublic,
   );
 }
 
-export function isReceivableChainEnabled(cfg: SorobanConfig = getSorobanConfig()) {
+export function isReceivableChainEnabled(cfg: SorobanConfig) {
   return Boolean(
-    cfg.receivableContractId &&
+    cfg.l1ContractsDeployed &&
+      cfg.receivableContractId &&
       cfg.issuerSecret &&
       cfg.issuerPublic &&
       cfg.msmePublic,
   );
 }
 
-export function isPayrollChainEnabled(cfg: SorobanConfig = getSorobanConfig()) {
+export function isPayrollChainEnabled(cfg: SorobanConfig) {
   return Boolean(
-    cfg.payrollContractId && cfg.msmeSecret && cfg.msmePublic && cfg.usdcTokenId,
+    cfg.l1ContractsDeployed &&
+      cfg.payrollContractId &&
+      cfg.msmeSecret &&
+      cfg.msmePublic &&
+      cfg.usdcTokenId,
   );
 }
 
-/**
- * Whether the server can build an unsigned payroll XDR for Freighter signing.
- * Requires only the contract ID — not the server-held MSME secret.
- */
-export function isPayrollBuildEnabled(cfg: SorobanConfig = getSorobanConfig()) {
-  return Boolean(cfg.payrollContractId);
+export function isPayrollBuildEnabled(cfg: SorobanConfig) {
+  return Boolean(cfg.l1ContractsDeployed && cfg.payrollContractId);
 }
 
 /** Public-only snapshot for UI (no secrets). */
-export function getPublicChainStatus(cfg: SorobanConfig = getSorobanConfig()) {
+export function getPublicChainStatus(cfg: SorobanConfig) {
   return {
     network: cfg.network,
+    selectedNetwork: cfg.network,
     configSource: cfg.configSource,
+    l1ContractsDeployed: cfg.l1ContractsDeployed,
+    mainnetDeployedInRepo: isNetworkDeployedInRepo("mainnet"),
+    testnetDeployedInRepo: isNetworkDeployedInRepo("testnet"),
+    mainnetAvailable: getSorobanConfig("mainnet").l1ContractsDeployed,
+    testnetAvailable: getSorobanConfig("testnet").l1ContractsDeployed,
     onChainReady: isSwapChainEnabled(cfg),
     receivableReady: isReceivableChainEnabled(cfg),
     payrollReady: isPayrollChainEnabled(cfg),
