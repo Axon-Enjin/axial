@@ -1,0 +1,1163 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Axial — Pitch Deck</title>
+  <meta name="description"
+    content="Axial: Instant Capital, Invisible Compliance. A Stellar/Soroban-powered liquidity and compliance engine for Philippine MSMEs.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap"
+    rel="stylesheet">
+  <style>
+    *,
+    *::before,
+    *::after {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      --obsidian: #0A0F1C;
+      --deep-slate: #131B2E;
+      --surface: #1A2340;
+      --teal: #2DD4BF;
+      --teal-dim: rgba(45, 212, 191, 0.15);
+      --teal-glow: rgba(45, 212, 191, 0.25);
+      --silver: #CBD5E1;
+      --white: #F1F5F9;
+      --muted: #64748B;
+      --amber: #F59E0B;
+      --rose: #FB7185;
+      --violet: #A78BFA;
+      --emerald: #34D399;
+      --blue: #60A5FA;
+    }
+
+    html {
+      font-size: 16px;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--obsidian);
+      color: var(--white);
+      overflow: hidden;
+      height: 100vh;
+      width: 100vw;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    /* ─── Slide Container ─── */
+    .deck {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+    }
+
+    .slide {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 4rem 6rem;
+      opacity: 0;
+      transform: translateY(30px);
+      transition: opacity 0.6s cubic-bezier(0.22, 1, 0.36, 1),
+        transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+      pointer-events: none;
+      will-change: opacity, transform;
+    }
+
+    .slide.active {
+      opacity: 1;
+      transform: translateY(0);
+      pointer-events: auto;
+    }
+
+    .slide.exit-up {
+      opacity: 0;
+      transform: translateY(-30px);
+    }
+
+    /* ─── Background Effects ─── */
+    .bg-gradient {
+      position: fixed;
+      inset: 0;
+      z-index: -1;
+      background:
+        radial-gradient(ellipse 80% 60% at 20% 10%, rgba(45, 212, 191, 0.04) 0%, transparent 60%),
+        radial-gradient(ellipse 60% 50% at 80% 90%, rgba(167, 139, 250, 0.03) 0%, transparent 60%),
+        var(--obsidian);
+    }
+
+    .noise {
+      position: fixed;
+      inset: 0;
+      z-index: -1;
+      opacity: 0.015;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+      background-size: 200px;
+    }
+
+    /* ─── Typography ─── */
+    .slide-label {
+      font-size: 0.7rem;
+      font-weight: 600;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--teal);
+      margin-bottom: 1.5rem;
+    }
+
+    h1 {
+      font-size: clamp(2.5rem, 5vw, 4.5rem);
+      font-weight: 800;
+      line-height: 1.05;
+      letter-spacing: -0.03em;
+      color: var(--white);
+    }
+
+    h2 {
+      font-size: clamp(1.8rem, 3.5vw, 3rem);
+      font-weight: 700;
+      line-height: 1.15;
+      letter-spacing: -0.02em;
+      color: var(--white);
+    }
+
+    h3 {
+      font-size: 1.25rem;
+      font-weight: 600;
+      color: var(--white);
+      margin-bottom: 0.5rem;
+    }
+
+    .subtitle {
+      font-size: clamp(1rem, 1.8vw, 1.35rem);
+      font-weight: 400;
+      color: var(--silver);
+      line-height: 1.6;
+      max-width: 680px;
+      margin-top: 1.25rem;
+    }
+
+    .stat-value {
+      font-size: clamp(2.5rem, 5vw, 4rem);
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      line-height: 1;
+    }
+
+    .stat-label {
+      font-size: 0.85rem;
+      font-weight: 400;
+      color: var(--muted);
+      margin-top: 0.5rem;
+      line-height: 1.4;
+    }
+
+    /* ─── Glass Card ─── */
+    .glass {
+      background: rgba(26, 35, 64, 0.5);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      border: 1px solid rgba(203, 213, 225, 0.06);
+      border-radius: 16px;
+      padding: 2rem;
+    }
+
+    .glass-sm {
+      background: rgba(26, 35, 64, 0.4);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(203, 213, 225, 0.05);
+      border-radius: 12px;
+      padding: 1.5rem;
+    }
+
+    /* ─── Layouts ─── */
+    .content-left {
+      align-items: flex-start;
+      text-align: left;
+    }
+
+    .content-center {
+      align-items: center;
+      text-align: center;
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 2rem;
+      width: 100%;
+      max-width: 1000px;
+      margin-top: 2.5rem;
+    }
+
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1.5rem;
+      width: 100%;
+      max-width: 1000px;
+      margin-top: 2.5rem;
+    }
+
+    .grid-4 {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1.25rem;
+      width: 100%;
+      max-width: 1000px;
+      margin-top: 2.5rem;
+    }
+
+    .flow-row {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      width: 100%;
+      max-width: 1000px;
+      margin-top: 2.5rem;
+    }
+
+    .flow-step {
+      flex: 1;
+      text-align: center;
+    }
+
+    .flow-arrow {
+      color: var(--muted);
+      font-size: 1.25rem;
+      flex-shrink: 0;
+    }
+
+    .full-width {
+      width: 100%;
+      max-width: 1000px;
+    }
+
+    /* ─── Accent Elements ─── */
+    .teal {
+      color: var(--teal);
+    }
+
+    .amber {
+      color: var(--amber);
+    }
+
+    .rose {
+      color: var(--rose);
+    }
+
+    .violet {
+      color: var(--violet);
+    }
+
+    .emerald {
+      color: var(--emerald);
+    }
+
+    .blue {
+      color: var(--blue);
+    }
+
+    .muted-text {
+      color: var(--muted);
+    }
+
+    .pill {
+      display: inline-block;
+      padding: 0.3rem 0.9rem;
+      border-radius: 100px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+
+    .pill-teal {
+      background: var(--teal-dim);
+      color: var(--teal);
+      border: 1px solid rgba(45, 212, 191, 0.2);
+    }
+
+    .divider {
+      width: 60px;
+      height: 2px;
+      background: linear-gradient(90deg, var(--teal), transparent);
+      margin: 1.5rem 0;
+    }
+
+    .tag {
+      display: inline-block;
+      padding: 0.2rem 0.6rem;
+      border-radius: 6px;
+      font-size: 0.65rem;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      background: rgba(45, 212, 191, 0.1);
+      color: var(--teal);
+      margin-bottom: 0.75rem;
+    }
+
+    /* ─── Team ─── */
+    .team-photo {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 2px solid rgba(45, 212, 191, 0.2);
+      margin-bottom: 1rem;
+    }
+
+    .team-name {
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: var(--white);
+    }
+
+    .team-role {
+      font-size: 0.75rem;
+      color: var(--muted);
+      margin-top: 0.25rem;
+      line-height: 1.4;
+    }
+
+    /* ─── Navigation ─── */
+    .nav {
+      position: fixed;
+      bottom: 2rem;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      z-index: 100;
+      padding: 0.6rem 1rem;
+      background: rgba(26, 35, 64, 0.7);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(203, 213, 225, 0.06);
+      border-radius: 100px;
+    }
+
+    .nav-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--muted);
+      cursor: pointer;
+      transition: all 0.3s ease;
+      border: none;
+      padding: 0;
+    }
+
+    .nav-dot.active {
+      background: var(--teal);
+      width: 20px;
+      border-radius: 3px;
+    }
+
+    .nav-counter {
+      font-size: 0.65rem;
+      color: var(--muted);
+      font-weight: 500;
+      letter-spacing: 0.1em;
+      margin-left: 0.75rem;
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* ─── Table ─── */
+    .data-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 0.5rem;
+    }
+
+    .data-table th {
+      text-align: left;
+      font-size: 0.65rem;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--muted);
+      padding: 0.75rem 1rem;
+      border-bottom: 1px solid rgba(203, 213, 225, 0.06);
+    }
+
+    .data-table td {
+      font-size: 0.85rem;
+      color: var(--silver);
+      padding: 0.75rem 1rem;
+      border-bottom: 1px solid rgba(203, 213, 225, 0.03);
+    }
+
+    .data-table tr:last-child td {
+      border-bottom: none;
+    }
+
+    /* ─── Specific Slide Styles ─── */
+    .logo-mark {
+      font-size: 1rem;
+      font-weight: 700;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--teal);
+      position: fixed;
+      top: 2rem;
+      left: 3rem;
+      z-index: 100;
+    }
+
+    .hero-tagline {
+      font-size: clamp(1.15rem, 2vw, 1.5rem);
+      font-weight: 400;
+      color: var(--teal);
+      margin-top: 1rem;
+      letter-spacing: 0.02em;
+    }
+
+    .metric-row {
+      display: flex;
+      align-items: baseline;
+      gap: 0.75rem;
+    }
+
+    .versus {
+      font-size: 1rem;
+      color: var(--muted);
+      font-weight: 400;
+    }
+
+    .timeline-item {
+      position: relative;
+      padding-left: 1.5rem;
+      padding-bottom: 1.5rem;
+    }
+
+    .timeline-item::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 0.5rem;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--teal);
+    }
+
+    .timeline-item::after {
+      content: '';
+      position: absolute;
+      left: 3.5px;
+      top: 1rem;
+      width: 1px;
+      height: calc(100% - 0.5rem);
+      background: rgba(45, 212, 191, 0.15);
+    }
+
+    .timeline-item:last-child::after {
+      display: none;
+    }
+
+    .timeline-phase {
+      font-size: 0.65rem;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--teal);
+      margin-bottom: 0.25rem;
+    }
+
+    .timeline-desc {
+      font-size: 0.85rem;
+      color: var(--silver);
+      line-height: 1.5;
+    }
+
+    .big-number {
+      font-size: clamp(3.5rem, 7vw, 6rem);
+      font-weight: 900;
+      letter-spacing: -0.04em;
+      line-height: 1;
+      background: linear-gradient(135deg, var(--teal), var(--blue));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .ask-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 2rem;
+      width: 100%;
+      max-width: 800px;
+      margin-top: 2.5rem;
+    }
+
+    .watermark {
+      position: fixed;
+      bottom: 2rem;
+      right: 3rem;
+      font-size: 0.6rem;
+      color: var(--muted);
+      opacity: 0.5;
+      z-index: 100;
+      letter-spacing: 0.1em;
+    }
+
+    /* ─── Stagger Animation ─── */
+    .stagger>* {
+      opacity: 0;
+      transform: translateY(12px);
+      transition: opacity 0.5s ease, transform 0.5s ease;
+    }
+
+    .slide.active .stagger>*:nth-child(1) {
+      opacity: 1;
+      transform: translateY(0);
+      transition-delay: 0.1s;
+    }
+
+    .slide.active .stagger>*:nth-child(2) {
+      opacity: 1;
+      transform: translateY(0);
+      transition-delay: 0.2s;
+    }
+
+    .slide.active .stagger>*:nth-child(3) {
+      opacity: 1;
+      transform: translateY(0);
+      transition-delay: 0.3s;
+    }
+
+    .slide.active .stagger>*:nth-child(4) {
+      opacity: 1;
+      transform: translateY(0);
+      transition-delay: 0.4s;
+    }
+
+    .slide.active .stagger>*:nth-child(5) {
+      opacity: 1;
+      transform: translateY(0);
+      transition-delay: 0.5s;
+    }
+
+    .slide.active .stagger>*:nth-child(6) {
+      opacity: 1;
+      transform: translateY(0);
+      transition-delay: 0.6s;
+    }
+
+    .slide.active .stagger>*:nth-child(7) {
+      opacity: 1;
+      transform: translateY(0);
+      transition-delay: 0.7s;
+    }
+
+    .slide.active .stagger>*:nth-child(8) {
+      opacity: 1;
+      transform: translateY(0);
+      transition-delay: 0.8s;
+    }
+
+    /* ─── Responsive ─── */
+    @media (max-width: 768px) {
+      .slide {
+        padding: 2rem 1.5rem;
+      }
+
+      .grid-2,
+      .grid-3,
+      .grid-4 {
+        grid-template-columns: 1fr;
+      }
+
+      .flow-row {
+        flex-direction: column;
+      }
+
+      .flow-arrow {
+        transform: rotate(90deg);
+      }
+
+      .ask-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="bg-gradient"></div>
+  <div class="noise"></div>
+  <div class="logo-mark">Axial</div>
+  <div class="watermark">Confidential · May 2026</div>
+
+  <div class="deck">
+
+    <!-- ═══════════ SLIDE 1: TITLE ═══════════ -->
+    <div class="slide content-center active" data-slide="0">
+      <div class="stagger">
+        <div class="pill pill-teal" style="margin-bottom: 2rem;">Build on Stellar Philippines 2026</div>
+        <h1>Axial</h1>
+        <p class="hero-tagline">Instant Capital, Invisible Compliance.</p>
+        <p class="subtitle" style="margin-top: 1.5rem;">
+          A Stellar/Soroban-powered liquidity and compliance engine<br>
+          for Philippine MSMEs.
+        </p>
+        <p style="font-size: 0.75rem; color: var(--muted); margin-top: 3rem; letter-spacing: 0.05em;">
+          Team Axon Enjin · May 2026
+        </p>
+      </div>
+    </div>
+
+    <!-- ═══════════ SLIDE 2: PROBLEM ═══════════ -->
+    <div class="slide content-left" data-slide="1">
+      <div class="stagger full-width">
+        <span class="slide-label">The Problem</span>
+        <h2>Philippine MSMEs are<br>structurally <span class="rose">cash-trapped.</span></h2>
+        <p class="subtitle">Two compounding crises share the same root cause — and no existing tool solves both.</p>
+
+        <div class="grid-2" style="margin-top: 2.5rem;">
+          <div class="glass">
+            <span class="tag" style="background: rgba(251, 113, 133, 0.1); color: var(--rose);">Crisis 1</span>
+            <h3>The Liquidity Trap</h3>
+            <p style="font-size: 0.85rem; color: var(--silver); line-height: 1.6;">
+              Enterprise buyers enforce <strong style="color: var(--white);">Net 60–90</strong> payment terms while
+              Philippine labor law mandates <strong style="color: var(--white);">bi-weekly payroll</strong>. A growing,
+              profitable MSME can face technical insolvency — not because it's losing money, but because its cash is
+              locked in receivables.
+            </p>
+          </div>
+          <div class="glass">
+            <span class="tag" style="background: rgba(245, 158, 11, 0.1); color: var(--amber);">Crisis 2</span>
+            <h3>The Compliance Burden</h3>
+            <p style="font-size: 0.85rem; color: var(--silver); line-height: 1.6;">
+              The BIR Electronic Invoicing System (EIS) mandate — deadline <strong style="color: var(--white);">December
+                31, 2026</strong> — requires JSON + JWS within T+3. Meanwhile, <strong style="color: var(--white);">56%
+                of MSMEs</strong> still manage statutory payroll on spreadsheets.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════ SLIDE 3: MARKET SIZE ═══════════ -->
+    <div class="slide content-center" data-slide="2">
+      <div class="stagger">
+        <span class="slide-label">Market Opportunity</span>
+        <div class="big-number">$221B</div>
+        <p style="font-size: 1.1rem; color: var(--silver); margin-top: 1rem; max-width: 500px; line-height: 1.6; text-align: center; margin-left: auto; margin-right: auto;">
+          MSME funding demand in the Philippines
+        </p>
+        <div class="divider" style="margin: 1.5rem auto;"></div>
+        <div style="display: flex; gap: 4rem; margin-top: 0.5rem; flex-wrap: wrap; justify-content: center;">
+          <div style="text-align: center;">
+            <div class="stat-value teal">$15B</div>
+            <div class="stat-label">Formal supply</div>
+          </div>
+          <div style="text-align: center;">
+            <div class="stat-value white" style="color: var(--white);">99.5%</div>
+            <div class="stat-label">of PH businesses are MSMEs</div>
+          </div>
+          <div style="text-align: center;">
+            <div class="stat-value amber">65%</div>
+            <div class="stat-label">of total employment</div>
+          </div>
+        </div>
+        <p style="font-size: 0.7rem; color: var(--muted); margin-top: 2rem;">Source: Visa Philippines, PSA, IFC · May
+          2025</p>
+      </div>
+    </div>
+
+    <!-- ═══════════ SLIDE 4: SOLUTION ═══════════ -->
+    <div class="slide content-left" data-slide="3">
+      <div class="stagger full-width">
+        <span class="slide-label">Our Solution</span>
+        <h2>One pipeline.<br><span class="teal">Liquidity in. Compliance out.</span></h2>
+        <p class="subtitle">Axial merges tokenized invoice factoring with automated BIR EIS reporting and statutory
+          payroll splitting into a single Stellar/Soroban pipeline.</p>
+
+        <div class="grid-3" style="margin-top: 2.5rem;">
+          <div class="glass-sm" style="text-align: center;">
+            <div style="font-size: 2rem; margin-bottom: 0.75rem;">💰</div>
+            <h3 style="font-size: 0.95rem;">Instant Capital</h3>
+            <p style="font-size: 0.8rem; color: var(--muted); line-height: 1.5;">
+              Tokenize receivables as Stellar Asset Contracts. Get ~80–90% advance in USDC instantly via atomic swap. No
+              collateral.
+            </p>
+          </div>
+          <div class="glass-sm" style="text-align: center;">
+            <div style="font-size: 2rem; margin-bottom: 0.75rem;">📋</div>
+            <h3 style="font-size: 0.95rem;">Auto Statutory Payroll</h3>
+            <p style="font-size: 0.8rem; color: var(--muted); line-height: 1.5;">
+              Soroban contract calculates and routes exact SSS, PhilHealth, Pag-IBIG deductions to government wallets in
+              real-time.
+            </p>
+          </div>
+          <div class="glass-sm" style="text-align: center;">
+            <div style="font-size: 2rem; margin-bottom: 0.75rem;">🔒</div>
+            <h3 style="font-size: 0.95rem;">Invisible BIR EIS</h3>
+            <p style="font-size: 0.8rem; color: var(--muted); line-height: 1.5;">
+              Off-chain oracle maps Stellar events to BIR's 20-field schema, JWS-signs, submits within T+3. Success ref
+              → Stellar memo.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════ SLIDE 5: HOW IT WORKS ═══════════ -->
+    <div class="slide content-left" data-slide="4">
+      <div class="stagger full-width">
+        <span class="slide-label">How It Works</span>
+        <h2 style="font-size: clamp(1.6rem, 2.8vw, 2.2rem);">End-to-end in one atomic flow</h2>
+
+        <div class="flow-row" style="margin-top: 2.5rem;">
+          <div class="flow-step glass-sm">
+            <div class="tag">Step 1</div>
+            <h3 style="font-size: 0.85rem;">Payer Confirms</h3>
+            <p style="font-size: 0.75rem; color: var(--muted); line-height: 1.4;">B2B payer verifies invoice &
+              acknowledges Notice of Assignment</p>
+          </div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-step glass-sm">
+            <div class="tag">Step 2</div>
+            <h3 style="font-size: 0.85rem;">SAC Mint</h3>
+            <p style="font-size: 0.75rem; color: var(--muted); line-height: 1.4;">Verified receivable tokenized as
+              Stellar Asset Contract on Soroban</p>
+          </div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-step glass-sm">
+            <div class="tag">Step 3</div>
+            <h3 style="font-size: 0.85rem;">USDC Advance</h3>
+            <p style="font-size: 0.75rem; color: var(--muted); line-height: 1.4;">Atomic swap delivers ~85% face value
+              in USDC. PHP shown in UI.</p>
+          </div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-step glass-sm">
+            <div class="tag">Step 4</div>
+            <h3 style="font-size: 0.85rem;">Split & Submit</h3>
+            <p style="font-size: 0.75rem; color: var(--muted); line-height: 1.4;">Payroll split routes to
+              SSS/PhilHealth/Pag-IBIG. EIS oracle fires to BIR.</p>
+          </div>
+        </div>
+
+        <p style="font-size: 0.75rem; color: var(--muted); margin-top: 2rem; max-width: 800px; line-height: 1.6;">
+          Settlement: USDC on Stellar (Circle-issued) · PHP fiat rail via PDAX (BSP-licensed, SEP-24) · 3–5 second
+          finality · BIR success reference anchored as immutable Stellar memo.
+        </p>
+      </div>
+    </div>
+
+    <!-- ═══════════ SLIDE 6: WHY STELLAR ═══════════ -->
+    <div class="slide content-left" data-slide="5">
+      <div class="stagger full-width">
+        <span class="slide-label">Why Stellar</span>
+        <h2 style="font-size: clamp(1.6rem, 2.8vw, 2.2rem);">Built on purpose-fit infrastructure</h2>
+
+        <div class="grid-2" style="margin-top: 2rem;">
+          <div class="glass-sm">
+            <h3 style="font-size: 0.9rem; color: var(--teal);">Stellar Asset Contracts</h3>
+            <p style="font-size: 0.8rem; color: var(--muted); line-height: 1.5;">Each receivable minted as a SAC — the
+              on-chain legal right to payment.</p>
+          </div>
+          <div class="glass-sm">
+            <h3 style="font-size: 0.9rem; color: var(--teal);">Soroban Smart Contracts</h3>
+            <p style="font-size: 0.8rem; color: var(--muted); line-height: 1.5;">Denomination-agnostic swap, statutory
+              router, and settlement — all Rust/WASM.</p>
+          </div>
+          <div class="glass-sm">
+            <h3 style="font-size: 0.9rem; color: var(--teal);">USDC on Stellar</h3>
+            <p style="font-size: 0.8rem; color: var(--muted); line-height: 1.5;">Circle-issued production settlement. No
+              external stablecoin risk.</p>
+          </div>
+          <div class="glass-sm">
+            <h3 style="font-size: 0.9rem; color: var(--teal);">3–5s Finality</h3>
+            <p style="font-size: 0.8rem; color: var(--muted); line-height: 1.5;">Settlement triggers compliance oracle
+              within T+3. Compliance as a background process.</p>
+          </div>
+        </div>
+
+        <div style="margin-top: 2rem; display: flex; gap: 2rem; flex-wrap: wrap;">
+          <div style="display: flex; align-items: center; gap: 0.5rem;">
+            <span style="color: var(--teal); font-size: 0.9rem;">✓</span>
+            <span style="font-size: 0.8rem; color: var(--silver);">Transaction memos as compliance proof</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 0.5rem;">
+            <span style="color: var(--teal); font-size: 0.9rem;">✓</span>
+            <span style="font-size: 0.8rem; color: var(--silver);">AUTH_REQUIRED for whitelisted routing</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 0.5rem;">
+            <span style="color: var(--teal); font-size: 0.9rem;">✓</span>
+            <span style="font-size: 0.8rem; color: var(--silver);">SEP-24 anchor-agnostic fiat rail</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════ SLIDE 7: BUSINESS MODEL ═══════════ -->
+    <div class="slide content-left" data-slide="6">
+      <div class="stagger full-width">
+        <span class="slide-label">Business Model</span>
+        <h2 style="font-size: clamp(1.6rem, 2.8vw, 2.2rem);">Two revenue engines</h2>
+        <p class="subtitle">Transaction volume drives the first. Regulatory urgency drives the second.</p>
+
+        <div class="grid-2" style="margin-top: 2.5rem;">
+          <div class="glass" style="border-left: 3px solid var(--teal);">
+            <span class="tag">Engine 1 · Transaction</span>
+            <h3 style="margin-top: 0.5rem;">Liquidity Spread</h3>
+            <p style="font-size: 2rem; font-weight: 800; color: var(--teal); margin: 0.75rem 0;">~1%</p>
+            <p style="font-size: 0.8rem; color: var(--muted); line-height: 1.5;">
+              of every funded peso. Platform spread on 2–3.5% discount fee per ~30-day tenor. + thin FX spread. All-in
+              stays below traditional PH factoring rates.
+            </p>
+          </div>
+          <div class="glass" style="border-left: 3px solid var(--violet);">
+            <span class="tag" style="background: rgba(167, 139, 250, 0.1); color: var(--violet);">Engine 2 ·
+              Recurring</span>
+            <h3 style="margin-top: 0.5rem;">Compliance SaaS</h3>
+            <p style="font-size: 2rem; font-weight: 800; color: var(--violet); margin: 0.75rem 0;">MRR</p>
+            <p style="font-size: 0.8rem; color: var(--muted); line-height: 1.5;">
+              Tiered monthly subscription for BIR EIS oracle + statutory payroll engine. Monetizes MSMEs not factoring
+              this month but bound by the Dec 2026 mandate. The moat.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════ SLIDE 8: COMPETITIVE ADVANTAGE ═══════════ -->
+    <div class="slide content-left" data-slide="7">
+      <div class="stagger full-width">
+        <span class="slide-label">Competitive Edge</span>
+        <h2 style="font-size: clamp(1.6rem, 2.8vw, 2.2rem);">Not another accounting tool</h2>
+        <p class="subtitle">We compete against the status quo — not Xero or QuickBooks.</p>
+
+        <div class="full-width glass" style="margin-top: 2.5rem; padding: 0; overflow: hidden;">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th></th>
+                <th>Traditional Factoring</th>
+                <th>Cloud Accounting</th>
+                <th style="color: var(--teal);">Axial</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td style="font-weight: 600; color: var(--white);">Generates liquidity</td>
+                <td>✓ (slow, collateral)</td>
+                <td style="color: var(--rose);">✗</td>
+                <td style="color: var(--teal);">✓ Minutes, no collateral</td>
+              </tr>
+              <tr>
+                <td style="font-weight: 600; color: var(--white);">BIR EIS compliant</td>
+                <td style="color: var(--rose);">✗</td>
+                <td>Partial</td>
+                <td style="color: var(--teal);">✓ Auto JWS + T+3</td>
+              </tr>
+              <tr>
+                <td style="font-weight: 600; color: var(--white);">Statutory payroll</td>
+                <td style="color: var(--rose);">✗</td>
+                <td>Manual</td>
+                <td style="color: var(--teal);">✓ On-chain split</td>
+              </tr>
+              <tr>
+                <td style="font-weight: 600; color: var(--white);">Audit trail</td>
+                <td>Paper</td>
+                <td>Database</td>
+                <td style="color: var(--teal);">✓ Immutable ledger</td>
+              </tr>
+              <tr>
+                <td style="font-weight: 600; color: var(--white);">Cost</td>
+                <td>15–30% APR</td>
+                <td>$20–50/mo</td>
+                <td style="color: var(--teal);">~6–9% all-in + SaaS</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════ SLIDE 9: TRACTION ═══════════ -->
+    <div class="slide content-left" data-slide="8">
+      <div class="stagger full-width">
+        <span class="slide-label">Traction</span>
+        <h2 style="font-size: clamp(1.6rem, 2.8vw, 2.2rem);">Built and deployed in 7 days</h2>
+        <p class="subtitle">3 smart contracts on Stellar. Full E2E pipeline operational.</p>
+
+        <div class="grid-3" style="margin-top: 2.5rem;">
+          <div class="glass-sm" style="text-align: center;">
+            <div class="stat-value teal" style="font-size: 2.5rem;">3</div>
+            <div class="stat-label">Soroban contracts deployed<br>(receivable_token, axial_swap, payroll_split)</div>
+          </div>
+          <div class="glass-sm" style="text-align: center;">
+            <div class="stat-value emerald" style="font-size: 2.5rem;">E2E</div>
+            <div class="stat-label">Full pipeline on Stellar Testnet<br>Mint → Swap → Split → EIS → Memo</div>
+          </div>
+          <div class="glass-sm" style="text-align: center;">
+            <div class="stat-value amber" style="font-size: 2.5rem;">Live</div>
+            <div class="stat-label">Deployed on Vercel<br>Dark glassmorphic 4-tab UI</div>
+          </div>
+        </div>
+
+        <div class="grid-2" style="margin-top: 1.5rem;">
+          <div class="glass-sm">
+            <h3 style="font-size: 0.85rem; margin-bottom: 0.5rem;">What's Real</h3>
+            <ul style="font-size: 0.8rem; color: var(--silver); line-height: 1.8; list-style: none; padding: 0;">
+              <li><span class="teal">✓</span> Real USDC atomic swaps on Stellar</li>
+              <li><span class="teal">✓</span> BIR EIS oracle with JWS signing</li>
+              <li><span class="teal">✓</span> Statutory payroll routing (SSS/PhilHealth/Pag-IBIG)</li>
+              <li><span class="teal">✓</span> Invoice OCR + management</li>
+              <li><span class="teal">✓</span> Stellar memo write-back of BIR ref</li>
+            </ul>
+          </div>
+          <div class="glass-sm">
+            <h3 style="font-size: 0.85rem; margin-bottom: 0.5rem;">Post-Hackathon Priorities</h3>
+            <ul style="font-size: 0.8rem; color: var(--silver); line-height: 1.8; list-style: none; padding: 0;">
+              <li><span class="amber">○</span> BIR PTT certification</li>
+              <li><span class="amber">○</span> PDAX Connect integration (PHP rail)</li>
+              <li><span class="amber">○</span> Liquidity provider partnerships</li>
+              <li><span class="amber">○</span> Legal review of NoA + statutory tables</li>
+              <li><span class="amber">○</span> Multi-wallet support (Freighter)</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════ SLIDE 10: ROADMAP ═══════════ -->
+    <div class="slide content-left" data-slide="9">
+      <div class="stagger full-width">
+        <span class="slide-label">Roadmap</span>
+        <h2 style="font-size: clamp(1.6rem, 2.8vw, 2.2rem);">Four-phase path to market</h2>
+
+        <div class="grid-2" style="margin-top: 2.5rem;">
+          <div>
+            <div class="timeline-item">
+              <div class="timeline-phase">Phase 1 — Wedge <span style="color: var(--emerald);">● Now</span></div>
+              <div class="timeline-desc">Production build on Stellar Testnet/Mainnet. Onboard software and creative
+                agencies as pilot cohort. White-glove onboarding.</div>
+            </div>
+            <div class="timeline-item">
+              <div class="timeline-phase">Phase 2 — Validation</div>
+              <div class="timeline-desc">Real operational deployment. Atomic swaps, EIS oracle, and statutory flows in
+                production. Activate founder referrals.</div>
+            </div>
+            <div class="timeline-item">
+              <div class="timeline-phase">Phase 3 — Expansion</div>
+              <div class="timeline-desc">F&B suppliers and distributors. Larger invoice throughput. Grow liquidity
+                provider pool.</div>
+            </div>
+            <div class="timeline-item">
+              <div class="timeline-phase">Phase 4 — Ad Tax Module</div>
+              <div class="timeline-desc">Programmable treasury for BIR RMC 5-2024 (digital ad tax compliance). Vertical
+                add-on using the same Soroban infrastructure.</div>
+            </div>
+          </div>
+
+          <div class="glass" style="align-self: start;">
+            <h3 style="font-size: 0.85rem; margin-bottom: 1.25rem;">Key Milestones</h3>
+            <div style="display: flex; flex-direction: column; gap: 1rem;">
+              <div>
+                <div
+                  style="font-size: 0.7rem; color: var(--teal); font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em;">
+                  9–12 months</div>
+                <div style="font-size: 0.85rem; color: var(--silver);">10 pilot orgs actively funding payroll</div>
+              </div>
+              <div>
+                <div
+                  style="font-size: 0.7rem; color: var(--teal); font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em;">
+                  First 90 days</div>
+                <div style="font-size: 0.85rem; color: var(--silver);">≥95% EIS submission success rate</div>
+              </div>
+              <div>
+                <div
+                  style="font-size: 0.7rem; color: var(--teal); font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em;">
+                  End of Phase 2</div>
+                <div style="font-size: 0.85rem; color: var(--silver);">NPS ≥40 from agency founders</div>
+              </div>
+              <div>
+                <div
+                  style="font-size: 0.7rem; color: var(--teal); font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em;">
+                  12 months</div>
+                <div style="font-size: 0.85rem; color: var(--silver);">~1% realized platform take rate</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════ SLIDE 11: TEAM ═══════════ -->
+    <div class="slide content-center" data-slide="10">
+      <div class="stagger">
+        <span class="slide-label">The Team</span>
+        <h2 style="margin-bottom: 0.5rem;">Axon Enjin</h2>
+        <p style="font-size: 0.9rem; color: var(--muted); margin-bottom: 2.5rem;">Four builders. Seven days. One
+          pipeline.</p>
+
+        <div class="grid-4" style="margin-top: 0;">
+          <div style="text-align: center;">
+            <img src="pics/Dela Torre.webp" alt="Carlos Jerico Dela Torre" class="team-photo">
+            <div class="team-name">Carlos Jerico Dela Torre</div>
+            <div class="team-role">Product & Business Architect<br>Team Lead</div>
+          </div>
+          <div style="text-align: center;">
+            <img src="pics/Tiu.webp" alt="Aidan Tiu" class="team-photo">
+            <div class="team-name">Aidan Tiu</div>
+            <div class="team-role">DevOps Engineer</div>
+          </div>
+          <div style="text-align: center;">
+            <img src="pics/Berongoy.webp" alt="Gerald Berongoy" class="team-photo">
+            <div class="team-name">Gerald Berongoy</div>
+            <div class="team-role">Full Stack Engineer</div>
+          </div>
+          <div style="text-align: center;">
+            <img src="pics/Sales.webp" alt="Rhandie Sales Jr." class="team-photo">
+            <div class="team-name">Rhandie Sales Jr.</div>
+            <div class="team-role">Full Stack Engineer</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════ SLIDE 12: CLOSING ═══════════ -->
+    <div class="slide content-center" data-slide="11">
+      <div class="stagger">
+        <span class="slide-label">Let's Build</span>
+        <h1 style="font-size: clamp(2rem, 4vw, 3.5rem);">Instant Capital.<br><span class="teal">Invisible
+            Compliance.</span></h1>
+        <div class="divider" style="margin: 2rem auto;"></div>
+        <p style="font-size: 1rem; color: var(--silver); max-width: 550px; line-height: 1.7;">
+          Axial is the central axis where receivable liquidity and Philippine regulatory execution become a single,
+          autonomous machine — so founders never think about either again.
+        </p>
+        <div style="margin-top: 3rem; display: flex; gap: 3rem; flex-wrap: wrap; justify-content: center;">
+          <div style="text-align: center;">
+            <div
+              style="font-size: 0.65rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 0.25rem;">
+              GitHub</div>
+            <div style="font-size: 0.85rem; color: var(--silver);">github.com/axon-enjin/axial</div>
+          </div>
+          <div style="text-align: center;">
+            <div
+              style="font-size: 0.65rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 0.25rem;">
+              Demo</div>
+            <div style="font-size: 0.85rem; color: var(--silver);">youtu.be/6-CpnsPGJK0</div>
+          </div>
+          <div style="text-align: center;">
+            <div
+              style="font-size: 0.65rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 0.25rem;">
+              Contact</div>
+            <div style="font-size: 0.85rem; color: var(--silver);">Carlos Jerico Dela Torre</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Navigation -->
+  <nav class="nav" id="nav"></nav>
+
+  <script>
+    const slides = document.querySelectorAll('.slide');
+    const nav = document.getElementById('nav');
+    let current = 0;
+    const total = slides.length;
+
+    // Build nav dots
+    function buildNav() {
+      nav.innerHTML = '';
+      for (let i = 0; i < total; i++) {
+        const dot = document.createElement('button');
+        dot.className = 'nav-dot' + (i === current ? ' active' : '');
+        dot.setAttribute('aria-label', `Slide ${i + 1}`);
+        dot.addEventListener('click', () => goTo(i));
+        nav.appendChild(dot);
+      }
+      const counter = document.createElement('span');
+      counter.className = 'nav-counter';
+      counter.textContent = `${current + 1} / ${total}`;
+      nav.appendChild(counter);
+    }
+
+    function goTo(index) {
+      if (index < 0 || index >= total || index === current) return;
+
+      const direction = index > current ? 1 : -1;
+      slides[current].classList.remove('active');
+      if (direction > 0) {
+        slides[current].classList.add('exit-up');
+      }
+
+      current = index;
+
+      // Reset exit classes
+      setTimeout(() => {
+        slides.forEach(s => s.classList.remove('exit-up'));
+      }, 600);
+
+      slides[current].classList.add('active');
+      buildNav();
+    }
+
+    function next() { goTo(current + 1); }
+    function prev() { goTo(current - 1); }
+
+    // Keyboard
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === ' ') { e.preventDefault(); next(); }
+      if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') { e.preventDefault(); prev(); }
+      if (e.key === 'Home') { e.preventDefault(); goTo(0); }
+      if (e.key === 'End') { e.preventDefault(); goTo(total - 1); }
+    });
+
+    // Click sides
+    document.addEventListener('click', (e) => {
+      if (e.target.closest('.nav') || e.target.closest('a') || e.target.closest('button')) return;
+      const x = e.clientX / window.innerWidth;
+      if (x > 0.65) next();
+      else if (x < 0.35) prev();
+    });
+
+    // Touch swipe
+    let touchStart = 0;
+    document.addEventListener('touchstart', e => { touchStart = e.touches[0].clientX; });
+    document.addEventListener('touchend', e => {
+      const diff = touchStart - e.changedTouches[0].clientX;
+      if (Math.abs(diff) > 50) { diff > 0 ? next() : prev(); }
+    });
+
+    // Mouse wheel
+    let wheelTimeout = false;
+    document.addEventListener('wheel', (e) => {
+      if (wheelTimeout) return;
+      wheelTimeout = true;
+      setTimeout(() => { wheelTimeout = false; }, 800);
+      if (e.deltaY > 0) next();
+      else prev();
+    }, { passive: true });
+
+    // Init
+    buildNav();
+  </script>
+
+</body>
+
+</html>
