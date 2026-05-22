@@ -157,7 +157,7 @@ export function AppSidebar({ network, user, onNewTransaction }: AppSidebarProps)
             </div>
           </div>
           <Link
-            href="https://github.com/axial-ph"
+            href="https://github.com/Axon-Enjin/axial"
             target="_blank"
             rel="noreferrer"
             className="flex items-center gap-3 rounded-r-full border-r-2 border-transparent px-4 py-2.5 font-label-md text-sm text-on-surface-variant transition-all duration-300 hover:bg-surface-variant/20 hover:text-on-surface"
@@ -232,7 +232,7 @@ export function AppSidebar({ network, user, onNewTransaction }: AppSidebarProps)
       {/* Footer: user identity + help */}
       <div className="mt-auto flex flex-col gap-0.5 border-t border-outline-variant/10 px-2 pt-3">
         <Link
-          href="https://github.com/axial-ph"
+          href="https://github.com/Axon-Enjin/axial"
           target="_blank"
           rel="noreferrer"
           className="flex items-center gap-2.5 rounded-r-full border-r-2 border-transparent px-3 py-2.5 font-label-md text-[14px] text-on-surface-variant transition-all duration-300 hover:bg-surface-variant/20 hover:text-on-surface"
