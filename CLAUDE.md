@@ -56,7 +56,7 @@ axial/
 
 The "backend" is **Next.js Route Handlers under `web/app/api/`** — there is no separate server. The SDD's modular-monolith / BullMQ-Temporal plan was not adopted; ignore it as a build target.
 
-`docs/flow.md` (built/mock/planned matrix) and the **"Implementation status" table in `docs/Axial.md`** are useful maps but **lag the code** — when they conflict with what's in `web/`, trust the code. As of this writing the following are built and wired: the 4 Soroban contracts (deployment matrix below — Testnet runs 3, Mainnet has all 4), USDC atomic swap, payroll split, BIR EIS oracle, the T+3 retry worker + Horizon poll + reconciliation cron jobs, Supabase auth with org-scoped multi-tenancy, the payer portal, NoA issue/ack, and Reflector FX with a hardcoded fallback. **Built but not wired:** the `settlement` contract is deployed on Mainnet but **not Testnet**, and the app does not call it — `SETTLEMENT_CONTRACT_ID` is unset and `testnet.json` has no settlement entry, so the on-chain closed loop is not exercised. **Still not built:** live BIR submission (mock by default — `BIR_EIS_LIVE` gates it) and real PDAX Connect calls.
+`docs/flow.md` (built/mock/planned matrix) and the **"Implementation status" table in `docs/Axial.md`** are useful maps but **lag the code** — when they conflict with what's in `web/`, trust the code. As of this writing the following are built and wired: the 4 Soroban contracts (all deployed + initialized on **Stellar Mainnet** — the network the system runs on; see the table below), USDC atomic swap, payroll split, BIR EIS oracle, the T+3 retry worker + Horizon poll + reconciliation cron jobs, Supabase auth with org-scoped multi-tenancy, the payer portal, NoA issue/ack, and Reflector FX with a hardcoded fallback. **Built but not wired:** the `settlement` contract is deployed + initialized on Mainnet but the app does not yet call it — the on-chain lockbox path (`register_invoice` / `settle`, B-2 phases S3–S6) is the active workstream. **Still not built:** live BIR submission (mock by default — `BIR_EIS_LIVE` gates it) and real PDAX Connect calls.
 
 **Stack:** Next.js 15.5 · React 19 · TypeScript 5 (strict) · Tailwind CSS 4 · `@stellar/stellar-sdk` · `@supabase/supabase-js` + `@supabase/ssr` (auth) · `tesseract.js` + `pdf-parse` + `sharp` (invoice OCR) · `stellar-hd-wallet` (key derivation). Path alias `@/*` → `web/*`.
 
@@ -72,7 +72,7 @@ Each page is a thin wrapper that renders a view from `components/views/` (`Overv
 
 **API routes (`web/app/api/`):** `invoices/*` (upload/parse/parse-sample/seed/CRUD + `[id]/confirm`, `[id]/eligibility`), `eis/*` (submissions, process, seed, `worker`, `horizon-poll`), `bir/eis` (mock BIR endpoint), `swap/*` + `receivable/mint` + `payroll/*` (quote/build/route) + `tx/submit` (Soroban invocation + quotes + client-signed submit), `noa/[receivableId]/*` (Notice of Assignment issue/ack), `payers/*`, `reconciliation/scan`, `fx/rate` (Reflector), `soroban/status`, `wallets/balances`, `dashboard/summary`, `auth/*` (invite, members).
 
-**Cron jobs (`web/vercel.json`):** `eis/worker` (every 6h — T+3 retry/expiry), `eis/horizon-poll` (every 10 min — chain event ingest), `reconciliation/scan` (daily — leakage scan). Protected by `CRON_SECRET`.
+**Background jobs (Cloud Scheduler):** three endpoints run on a schedule — `eis/worker` (every 6h — T+3 retry/expiry), `eis/horizon-poll` (every 10 min — chain event ingest), `reconciliation/scan` (daily — leakage scan). Each is an HTTP call to the Cloud Run service, protected by `CRON_SECRET`. Cloud Run has no built-in cron — these must be wired as **GCP Cloud Scheduler** jobs (not yet set up).
 
 ### Persistence — dual backend
 
@@ -96,18 +96,18 @@ Four Rust crates (`soroban-sdk` 25), each with `src/lib.rs` + `src/test.rs`:
 
 | Crate | Responsibility | Deployed |
 |-------|----------------|----------|
-| `receivable_token` | `initialize`, `mint`, `is_minted`, `get_receivable` — one mint per invoice (SAC-style receivable) | Testnet + Mainnet |
-| `axial_swap` | `initialize`, `quote`, `execute_advance` — USDC advance vs receivable at configurable `advance_bps` (85% default) | Testnet + Mainnet |
-| `payroll_split` | `initialize`, `quote`, `route_payroll`, `get_payroll` — USDC split to SSS/PhilHealth/Pag-IBIG + net to employees | Testnet + Mainnet |
-| `settlement` | Per-invoice lockbox: `settle` distributes collected USDC (advance → funder, remainder → MSME), records shortfalls as leakage | **Mainnet only** — not on Testnet, not wired into the app |
+| `receivable_token` | `initialize`, `mint`, `is_minted`, `get_receivable` — one mint per invoice (SAC-style receivable) | Mainnet (+ Testnet sandbox) |
+| `axial_swap` | `initialize`, `quote`, `execute_advance` — USDC advance vs receivable at configurable `advance_bps` (85% default) | Mainnet (+ Testnet sandbox) |
+| `payroll_split` | `initialize`, `quote`, `route_payroll`, `get_payroll` — USDC split to SSS/PhilHealth/Pag-IBIG + net to employees | Mainnet (+ Testnet sandbox) |
+| `settlement` | Per-invoice lockbox: `settle` distributes collected USDC (advance → funder, remainder → MSME), records shortfalls as leakage | Mainnet + Testnet — app wiring (B-2 S3–S6) pending |
 
-Web talks to chain via `lib/soroban/`: `config.ts` resolves contract IDs and signing keys from env or `soroban/deployments/testnet.json`; `invoke-*.ts` builds and submits transactions; `isSwapChainEnabled` / `isReceivableChainEnabled` / `isPayrollChainEnabled` gate whether a route runs on-chain or returns a mocked result. Default signing is **custodial/server-side** (server holds funder/MSME/issuer secrets). `freighter.ts` + `build-tx.ts` + `tx/submit` provide an optional client-signed path (Freighter browser extension). Deployed contract IDs and signing-key publics are not committed — `testnet.json` is gitignored; copy `testnet.example.json`.
+Web talks to chain via `lib/soroban/`: `config.ts` resolves contract IDs and signing keys from `MAINNET_`-prefixed env vars (falling back to `soroban/deployments/mainnet.json`); the network is fixed to Mainnet (`network.ts`). `invoke-*.ts` builds and submits transactions; `isSwapChainEnabled` / `isReceivableChainEnabled` / `isPayrollChainEnabled` gate whether a route runs on-chain or returns a mocked result. Default signing is **custodial/server-side** (server holds funder/MSME/issuer secrets). `freighter.ts` + `build-tx.ts` + `tx/submit` provide an optional client-signed path (Freighter browser extension). Deployed contract IDs and signing-key publics are not committed — `mainnet.json` / `testnet.json` are gitignored; copy the matching `.example.json`.
 
 ### Environment & deployment
 
-`web/.env.example` is the source of truth for env vars. Required for a working demo: `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, the public Supabase vars (`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` — needed by browser client + auth middleware), `NEXT_PUBLIC_BASE_URL`, and the three Stellar secrets (`STELLAR_FUNDER_SECRET`, `STELLAR_MSME_SECRET`, `STELLAR_ISSUER_SECRET`). `cd soroban && ./scripts/write-web-env.sh` populates the Stellar values after a deploy. `AXIAL_ALLOW_SEED=true` enables demo seed routes — preview only.
+`web/.env.example` is the source of truth for env vars. Required for a working demo: `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, the public Supabase vars (`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` — needed by browser client + auth middleware), `NEXT_PUBLIC_BASE_URL`, and the three Mainnet Stellar secrets (`MAINNET_STELLAR_FUNDER_SECRET`, `MAINNET_STELLAR_MSME_SECRET`, `MAINNET_STELLAR_ISSUER_SECRET` — the app reads `MAINNET_`-prefixed chain env). `cd soroban && ./scripts/write-web-env.sh` populates the Stellar values after a deploy. `AXIAL_ALLOW_SEED=true` enables demo seed routes — preview only.
 
-**CI deploy:** `.github/workflows/deploy-cloudrun.yml` builds `web/Dockerfile` and deploys to **Google Cloud Run** (`asia-southeast1`, service `axial-web`) on every push to `main`; build-time and runtime env come from GitHub Actions vars/secrets. `next.config.ts` uses `output: "standalone"` for the container build. `web/vercel.json` (region `sin1`, raised `maxDuration` on OCR/balance/worker routes, cron schedules) still exists for the alternate Vercel deploy path — `docs/vercel-deployment.md` documents it.
+**CI deploy:** `.github/workflows/deploy-cloudrun.yml` builds `web/Dockerfile` and deploys to **Google Cloud Run** (`asia-southeast1`, service `axial-web`) on every push to `main`; build-time and runtime env come from GitHub Actions vars/secrets. `next.config.ts` uses `output: "standalone"` for the container build. Vercel is not used.
 
 ## Locked Architecture Decisions
 
@@ -115,6 +115,7 @@ Finalized 2026-05-14 — do not reopen without updating `docs/Axial.md` first.
 
 | Decision | Locked value |
 |---|---|
+| Operating network | **Stellar Mainnet only** (locked 2026-05-22) — testnet is retired as an operating target; it remains a developer sandbox only |
 | Settlement asset | **USDC on Stellar** — Circle-issued |
 | USDC Mainnet issuer | `GA5ZSEJYB37JRC5AVCIA5MOP4RHTM335X2KGX3IHOJAPP5RE34K4KZVN` |
 | User-facing denomination | **PHP** — all invoices, payroll, dashboards show pesos |
@@ -124,7 +125,7 @@ Finalized 2026-05-14 — do not reopen without updating `docs/Axial.md` first.
 | PHPC | ❌ Retired — on Polygon/Ronin not Stellar; exited BSP sandbox July 2025 |
 | BIR EIS mandate scope | Phase 1 taxpayers only (Large Taxpayers, e-commerce, exporters, ≥₱1B gross sales, CAS/CBA users) |
 
-**Current deploy reality:** the hackathon build runs the contracts on **Stellar testnet** (`soroban/deployments/testnet.json`, testnet RPC, a testnet USDC SAC). The Mainnet issuer above is the production settlement reference, not where the demo runs.
+**Current deploy reality:** Axial runs on **Stellar Mainnet** — all 4 contracts deployed and initialized (`soroban/deployments/mainnet.json`), settled in Circle USDC (SAC `CCW67TSZV3SSS2HXMBQ5JFGCKJNXKZM7UQUWUZPUTHXSTZLEO7SJMI75`). Testnet remains a developer sandbox only — not an operating target.
 
 ## Build Scope (L1 → L3)
 

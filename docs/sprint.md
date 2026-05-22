@@ -42,7 +42,6 @@ This is the working task board for Axial, derived from the **CTO/auditor review 
 | [`clr-axial.md`](clr-axial.md) | Compliance & legal readiness — NoA mechanism, KYC/KYB, Data Privacy Act |
 | [`rfc-axial-closed-loop-settlement.md`](rfc-axial-closed-loop-settlement.md) | Closed-loop / confirmed-invoice settlement deep dive |
 | [`rfc-axial-eis-oracle.md`](rfc-axial-eis-oracle.md) | BIR EIS oracle deep dive |
-| [`vercel-deployment.md`](vercel-deployment.md) | Vercel deploy + env var guide |
 
 **Engineering docs**
 
@@ -66,7 +65,7 @@ This is the working task board for Axial, derived from the **CTO/auditor review 
 | Persistence (Supabase + file fallback) | `../web/lib/eis/store.ts`, `../web/lib/invoices/store.ts`, `../supabase/migrations/` |
 | Page views | `../web/components/views/` |
 | Soroban contracts | `../soroban/contracts/` |
-| Deployed contract IDs (gitignored) | `../soroban/deployments/testnet.json` |
+| Deployed contract IDs (gitignored) | `../soroban/deployments/mainnet.json` (operating) · `testnet.json` (dev sandbox) |
 
 ---
 
@@ -76,9 +75,9 @@ This is the working task board for Axial, derived from the **CTO/auditor review 
 |---|---|---|
 | D1 | **L3 dropped** | PDAX sandbox access not granted. Final scope = **L1 + L2** (L2 = our mocked PDAX UI). |
 | D2 | **Custodial signing (Q7)** | Server holds funder/MSME/issuer secrets and signs all Soroban txns. No Freighter in v1. |
-| D3 | **Mainnet is conditional** | Deploy to Mainnet on Day 6 only if testnet is stable; testnet stays the live demo path. |
+| D3 | **Mainnet-only** (revised 2026-05-22) | Axial runs on **Stellar Mainnet only**. Reverses the earlier "conditional Mainnet / testnet is the demo path" stance — testnet is retired as an operating target and kept only as a developer sandbox. |
 | D4 | **Closed loop is not live** | Payer-confirm is a demo PATCH. Do not present the closed-loop settlement as working. |
-| D5 | **Post-submission re-scope (2026-05-22)** | Settlement (B-2) is the sole active workstream — it was marked ✅ but is deployed on **Mainnet only**, not on Testnet, and not wired into the app. BIR EIS stays mock-only (live path PTT-gated, seam dormant). Real-KYB integration and mainnet Reflector verification deferred; PDAX (B-9) stays dropped. |
+| D5 | **Post-submission re-scope (2026-05-22)** | Settlement (B-2) is the sole active workstream — the contract is deployed + initialized on Mainnet but the app does not yet call it; the S3–S6 wiring is the work. BIR EIS stays mock-only (live path PTT-gated, seam dormant). Real-KYB integration deferred; PDAX (B-9) stays dropped. |
 
 ---
 
@@ -92,7 +91,7 @@ Wired the audit log to live data from `GET /api/eis/submissions` (replaces the
 hardcoded `2026-10-24` array). Loading + empty states included. The panel now
 shows real EIS events once swaps or payroll runs execute. File fallback works
 locally without Supabase; for the deployed demo set `SUPABASE_URL` +
-`SUPABASE_SERVICE_ROLE_KEY` on Vercel and confirm migration 001 is applied.
+`SUPABASE_SERVICE_ROLE_KEY` in the Cloud Run deploy env and confirm migration 001 is applied.
 - **References:** [`../web/components/views/SettingsView.tsx`](../web/components/views/SettingsView.tsx)
 
 ### S0-2 · Add a visible "Testnet" badge · `P1` · ✅ done
@@ -133,11 +132,13 @@ rent buffer + one test swap margin).
 **Delivered (2026-05-22):** **all 4 contracts** deployed to Mainnet — `receivable_token`,
 `axial_swap`, `payroll_split`, `settlement` — see `deployments/mainnet.json`. The Testnet
 deploy (2026-05-20) predates the `settlement` crate, so Testnet runs only 3; settlement's
-Testnet deploy + app wiring is tracked under B-2. (The Mainnet `settlement` contract is
-deployed but may not be `initialize`d — confirm under B-2.)
+Testnet deploy + app wiring is tracked under B-2. **Verified 2026-05-22:** all 4 Mainnet
+contracts are deployed **and initialized** (`axial_swap` `advance_bps`=8500; `receivable_token`
+shows ~11 mint events; the rest initialized but never invoked — Mainnet is a proof artifact,
+not the live demo).
 
-Per D3 — Testnet remained the live demo path; Mainnet contract IDs on stellar.expert
-are the proof artifact.
+Per the Mainnet-only decision (D3) — Mainnet is the operating network; the Mainnet
+contract IDs on stellar.expert are the live deployment.
 
 **Mainnet deploy runbook (run from WSL):**
 
@@ -173,8 +174,8 @@ live presentation. All routes are now at `/app/*`.
 
 **Demo shot list (in order):**
 
-1. **Landing** — open `/` · show tagline, problem cards, 5-step flow · click "Launch testnet demo"
-2. **Overview** (`/app`) — EIS pulse live · treasury USDC · testnet badge visible
+1. **Landing** — open `/` · show tagline, problem cards, 5-step flow · click "Launch demo"
+2. **Overview** (`/app`) — EIS pulse live · treasury USDC · Mainnet badge visible
 3. **Liquidity** (`/app/liquidity`) — upload a real PDF invoice (or hit seed) · row appears in table
 4. **Confirm payer** — click "Confirm payer" demo PATCH · status changes to Fundable
 5. **Tokenize & Swap** — click "Tokenize & Swap" · toast pipeline runs · row shows USDC settled
@@ -214,7 +215,7 @@ Official Axial logo fully deployed. All brand identity assets are live.
 
 > **Commitment:** Axial ships as a fully production-ready system — not a hackathon
 > artifact. Every item below is scoped and committed, not optional. The roadmap
-> closes the gap between the current testnet demo and a production-credible
+> closes the gap between today's build and a production-credible
 > liquidity-and-compliance platform: real settlement integrity, self-custody,
 > event-driven compliance, and multi-tenancy.
 >
@@ -251,39 +252,32 @@ Closed-loop payer verification is fully implemented (CLS-01 through CLS-05).
 - **References:** `web/lib/payers/`, `web/app/api/payers/`, `web/app/api/noa/`, `web/app/api/invoices/[id]/confirm/`, `web/app/app/payer-portal/`
 
 ### B-2 · On-chain lockbox / settlement contract + reconciliation worker · `P0` · 🟡 in progress
-**Status correction (2026-05-22):** previously marked ✅ done — that was wrong. The
-contract code, web invoke layer, and route wiring all exist, and the contract is
-deployed on **Mainnet** (`CDMHMQNP…`) — but **not on Testnet**, and not wired into the
-app (`SETTLEMENT_CONTRACT_ID` unset, `testnet.json` has no settlement entry), so the
-on-chain closed loop is not exercised. The contract tests have also never been run
-(no `test_snapshots/`), and the lockbox-funding leg does not exist (`settle` distributes
-USDC the contract never receives). This is the **highest-priority active workstream**
-(D5). Phases S1–S6 below.
+**Status (2026-05-22):** the `settlement` contract is **deployed + initialized on Stellar
+Mainnet** (`CDMHMQNP…`) and its test suite passes (7/7) — but the **app does not yet call
+it**. The remaining work is wiring `register_invoice` / `settle` into the request flow.
+S1–S2 are done; S3–S6 below are the active workstream (D5).
 
-**Code already in place:** `soroban/contracts/settlement/` (contract + 7-test suite),
-`web/lib/settlement/` (reserve-ledger store), `web/lib/soroban/invoke-settlement.ts`,
+**Code already in place:** `soroban/contracts/settlement/` (contract + 7-test suite, all
+passing), `web/lib/settlement/` (reserve-ledger store), `web/lib/soroban/invoke-settlement.ts`,
 `config.ts` `settlementContractId`, route calls in `invoices/[id]` + `reconciliation/scan`.
 
-**S1 · Verify build + tests** — `cargo test -p settlement` (WSL); fix any soroban-sdk 25
-mismatches; commit `test_snapshots/` (settlement is the only crate missing them).
-**S2 · Deploy + initialize on testnet** — `make deploy-settlement`; call `initialize(admin, usdc)`;
-write the ID to `deployments/testnet.json` (`settlement` key) + `SETTLEMENT_CONTRACT_ID`.
-(Mainnet deploy is already done — this phase closes the Testnet gap and confirms the
-Mainnet contract is initialized.)
+**S1 · Build + tests — ✅ done.** `cargo test -p settlement` — fixed a missing `PartialEq`
+on `LockboxRecord`; 7/7 tests pass, `test_snapshots/` generated.
+**S2 · Deploy + initialize — ✅ done.** All 4 contracts are deployed and initialized on
+**Mainnet** (operating network) and **Testnet** (`settlement` → `CAZ2GTIO…`, 2026-05-22) —
+verified on-chain. The system operates Mainnet-only; the Testnet deployment satisfies the
+"deployed on both" submission requirement.
 **S3 · Fire `register_invoice` at the right point** — move it from `invoices/[id]` (settle)
 to immediately after `execute_advance` in `web/app/api/swap/execute/route.ts`.
 **S4 · Real lockbox funding** — add a payer Stellar key; `fundLockboxOnChain()` (USDC SAC
 transfer → settlement contract address); surface the address in the NoA + payer portal;
-add a "Pay invoice" action in `PayerPortalView`.
+add a "Pay invoice" action in `PayerPortalView`. Uses real Mainnet USDC — keep demo amounts small.
 **S5 · Real settle + reconcile** — `settleOnChain` with a contract-balance pre-check;
-verify full + partial paths and `report_leakage` end-to-end on testnet.
-**S6 · Hardening** — decide the per-invoice attribution / trust model; fix the misleading
-"keyed by invoice_id memo" comment in `lib.rs` (Soroban token transfers carry no memo);
-record the decision in `rfc-axial-closed-loop-settlement.md`.
+verify full + partial paths and `report_leakage` end-to-end on Mainnet (small amounts).
+**S6 · Hardening** — ✅ the misleading "keyed by invoice_id memo" comment in `lib.rs` is
+fixed. Remaining: decide the per-invoice attribution / trust model and record it in
+`rfc-axial-closed-loop-settlement.md`.
 
-Once S1–S6 land on testnet, settlement also needs a **Mainnet deploy** (see S0-5 caveat).
-
-- **Owner split:** S1–S2 run in WSL (Rust + Stellar CLI); S3–S6 are web/contract code.
 - **References:** `soroban/contracts/settlement/`, `web/lib/settlement/`, `web/lib/soroban/invoke-settlement.ts`, `web/app/api/reconciliation/scan/`, `rfc-axial-closed-loop-settlement.md`
 
 ### B-3 · Freighter wallet integration (self-custody) · `P1` · ✅ done
@@ -312,7 +306,7 @@ Event-driven, deadline-enforced BIR EIS compliance pipeline.
 - `EisSubmission.dueBy` + `EisSubmission.submittedAt` fields; oracle sets `dueBy = createdAt+3days` on every new submission
 - `store.ts`: `findSubmissionsForRetry()`, `findExpiredSubmissions()`
 - `supabase/migrations/005_eis_t3_fields.sql`: `due_by`, `submitted_at` columns + retry index
-- `vercel.json`: cron schedule — worker every 6h, horizon-poll every 10min, reconciliation/scan nightly (runs on the Vercel path; Cloud Run needs Cloud Scheduler)
+- cron schedule (worker 6h, horizon-poll 10min, reconciliation/scan nightly) — wire as GCP Cloud Scheduler jobs; Cloud Run has no built-in cron
 - `.env.example`: `CRON_SECRET`, `SETTLEMENT_CONTRACT_ID`
 - **References:** `web/lib/eis/worker.ts`, `web/lib/eis/horizon-poll.ts`, `web/app/api/eis/worker/`, `web/app/api/eis/horizon-poll/`
 
@@ -363,7 +357,7 @@ The mock→live transition is now a single env-var switch — no code changes ne
 `sdd-axial.md` v0.3 now accurately describes the v1 build reality alongside the original design intent.
 
 **Delivered:**
-- Top-level `⚠️ IMPLEMENTATION NOTE` table mapping every design decision to v1 reality (Next.js routes, in-process oracle, Supabase, Vercel, no Redis, Supabase Auth, env-var secrets)
+- Top-level `⚠️ IMPLEMENTATION NOTE` table mapping every design decision to v1 reality (Next.js routes, in-process oracle, Supabase, Cloud Run, no Redis, Supabase Auth, env-var secrets)
 - §2: v1 build reality architecture diagram (Mermaid) alongside the intended design
 - §3, §5, §7, §8: build-reality callout blocks explaining actual vs. intended per section
 - Self-check updated; open items (BIR schema, NFRs, vault migration) tracked

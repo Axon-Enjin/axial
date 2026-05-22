@@ -25,7 +25,7 @@ PostgreSQL backing for **BIR EIS**, **Active Factoring** (invoices), **Payer reg
 2. **SQL Editor** → run all 6 migrations in order (001 → 006).
 3. **Auth → Providers**: enable **Email** (magic link), optionally **Google** OAuth.
 4. **Auth → URL Configuration**: add your app URL(s) to *Site URL* and *Redirect URLs*  
-   e.g. `http://localhost:3000`, `https://axial-phi.vercel.app`; redirect URL must be `{base}/auth/callback`.
+   e.g. `http://localhost:3000`, `https://axial.axonenjin.com`; redirect URL must be `{base}/auth/callback`.
 5. **Project Settings → API** → copy:
    - Project URL → `SUPABASE_URL` / `NEXT_PUBLIC_SUPABASE_URL`
    - `service_role` key → `SUPABASE_SERVICE_ROLE_KEY` (server only — never expose)

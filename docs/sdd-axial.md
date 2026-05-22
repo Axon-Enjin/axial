@@ -25,16 +25,16 @@
 > | Design intent | v1 build reality |
 > |---|---|
 > | Modular monolith with separate API gateway | **Next.js 15 API routes** under `web/app/api/` — no separate gateway, BFF pattern co-located |
-> | BullMQ / Temporal job queue | **In-process fire-and-forget oracle** (`lib/eis/oracle.ts`) + scheduled retry/horizon-poll/reconciliation jobs (cron schedule in `web/vercel.json`) |
+> | BullMQ / Temporal job queue | **In-process fire-and-forget oracle** (`lib/eis/oracle.ts`) + scheduled retry/horizon-poll/reconciliation jobs (GCP Cloud Scheduler) |
 > | Managed PostgreSQL | **Supabase** (project `ifzyntqwymmgimnxtguz`); file-fallback JSON store when Supabase not configured |
 > | Redis distributed cache + locks | **Not in v1** — rate limits and locks omitted; no Redis dependency |
-> | HashiCorp Vault / cloud KMS | **Env vars** — GCP Secret Manager on Cloud Run (Vercel env vars on the alternate path); production vault path preserved in design |
+> | HashiCorp Vault / cloud KMS | **Env vars** — GCP Secret Manager on Cloud Run; production vault path preserved in design |
 > | OIDC auth, vendor TBD | **Supabase Auth** — magic link OTP + Google OAuth; org auto-created by DB trigger on user insert |
 > | `/v1/` prefixed REST API | **Next.js API routes** — no version prefix; route structure is `web/app/api/**` |
 > | Separate compliance oracle service | **In-process** — `lib/eis/` runs in the same Next.js serverless function; fire-and-forget via `void processLedgerEvent().catch()` |
 > | Mock → live BIR EIS toggle via code change | **Env-var switchable** — `BIR_EIS_LIVE=true` + `BIR_EIS_ENDPOINT` + `BIR_JWS_PRIVATE_KEY_B64`; no code change required |
 > | Freighter / wallet connect: TBD | **Freighter implemented (B-3)** — optional alongside custodial path; `window.freighter` extension API |
-> | Hosting: TBD | **Google Cloud Run** (`asia-southeast1`) via GitHub Actions (`deploy-cloudrun.yml`, `web/Dockerfile`); Vercel config (`vercel.json`, region `sin1`) retained as an alternate path |
+> | Hosting: TBD | **Google Cloud Run** (`asia-southeast1`) via GitHub Actions (`deploy-cloudrun.yml`, `web/Dockerfile`, `output: standalone`) |
 
 ---
 
@@ -127,8 +127,8 @@ graph LR
     FxOracle[Reflector FX  lib/fx/reflector.ts]
   end
 
-  subgraph chain [Stellar — Testnet demo / Mainnet]
-    Soroban[Soroban contracts — 3 Testnet · 4 Mainnet]
+  subgraph chain [Stellar Mainnet]
+    Soroban[4 Soroban contracts]
     RPC[Soroban RPC]
     Horizon[Horizon API]
   end
@@ -164,11 +164,11 @@ graph LR
 | In-process oracle | **`lib/eis/`** (same serverless function) | Fire-and-forget EIS pipeline; map ledger events → BIR schema; JWS sign; submit; memo write-back |
 | BIR EIS client | **`lib/eis/bir-client.ts`** | Mock (HS256) today; live (RS256, real endpoint) via `BIR_EIS_LIVE=true` env var |
 | FX oracle | **`lib/fx/reflector.ts`** | Reflector on-chain PHP/USDC rate; 5-min in-process cache; fallback 56.5 |
-| Scheduled jobs | **Cron schedule** (`web/vercel.json`) | Worker (6h), Horizon-poll (10min), reconciliation/scan (nightly 2am). Runs on the Vercel path; on Cloud Run needs Cloud Scheduler. |
-| Chain | **Stellar** — 3 contracts on Testnet (live demo), 4 on Mainnet | SAC mint, atomic swap, payroll split, settlement |
+| Scheduled jobs | **GCP Cloud Scheduler** | Worker (6h), Horizon-poll (10min), reconciliation/scan (nightly) — HTTP calls to the Cloud Run service, protected by `CRON_SECRET` |
+| Chain | **Stellar Mainnet** — 4 contracts (receivable, swap, payroll, settlement) | SAC mint, atomic swap, payroll split, settlement |
 | Auth | **Supabase Auth** | Magic link OTP + Google OAuth; org auto-created on user insert via DB trigger |
 | Data | **Supabase** (Postgres + RLS) or **JSON file fallback** | Submissions, invoices, payers, reserve ledger, orgs, memberships; RLS enforces org isolation |
-| Secrets | **GCP Secret Manager** (Cloud Run) / Vercel env vars (alt) | Stellar keys, Supabase service role, BIR credentials; vault migration path preserved in design |
+| Secrets | **GCP Secret Manager** (Cloud Run) | Stellar keys, Supabase service role, BIR credentials; vault migration path preserved in design |
 
 ---
 
@@ -279,7 +279,7 @@ AuditLog
 
 ## 5. Compliance Architecture
 
-> **v1 build reality:** The compliance oracle is **in-process** — it runs inside the same Next.js serverless function that handles the on-chain API routes. There is no separate oracle service or external job queue. The oracle fires-and-forgets via `void processLedgerEvent().catch()` so it does not block the user-facing response. Scheduled retry, horizon polling, and reconciliation run as cron jobs (schedule in `web/vercel.json`). The BIR EIS client is env-var switchable between mock and live (see `lib/eis/bir-client.ts`). JWS uses HS256 mock by default; switches to RS256 production key when `BIR_EIS_LIVE=true`. See `docs/rfc-axial-eis-oracle.md` for the detailed design.
+> **v1 build reality:** The compliance oracle is **in-process** — it runs inside the same Next.js serverless function that handles the on-chain API routes. There is no separate oracle service or external job queue. The oracle fires-and-forgets via `void processLedgerEvent().catch()` so it does not block the user-facing response. Scheduled retry, horizon polling, and reconciliation run as GCP Cloud Scheduler jobs. The BIR EIS client is env-var switchable between mock and live (see `lib/eis/bir-client.ts`). JWS uses HS256 mock by default; switches to RS256 production key when `BIR_EIS_LIVE=true`. See `docs/rfc-axial-eis-oracle.md` for the detailed design.
 
 ### BIR EIS Oracle
 
@@ -369,16 +369,16 @@ Every database query filters by `org_id`. No cross-tenant data leakage.
 
 ## 8. Infrastructure, CI/CD, and Deployment
 
-> **v1 build reality:** Hosting is **Google Cloud Run** (`asia-southeast1`) — `web/Dockerfile`, `output: standalone`, deployed by GitHub Actions (`deploy-cloudrun.yml`) on push to `main`. Vercel config (`vercel.json`, region `sin1`) is retained as an alternate path — see `docs/vercel-deployment.md`. No Redis in v1. Secrets in GCP Secret Manager. Cron schedules live in `web/vercel.json` (they run on the Vercel path; on Cloud Run they need Cloud Scheduler). Local dev uses `npm run dev` from `web/` against Stellar Testnet. Soroban contracts built and deployed from WSL (`make deploy-all`).
+> **v1 build reality:** Hosting is **Google Cloud Run** (`asia-southeast1`) — `web/Dockerfile`, `output: standalone`, deployed by GitHub Actions (`deploy-cloudrun.yml`) on push to `main`. No Redis in v1. Secrets in GCP Secret Manager. The scheduled jobs (worker, horizon-poll, reconciliation) run as GCP Cloud Scheduler jobs — Cloud Run has no built-in cron. Local dev uses `npm run dev` from `web/` against Stellar Mainnet (demo/mock mode unless `MAINNET_*` secrets are set). Soroban contracts built and deployed from WSL (`make deploy-all`).
 
-**Hosting:** Google Cloud Run (`asia-southeast1`), GitHub Actions CI. Vercel is the alternate path — guide: [`docs/vercel-deployment.md`](vercel-deployment.md).
+**Hosting:** Google Cloud Run (`asia-southeast1`), deployed by GitHub Actions on push to `main`.
 
 **Environments:**
 
 | Environment | Description |
 |---|---|
-| `dev` | Local `npm run dev` + Stellar Testnet; mock BIR EIS endpoint; no real money; file fallback if Supabase not configured |
-| `staging` / `preview` | Preview builds per PR (Vercel alternate path); Stellar Testnet; Supabase same project (dev branch TBD) |
+| `dev` | Local `npm run dev` — Stellar Mainnet config; demo/mock mode unless `MAINNET_*` secrets are set; mock BIR EIS endpoint; file fallback if Supabase not configured |
+| `staging` / `preview` | Per-branch preview builds; Stellar Mainnet; Supabase same project |
 | `prod` | Cloud Run (`asia-southeast1`); Supabase production project; Stellar Mainnet (all 4 contracts deployed); real BIR EIS if PTT granted |
 
 **CI/CD:** Lint → typecheck → tests on every PR; gated deploy to staging; migration strategy: expand/contract pattern (add column → backfill → make non-nullable → drop old). No destructive migrations without rollback plan.

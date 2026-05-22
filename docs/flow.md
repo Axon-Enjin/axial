@@ -1,6 +1,6 @@
 # Axial — App flow & feature scope (visual)
 
-**Hackathon build:** testnet · May 2026  
+**Build:** Stellar Mainnet · May 2026  
 **Legend:** `✅` built & wired · `🟡` UI/mock or partial · `⬜` planned (docs) · `❌` won't ship v1
 
 **Aligned with:** `web/` app · `GET /api/dashboard/summary` · Supabase `ifzyntqwymmgimnxtguz`
@@ -23,18 +23,18 @@ flowchart TB
   OV --> OV3["✅ Recent Actions — EIS feed"]
   OV --> OV4["✅ Liquidity headline — book from summary API"]
   OV --> OV5["🟡 Runway chart — demo bars + EIS activity hint"]
-  OV --> OV6["✅ Testnet treasury — USDC/XLM balances"]
+  OV --> OV6["✅ Treasury — Mainnet USDC/XLM balances"]
 
   LQ --> LQ1["✅ Upload PDF/XML — OCR parse + persist"]
   LQ --> LQ2["✅ Invoice table — Supabase/file + pagination"]
   LQ --> LQ3["✅ Payer portal — confirm + eligibility"]
-  LQ --> LQ4["✅ Tokenize & Swap — testnet"]
+  LQ --> LQ4["✅ Tokenize & Swap — Mainnet"]
   LQ --> LQ5["✅ Swap quote API — 85% advance"]
   LQ --> LQ6["✅ Pipeline progress — toast + sidebar"]
   LQ --> LQ7["✅ Stat tiles — treasury USDC + book + contracts"]
 
   CP --> CP1["✅ Payroll quote — contract math"]
-  CP --> CP2["✅ Route Payroll — testnet*"]
+  CP --> CP2["✅ Route Payroll — Mainnet*"]
   CP --> CP3["✅ BIR EIS table — Supabase"]
   CP --> CP4["✅ Expand 20 BIR fields"]
   CP --> CP5["🟡 Filing milestones — static"]
@@ -86,7 +86,7 @@ flowchart LR
 
   subgraph phaseE [E — Collection]
     E1["🟡 Payer pays lockbox — demo mark collected"]
-    E2["🟡 Settlement contract — Mainnet only, not on Testnet"]
+    E2["🟡 Settlement contract — deployed, app wiring pending"]
     E3["⬜ Funder repaid + reserve release"]
     E4["✅ Reconciliation cron — leakage scan"]
   end
@@ -105,7 +105,7 @@ flowchart LR
 
 ---
 
-## 3. What happens today — demo path (testnet)
+## 3. What happens today — demo path (Mainnet)
 
 Use this for recordings and mental model:
 
@@ -114,7 +114,7 @@ sequenceDiagram
   actor MSME as MSME Founder
   participant UI as Axial UI
   participant API as Next.js API
-  participant SC as Soroban Testnet
+  participant SC as Soroban Mainnet
   participant OR as EIS Oracle
   participant DB as Supabase
   participant BIR as Mock BIR
@@ -186,7 +186,7 @@ flowchart TD
   EIS --> UI2["✅ Compliance + Overview update"]
 ```
 
-**Not built:** real payer KYB onboarding; on-chain lockbox enforcement — `settlement` is deployed on Mainnet only, not on Testnet and not wired into the app.
+**Not built:** real payer KYB onboarding; on-chain lockbox enforcement — `settlement` is deployed + initialized on Mainnet but not yet wired into the app (B-2 phases S3–S6).
 
 ---
 
@@ -221,11 +221,11 @@ flowchart TB
     SB["supabase/eis-store · invoices-store"]
   end
 
-  subgraph chain [Stellar Testnet]
+  subgraph chain [Stellar Mainnet]
     RT["receivable_token"]
     AS["axial_swap"]
     PS["payroll_split"]
-    USDC["testnet USDC"]
+    USDC["Circle USDC"]
   end
 
   subgraph data [Persistence]
@@ -274,9 +274,9 @@ stateDiagram-v2
 | Payer KYB onboarding | Must | ⬜ | No real KYB flow |
 | Invoice upload + OCR | Implied UI | ✅ | Parse API + persist |
 | Factoring book + pagination | Should | ✅ | Supabase `factoring_invoices` |
-| SAC mint / receivable token | Must | ✅ | Testnet |
-| Atomic USDC swap | Must | ✅ | Testnet |
-| Payroll statutory split | Must | ✅ | Testnet |
+| SAC mint / receivable token | Must | ✅ | Mainnet |
+| Atomic USDC swap | Must | ✅ | Mainnet |
+| Payroll statutory split | Must | ✅ | Mainnet |
 | BIR EIS oracle 20 fields | Must | ✅ | Mock BIR + real pipeline |
 | JWS + memo write-back | Must | ✅ | Mock JWS |
 | T+3 worker / due_by | SDD | ✅ | `eis/worker` cron — retry within window, expire after |
@@ -287,9 +287,9 @@ stateDiagram-v2
 | Auth / multi-tenant | Prod | ✅ | Supabase SSR auth, org-scoped, invites |
 | Overview health dashboard | Must | ✅ | Live EIS + summary API + treasury |
 | Liquidity stat tiles | Should | ✅ | Summary API |
-| Closed-loop lockbox settlement | Must | 🟡 | `settlement` deployed on Mainnet only; not on Testnet / not wired into the app |
+| Closed-loop lockbox settlement | Must | 🟡 | `settlement` deployed + initialized on Mainnet; app wiring (B-2 S3–S6) pending |
 | PDAX PHP ramp UI | L2 | ✅ | Settings `PdaxRampCard` |
-| Mainnet deploy | L1 | ✅ | All 4 contracts on Mainnet; the live demo runs on Testnet (3) |
+| Operating network | L1 | ✅ | Stellar Mainnet — all 4 contracts deployed + initialized; system runs Mainnet-only |
 | Live BIR submission | — | ⬜ | Mock by default; `BIR_EIS_LIVE` gates real client |
 | Funder portal | Could | ❌ | v1 skip |
 
@@ -300,10 +300,10 @@ stateDiagram-v2
 ```mermaid
 flowchart LR
   subgraph L1 [L1 Must ship — judge demo]
-    L1a["✅ 3 Soroban contracts testnet"]
+    L1a["✅ 4 Soroban contracts on Mainnet"]
     L1b["✅ Swap + mint + payroll UI"]
     L1c["✅ EIS oracle + Compliance UI"]
-    L1d["✅ Mainnet — 4 contracts deployed"]
+    L1d["✅ Circle USDC settlement on Mainnet"]
     L1e["🟡 Fiat placeholder — treasury card"]
   end
 
@@ -379,10 +379,10 @@ flowchart TB
 | POST | `/api/auth/invite` · `/api/auth/members` | Org invites + membership |
 | POST | `/api/tx/submit` | Submit a client-signed (Freighter) transaction |
 
-Cron endpoints are protected by `CRON_SECRET`; schedules are in `web/vercel.json`.
+Cron endpoints are protected by `CRON_SECRET`; run them as GCP Cloud Scheduler jobs.
 
 ---
 
-*Update this doc when Mainnet or live BIR submission lands.*
+*Update this doc when the settlement wiring (B-2 S3–S6) or live BIR submission lands.*
 
 *Audit-derived task board: [`sprint.md`](sprint.md) · scope decisions: "Build audit & final scope lock (2026-05-22)" in [`Axial.md`](Axial.md).*

@@ -91,7 +91,7 @@ We merged tokenized invoice factoring with automated EIS reporting and statutory
 | **Settlement** | USDC on Stellar (Circle-issued) |
 | **Wallets** | Freighter Integration (Self-custody) |
 | **Design** | Dark glassmorphic, Geist typography, Material Symbols |
-| **Hosting** | Google Cloud Run (`asia-southeast1`), GitHub Actions CI — Vercel config retained as alternate |
+| **Hosting** | Google Cloud Run (`asia-southeast1`), GitHub Actions CI |
 
 ---
 
@@ -107,7 +107,7 @@ graph TD
         FREIGHTER["Freighter Wallet<br/>(Self-Custody)"]
     end
 
-    subgraph Stellar ["Stellar Network"]
+    subgraph Stellar ["Stellar Mainnet"]
         RPC["Soroban RPC"]
         RT{"receivable_token"}
         AS{"axial_swap"}
@@ -115,7 +115,7 @@ graph TD
         SET{"settlement"}
     end
 
-    subgraph Backend ["Backend (API Routes + Workers)"]
+    subgraph Backend ["Backend — Google Cloud Run · asia-southeast1"]
         API["Next.js API"]
         CRON["Event Polling & Workers"]
         DB["Supabase (PostgreSQL + Auth)"]
@@ -147,10 +147,31 @@ graph TD
     RT -.-> |"mint (confirmed receivable)"| AS
     AS -.-> |"USDC advance"| PS
     PS -.-> |"SSS/PhilHealth/Pag-IBIG split"| ORACLE
-    SET -.-> |"payer pays lockbox"| AS
+    AS -.-> |"register lockbox"| SET
 
     ORACLE --> |"JWS-signed JSON"| EIS
     EIS --> |"success ref → Stellar memo"| ORACLE
+```
+
+### Build & Deploy
+
+Contracts are tested and dry-run on **Testnet** (a developer sandbox), then deployed to **Mainnet** — the operating network. The web app ships via GitHub Actions → Google Cloud Run.
+
+```mermaid
+graph LR
+    subgraph contracts ["Soroban contracts"]
+        BUILD["cargo test · stellar contract build"]
+        BUILD --> TN["Stellar Testnet<br/>developer sandbox"]
+        TN -->|"verified"| MN["Stellar Mainnet<br/>operating network"]
+    end
+
+    subgraph app ["Web app"]
+        PUSH["git push → main"] --> GHA["GitHub Actions<br/>docker build"]
+        GHA --> CR["Google Cloud Run<br/>asia-southeast1"]
+    end
+
+    CR -->|"MAINNET_* env"| MN
+    CR --> SB[("Supabase<br/>Postgres · Auth")]
 ```
 
 ### Smart Contracts (Soroban)
@@ -160,7 +181,7 @@ graph TD
 | `receivable_token` | SAC mint — `initialize`, `mint`, `is_minted`, `get_receivable`. One mint per confirmed invoice. | ✅ Testnet + Mainnet |
 | `axial_swap` | USDC atomic swap — advance vs receivable token. Denomination-agnostic asset param, configurable advance bps, reserve + discount. | ✅ Testnet + Mainnet |
 | `payroll_split` | Statutory payroll router — `initialize`, `quote`, `route_payroll`, `get_payroll`. USDC split to SSS / PhilHealth / Pag-IBIG + net to employees. | ✅ Testnet + Mainnet |
-| `settlement` | Lockbox & Reconciliation — `initialize`, `register_invoice`, `settle`, `report_leakage`, `get_lockbox`. Receives payer funds, repays funder, routes reserve to MSME. | 🟡 Mainnet only — not on Testnet, not yet wired into the app |
+| `settlement` | Lockbox & Reconciliation — `initialize`, `register_invoice`, `settle`, `report_leakage`, `get_lockbox`. Receives payer funds, repays funder, routes reserve to MSME. | 🟡 Testnet + Mainnet — app wiring (B-2 S3–S6) pending |
 
 **Happy-path call order:**
 
@@ -257,7 +278,7 @@ cp web/.env.example web/.env
 cp soroban/.env.example soroban/.env
 ```
 
-See [`docs/vercel-deployment.md`](docs/vercel-deployment.md) for Vercel-specific configuration.
+Environment variables are set as GitHub Actions repo vars/secrets for the Cloud Run deploy.
 
 ---
 
@@ -267,10 +288,11 @@ See [`docs/vercel-deployment.md`](docs/vercel-deployment.md) for Vercel-specific
 
 - **Network:** Stellar Testnet (Soroban RPC)
 - **RPC:** `https://soroban-testnet.stellar.org:443`
-- **Deployed Contracts** — 3 on Testnet (`settlement` is Mainnet-only, see below):
+- **Deployed Contracts** — all 4 on Testnet:
   - **Axial Swap:** [`CDDAIDM4D62OZL5MQPKO5ZFWE7TBRFJD5Y3L2UZKP5OVGP2VHZ2UU736`](https://stellar.expert/explorer/testnet/contract/CDDAIDM4D62OZL5MQPKO5ZFWE7TBRFJD5Y3L2UZKP5OVGP2VHZ2UU736)
   - **Receivable Token:** [`CAQEEFBO44FONQKGCEHR2QFTLOIIO232Z7WM6722ZDA6MNAL2NNU7SOP`](https://stellar.expert/explorer/testnet/contract/CAQEEFBO44FONQKGCEHR2QFTLOIIO232Z7WM6722ZDA6MNAL2NNU7SOP)
   - **Payroll Split:** [`CBJCEJMDGRGLVU7VHAFR2VSVSBIKIWZA6LBQN6SCLZVJU6YROTETY3MB`](https://stellar.expert/explorer/testnet/contract/CBJCEJMDGRGLVU7VHAFR2VSVSBIKIWZA6LBQN6SCLZVJU6YROTETY3MB)
+  - **Settlement:** [`CAZ2GTIOW6T7DQZH2CA3IIAWJAV5JJAMXD2XUTPS4BH6OXPFXVMYLL2X`](https://stellar.expert/explorer/testnet/contract/CAZ2GTIOW6T7DQZH2CA3IIAWJAV5JJAMXD2XUTPS4BH6OXPFXVMYLL2X)
 - **Demo Wallets:**
 
 | Name | Role | Address |

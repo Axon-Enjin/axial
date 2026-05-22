@@ -1,6 +1,7 @@
 # Cursor / agent skills (local tooling — not product code)
 .agents/
 .cursor/
+.gemini/
 skills-lock.json
 
 # Secrets — never commit
@@ -32,6 +33,16 @@ claude-design/
 # Pitch Deck PDF (HTML is committed, PDF is generated locally)
 docs/pitch-deck.pdf
 
+# Utility scripts — ignore local node_modules
+scripts/**/node_modules/
+
 # OS
 .DS_Store
-Thumbs.db
+Thumbs.db
+
+# Editors & IDEs
+*.swp
+*.swo
+*~
+.idea/
+.vscode/

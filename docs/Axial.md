@@ -48,8 +48,8 @@ A CTO/auditor review on Day 5 of the hackathon checked the `web/` and `soroban/`
 |---|---|---|
 | PDAX Connect (L3) | ❌ Dropped | PDAX sandbox access was **not granted**. Final hackathon scope is **L1 + L2** (L2 = our own mocked PDAX UI). No real PDAX API calls. The SEP-24 abstraction stands so PDAX can be wired post-hackathon without contract changes. |
 | Wallet management (Q7) | ✅ Locked | **Custodial backend signing** for the hackathon demo — the Next.js server holds the funder/MSME/issuer secrets and signs all Soroban transactions. No Freighter/Albedo in v1. Freighter (MSME + payer self-custody) is post-hackathon roadmap. |
-| Mainnet deploy | ✅ Done | All **4 contracts** deployed to Mainnet (`deployments/mainnet.json`, 2026-05-22). Testnet remains the live demo path and runs **3** — the testnet deploy (2026-05-20) predates the `settlement` crate. |
-| Closed-loop settlement build gap | ⚠️ Acknowledged | The closed loop is built in code — payer portal, NoA issue/ack, reconciliation cron, and the `settlement` contract (deployed on Mainnet). But it is **not exercised**: settlement is not on Testnet and not wired into the app, so the on-chain lockbox does not run in the demo. #1 post-hackathon priority. Do **not** present the closed loop as live. |
+| Operating network — Mainnet only | ✅ Locked (2026-05-22) | Axial runs on **Stellar Mainnet only**. All 4 contracts are deployed + initialized on Mainnet (`deployments/mainnet.json`). This **reverses** the earlier "testnet is the live demo path" decision — testnet is retired as an operating target and kept only as a developer sandbox. |
+| Closed-loop settlement build gap | ⚠️ Acknowledged | The closed loop is built in code — payer portal, NoA issue/ack, reconciliation cron, and the `settlement` contract (deployed + initialized on Mainnet). But it is **not exercised**: the app does not yet call settlement — the `register_invoice`/`settle` wiring (B-2 phases S3–S6) is the active workstream. Do **not** present the closed loop as live until that lands. |
 | Hardcoded demo data | ⚠️ Acknowledged | FX rate (`56.5`), Settings credentials/audit log, and seller/buyer TINs are hardcoded demo values. Acceptable for the hackathon; tracked for replacement in [`docs/sprint.md`](sprint.md). |
 
 ### Locked architecture in one paragraph
@@ -94,7 +94,7 @@ Snapshot of what ships in **`web/`** today vs locked product vision. Visual tab 
 
 | Area | Status | Notes |
 |------|--------|-------|
-| Soroban L1 (mint, swap, payroll) | ✅ Testnet | Happy path wired from Liquidity + Compliance |
+| Soroban L1 (mint, swap, payroll) | ✅ Mainnet | Happy path wired from Liquidity + Compliance |
 | BIR EIS oracle (20 fields, JWS mock, memo) | ✅ | Supabase `eis_submissions`; API-triggered on chain events |
 | T+3 submission worker | ✅ | `eis/worker` cron — retries stale submissions inside the T+3 window, expires the rest |
 | Horizon event poll | ✅ | `eis/horizon-poll` cron — ingests chain events the live API path missed |
@@ -103,13 +103,13 @@ Snapshot of what ships in **`web/`** today vs locked product vision. Visual tab 
 | Payer portal + NoA | ✅ | `/app/payer-portal` (token auth), `/api/payers`, eligibility check, NoA issue/ack |
 | Auth / multi-tenancy | ✅ | Supabase SSR auth, org-scoped data, invites (`api/auth/*`, migration `006`) |
 | Overview / Liquidity metrics | ✅ | `GET /api/dashboard/summary` — book face PHP, treasury USDC, contract count |
-| Testnet treasury card | ✅ | `GET /api/wallets/balances` on Overview |
+| Treasury card | ✅ | `GET /api/wallets/balances` on Overview — Mainnet balances |
 | FX rate (Reflector) | ✅ | `lib/fx/reflector.ts` + `/api/fx/rate` — live oracle, hardcoded 56.5 PHP/USDC fallback |
 | Public landing page | ✅ | Marketing landing at `/`; `/app` is the authenticated Overview |
 | PDAX ramp (L2) | ✅ UI | Settings demo card; **L3 Connect API not pursued — sandbox access not granted (2026-05-22)** |
 | Wallet signing | ✅ Custodial | Server-side signing with funder/MSME/issuer secrets; optional Freighter client-sign path (Q7 locked custodial 2026-05-22) |
-| On-chain lockbox enforcement | 🟡 | `settlement` deployed on **Mainnet only** — not on Testnet, not wired into the app; collection reconciled off-chain |
-| Mainnet deploy | ✅ | All 4 contracts deployed to Mainnet; the live demo still runs on Testnet (3 contracts) |
+| On-chain lockbox enforcement | 🟡 | `settlement` deployed + initialized on Mainnet; app wiring (B-2 S3–S6) pending — collection reconciled off-chain meanwhile |
+| Operating network | ✅ | **Stellar Mainnet** — all 4 contracts deployed + initialized; the system runs Mainnet-only |
 | Live BIR submission | ⬜ | Mock BIR by default; `BIR_EIS_LIVE` gates the real client (needs Permit to Transmit) |
 
 Audit-derived task board: [`docs/sprint.md`](sprint.md).
@@ -504,7 +504,7 @@ Despite operating on high-frequency Stellar consensus protocols and strict T+3 r
 | **Liquidity** | Tokenized AR, atomic swaps, settlement proceeds (USDC on Stellar, PHP-denominated UI), repayment timeline, lender context |
 | **Compliance** | Statutory payroll splits, SSS/PhilHealth/Pag-IBIG routing, BIR EIS pipeline, T+3 queue, JWS submission status |
 | **Overview** | Cross-domain health: liquidity headroom, upcoming payroll, filing windows, ambient success indicators |
-| **Settings** | Org profile, connected wallets, notification preferences, environment (testnet/mainnet), integrations |
+| **Settings** | Org profile, connected wallets, notification preferences, network status, integrations |
 
 Three tabs would force bias (Overview becomes either Liquidity or Compliance's home). Five tabs would fragment statutory workflows that are emotionally one problem for the user. Four is the minimum viable architecture.
 
@@ -539,7 +539,7 @@ Three tabs would force bias (Overview becomes either Liquidity or Compliance's h
 
 | Phase | Entry Criteria | Goal |
 |---|---|---|
-| **Phase 1 — Wedge** | Pilot-capable on Stellar Testnet/Mainnet | Onboard software/creative agencies; maximize UX and reliability feedback |
+| **Phase 1 — Wedge** | Pilot-capable on Stellar Mainnet | Onboard software/creative agencies; maximize UX and reliability feedback |
 | **Phase 2 — Validation** | No P0 reliability gaps on core bridge; Phase 1 milestones met | Prove atomic swaps, oracle/EIS, and statutory flows in real operations; activate founder referrals |
 | **Phase 3 — Expansion** | Stable Phase 2 metrics | F&B suppliers and distributors; larger invoice throughput for liquidity side |
 | **Phase 4 — Ad Tax Module** | Core infrastructure stable | Launch Candidate 2 (programmable treasury for RMC 5-2024) as a vertical add-on |

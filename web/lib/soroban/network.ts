@@ -2,13 +2,17 @@ export const AXIAL_NETWORK_COOKIE = "axial_network";
 
 export type StellarNetworkId = "testnet" | "mainnet";
 
-export const DEFAULT_STELLAR_NETWORK: StellarNetworkId = "testnet";
+// Axial runs on Mainnet only. Testnet is retired as an operating target;
+// the `testnet` branch of the type/config is kept for tooling but the app
+// always resolves to Mainnet.
+export const DEFAULT_STELLAR_NETWORK: StellarNetworkId = "mainnet";
 
 const MAINNET_USDC_SAC =
   "CCW67TSZV3SSS2HXMBQ5JFGCKJNXKZM7UQUWUZPUTHXSTZLEO7SJMI75";
 
-export function parseNetwork(raw: string | null | undefined): StellarNetworkId {
-  return raw === "mainnet" ? "mainnet" : "testnet";
+/** Mainnet-only: the app always operates on Mainnet regardless of input. */
+export function parseNetwork(_raw?: string | null): StellarNetworkId {
+  return "mainnet";
 }
 
 export function networkLabel(network: StellarNetworkId): string {
