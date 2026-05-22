@@ -3,6 +3,7 @@
 import { Fragment, useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { InvoiceTrustRow } from "@/components/liquidity/InvoiceTrustRow";
+import { PayerPanel } from "@/components/liquidity/PayerPanel";
 import { TokenizationPipeline } from "@/components/liquidity/TokenizationPipeline";
 import { useApp } from "@/components/providers/AppProvider";
 import { Button } from "@/components/ui/Button";
@@ -185,7 +186,8 @@ type ChainStatus = {
 };
 
 export function LiquidityView() {
-  const { dispatch, setLastSwapAdvancePhp, setProgressToast, dismissToast } = useApp();
+  const { dispatch, setLastSwapAdvancePhp, setProgressToast, dismissToast, freighterPublicKey } =
+    useApp();
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -438,12 +440,14 @@ export function LiquidityView() {
       setSwapStep("mint");
       setPipelineStage("minting");
       const chainInvoiceId = `${id}-${Date.now()}`;
+      // If Freighter is connected, route assets to the user's self-custodied wallet
+      const msmePublic = freighterPublicKey ?? undefined;
 
       try {
         const mintRes = await fetch("/api/receivable/mint", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ invoiceId: chainInvoiceId, faceAmount: face }),
+          body: JSON.stringify({ invoiceId: chainInvoiceId, faceAmount: face, msmePublic }),
         });
         const mintData = (await mintRes.json()) as {
           mode?: string;
@@ -462,7 +466,7 @@ export function LiquidityView() {
         const res = await fetch("/api/swap/execute", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ invoiceId: chainInvoiceId, faceAmount: face }),
+          body: JSON.stringify({ invoiceId: chainInvoiceId, faceAmount: face, sourceInvoiceId: id, msmePublic }),
         });
         const data = (await res.json()) as {
           mode?: string;
@@ -598,6 +602,8 @@ export function LiquidityView() {
           </Card>
         </div>
       </div>
+
+      <PayerPanel onPayerRegistered={() => void loadInvoices(page, true)} />
 
       <Card padding="none">
         <div className="flex items-start justify-between border-b border-outline-variant/15 p-6">

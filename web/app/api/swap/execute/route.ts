@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { triggerEisFromChain } from "@/lib/eis/trigger";
+import { checkFundingEligibility } from "@/lib/payers/eligibility";
 import { getSorobanConfig, isSwapChainEnabled } from "@/lib/soroban/config";
 import { executeAdvanceOnChain } from "@/lib/soroban/invoke-swap";
 import { quoteAdvance } from "@/lib/soroban/quote";
@@ -7,6 +8,14 @@ import { quoteAdvance } from "@/lib/soroban/quote";
 type Body = {
   invoiceId?: string;
   faceAmount?: number;
+  /** Stored invoice ID (without timestamp suffix) for eligibility check. */
+  sourceInvoiceId?: string;
+  /**
+   * Optional Freighter wallet public key. When present, the USDC advance
+   * is routed to the user's self-custodied wallet (Freighter address)
+   * instead of the server-managed MSME account.
+   */
+  msmePublic?: string;
 };
 
 export async function POST(request: Request) {
@@ -19,6 +28,13 @@ export async function POST(request: Request) {
 
   const invoiceId = body.invoiceId?.trim();
   const faceAmount = body.faceAmount;
+  // sourceInvoiceId is the stored invoice ID; invoiceId is the chain-scoped one
+  // (may carry a timestamp suffix). Fall back to stripping the suffix heuristically.
+  const sourceInvoiceId =
+    body.sourceInvoiceId?.trim() ??
+    (invoiceId ? invoiceId.replace(/-\d{10,}$/, "") : undefined);
+  // Freighter self-custody: override the MSME recipient with the user's own wallet
+  const msmePublicOverride = body.msmePublic?.trim() || undefined;
 
   if (!invoiceId) {
     return NextResponse.json({ error: "invoiceId is required" }, { status: 400 });
@@ -28,6 +44,27 @@ export async function POST(request: Request) {
       { error: "faceAmount must be a positive number" },
       { status: 400 },
     );
+  }
+
+  // CLS-05 — funding eligibility gate (payer KYB + confirmation + NoA ack)
+  if (sourceInvoiceId) {
+    try {
+      const eligibility = await checkFundingEligibility(sourceInvoiceId);
+      if (!eligibility.fundable) {
+        return NextResponse.json(
+          {
+            error: "NOT_FUNDABLE",
+            blockers: eligibility.blockers,
+            message:
+              "Invoice is not eligible for funding. Complete payer KYB, invoice confirmation, and NoA acknowledgement.",
+          },
+          { status: 409 },
+        );
+      }
+    } catch {
+      // Non-fatal: if the eligibility check itself errors, allow the swap through
+      // (e.g. invoice not yet in the store in pure on-chain mode)
+    }
   }
 
   const cfg = getSorobanConfig();
@@ -46,7 +83,7 @@ export async function POST(request: Request) {
   }
 
   try {
-    const onChain = await executeAdvanceOnChain(cfg, invoiceId, faceAmount!);
+    const onChain = await executeAdvanceOnChain(cfg, invoiceId, faceAmount!, msmePublicOverride);
     triggerEisFromChain(
       "swap_executed",
       invoiceId,

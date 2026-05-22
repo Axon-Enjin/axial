@@ -7,6 +7,7 @@ export type SorobanConfig = {
   swapContractId: string | null;
   receivableContractId: string | null;
   payrollContractId: string | null;
+  settlementContractId: string | null;
   usdcTokenId: string | null;
   funderSecret: string | null;
   funderPublic: string | null;
@@ -32,6 +33,10 @@ export function getSorobanConfig(): SorobanConfig {
   const payrollContractId =
     process.env.PAYROLL_SPLIT_CONTRACT_ID ??
     deployment?.contracts?.payroll_split ??
+    null;
+  const settlementContractId =
+    process.env.SETTLEMENT_CONTRACT_ID ??
+    deployment?.contracts?.settlement ??
     null;
   const usdcTokenId =
     process.env.SOROBAN_USDC_TOKEN_ID ??
@@ -73,6 +78,7 @@ export function getSorobanConfig(): SorobanConfig {
     swapContractId,
     receivableContractId,
     payrollContractId,
+    settlementContractId,
     usdcTokenId,
     funderSecret: process.env.STELLAR_FUNDER_SECRET ?? null,
     funderPublic,
@@ -108,6 +114,14 @@ export function isPayrollChainEnabled(cfg: SorobanConfig = getSorobanConfig()) {
   );
 }
 
+/**
+ * Whether the server can build an unsigned payroll XDR for Freighter signing.
+ * Requires only the contract ID — not the server-held MSME secret.
+ */
+export function isPayrollBuildEnabled(cfg: SorobanConfig = getSorobanConfig()) {
+  return Boolean(cfg.payrollContractId);
+}
+
 /** Public-only snapshot for UI (no secrets). */
 export function getPublicChainStatus(cfg: SorobanConfig = getSorobanConfig()) {
   return {
@@ -116,13 +130,17 @@ export function getPublicChainStatus(cfg: SorobanConfig = getSorobanConfig()) {
     onChainReady: isSwapChainEnabled(cfg),
     receivableReady: isReceivableChainEnabled(cfg),
     payrollReady: isPayrollChainEnabled(cfg),
+    payrollBuildReady: isPayrollBuildEnabled(cfg),
     swapContractId: cfg.swapContractId,
     receivableContractId: cfg.receivableContractId,
     payrollContractId: cfg.payrollContractId,
+    settlementContractId: cfg.settlementContractId,
     usdcTokenId: cfg.usdcTokenId,
     funderPublic: cfg.funderPublic,
     msmePublic: cfg.msmePublic,
     issuerPublic: cfg.issuerPublic,
+    rpcUrl: cfg.rpcUrl,
+    networkPassphrase: cfg.networkPassphrase,
     explorerContractBase:
       cfg.network === "mainnet"
         ? "https://stellar.expert/explorer/public/contract"

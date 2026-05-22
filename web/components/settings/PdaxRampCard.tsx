@@ -1,20 +1,49 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useApp } from "@/components/providers/AppProvider";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { Icon } from "@/components/ui/Icon";
 
-const DEMO_RATE = 56.5;
+const FALLBACK_RATE = 56.5;
+
+type FxRate = {
+  phpPerUsdc: number;
+  source: "reflector" | "fallback";
+  contractId: string | null;
+  cachedAt: string | null;
+  error: string | null;
+};
 
 export function PdaxRampCard() {
   const { dispatch } = useApp();
   const [phpAmount, setPhpAmount] = useState("100000");
   const [mode, setMode] = useState<"deposit" | "withdraw">("deposit");
+  const [fxRate, setFxRate] = useState<FxRate | null>(null);
+  const [rateLoading, setRateLoading] = useState(true);
+
+  useEffect(() => {
+    fetch("/api/fx/rate")
+      .then((r) => r.json())
+      .then((data: FxRate) => setFxRate(data))
+      .catch(() => {
+        setFxRate({
+          phpPerUsdc: FALLBACK_RATE,
+          source: "fallback",
+          contractId: null,
+          cachedAt: null,
+          error: "Could not reach FX rate endpoint",
+        });
+      })
+      .finally(() => setRateLoading(false));
+  }, []);
+
+  const rate = fxRate?.phpPerUsdc ?? FALLBACK_RATE;
+  const isLive = fxRate?.source === "reflector";
 
   const php = Number(phpAmount.replace(/,/g, "")) || 0;
-  const usdc = php > 0 ? (php / DEMO_RATE).toFixed(2) : "0.00";
+  const usdc = php > 0 ? (php / rate).toFixed(2) : "0.00";
 
   return (
     <Card>
@@ -64,19 +93,54 @@ export function PdaxRampCard() {
           />
         </div>
         <div className="rounded-lg border border-outline-variant/20 bg-surface-container-low p-4">
-          <div className="font-label-sm text-label-sm text-on-surface-variant">Indicative rate</div>
+          <div className="flex items-center justify-between gap-2">
+            <span className="font-label-sm text-label-sm text-on-surface-variant">
+              Indicative rate
+            </span>
+            {rateLoading ? (
+              <span className="inline-flex items-center gap-1 font-label-sm text-label-sm text-on-surface-variant">
+                <span className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-outline" />
+                fetching…
+              </span>
+            ) : isLive ? (
+              <span className="inline-flex items-center gap-1.5 font-label-sm text-label-sm text-[#2DD4BF]">
+                <span className="inline-block h-1.5 w-1.5 rounded-full bg-[#2DD4BF]" />
+                Live · Reflector
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-1.5 font-label-sm text-label-sm text-on-surface-variant">
+                <span className="inline-block h-1.5 w-1.5 rounded-full bg-outline" />
+                Demo rate
+              </span>
+            )}
+          </div>
           <div className="mt-1 font-headline-md text-headline-md text-on-surface">
-            ₱{DEMO_RATE.toFixed(2)} / USDC
+            ₱{rate.toFixed(2)} / USDC
           </div>
           <div className="mt-2 font-body-md text-body-md text-[#2DD4BF]">
             ≈ {usdc} USDC {mode === "deposit" ? "credited" : "sent"}
           </div>
+          {fxRate?.contractId && isLive ? (
+            <a
+              href={`https://stellar.expert/explorer/testnet/contract/${fxRate.contractId}`}
+              target="_blank"
+              rel="noreferrer"
+              className="mt-2 block font-mono text-xs text-on-surface-variant/60 underline-offset-2 hover:text-primary hover:underline"
+            >
+              {fxRate.contractId.slice(0, 8)}…
+            </a>
+          ) : null}
+          {fxRate?.error && !isLive ? (
+            <p className="mt-1.5 font-body-md text-body-md text-on-surface-variant/70 text-xs">
+              {fxRate.error.includes("null") ? "PHP not available on testnet oracle" : fxRate.error}
+            </p>
+          ) : null}
         </div>
       </div>
 
       <p className="mt-4 font-body-md text-body-md text-on-surface-variant">
         Settlement on Stellar uses USDC. Invoices and payroll display PHP; conversion happens at
-        swap time via oracle (demo rate above).
+        swap time via the Reflector price oracle.
       </p>
 
       <div className="mt-4 flex flex-wrap gap-2">

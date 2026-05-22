@@ -4,14 +4,32 @@ import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
   useRef,
   useState,
 } from "react";
 import { AppToast, type ToastState } from "@/components/ui/AppToast";
 import { demoActionMessage, type DemoActionKind } from "@/lib/demo-actions";
+import {
+  checkFreighterConnected,
+  freighterAvailable,
+  getFreighterNetworkDetails,
+  getFreighterPublicKey,
+  type FreighterNetworkDetails,
+} from "@/lib/soroban/freighter";
+
+export type AppUser = {
+  id: string;
+  email: string | null;
+  orgId: string | null;
+  orgName: string | null;
+  role: string | null;
+};
 
 type AppContextValue = {
+  /** Authenticated user (null if unauthenticated / auth not configured). */
+  currentUser: AppUser | null;
   walletConnected: boolean;
   toggleWallet: () => void;
   toast: ToastState | null;
@@ -26,15 +44,45 @@ type AppContextValue = {
     opts?: { progress?: number; stepLabel?: string },
   ) => void;
   dismissToast: () => void;
+  // ── Freighter self-custody wallet ──────────────────────────────────────────
+  /** Connected Freighter public key, or null if not connected. */
+  freighterPublicKey: string | null;
+  /** Network details from the connected Freighter wallet. */
+  freighterNetwork: FreighterNetworkDetails | null;
+  /** Whether the Freighter extension is installed in this browser. */
+  freighterInstalled: boolean;
+  /** Whether a connection attempt is in progress. */
+  freighterConnecting: boolean;
+  /**
+   * Connect Freighter. Prompts the user to grant access.
+   * On success, `freighterPublicKey` is set.
+   * Throws on user rejection or extension not installed.
+   */
+  connectFreighter: () => Promise<void>;
+  /** Disconnect Freighter (clears local state — does not revoke extension access). */
+  disconnectFreighter: () => void;
 };
 
 const AppContext = createContext<AppContextValue | null>(null);
 
-export function AppProvider({ children }: { children: React.ReactNode }) {
+export function AppProvider({
+  children,
+  initialUser = null,
+}: {
+  children: React.ReactNode;
+  initialUser?: AppUser | null;
+}) {
+  const [currentUser] = useState<AppUser | null>(initialUser);
+  // currentUser is initialised from server-side session (see initialUser prop)
   const [walletConnected, setWalletConnected] = useState(false);
   const [toast, setToast] = useState<ToastState | null>(null);
   const [lastSwapAdvancePhp, setLastSwapAdvancePhp] = useState<number | null>(null);
   const dismissTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Freighter state
+  const [freighterPublicKey, setFreighterPublicKey] = useState<string | null>(null);
+  const [freighterNetwork, setFreighterNetwork] = useState<FreighterNetworkDetails | null>(null);
+  const [freighterInstalled, setFreighterInstalled] = useState(false);
+  const [freighterConnecting, setFreighterConnecting] = useState(false);
 
   const clearDismissTimer = useCallback(() => {
     if (dismissTimerRef.current) {
@@ -91,8 +139,67 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setWalletConnected((w) => !w);
   }, []);
 
+  // Detect Freighter on mount and auto-restore an existing session
+  useEffect(() => {
+    const installed = freighterAvailable();
+    setFreighterInstalled(installed);
+    if (!installed) return;
+    void checkFreighterConnected().then(async (connected) => {
+      if (!connected) return;
+      try {
+        const publicKey = await getFreighterPublicKey();
+        const networkDetails = await getFreighterNetworkDetails().catch(
+          (): FreighterNetworkDetails => ({
+            network: "TESTNET",
+            networkUrl: "https://horizon-testnet.stellar.org",
+            networkPassphrase: "Test SDF Network ; September 2015",
+          }),
+        );
+        setFreighterPublicKey(publicKey);
+        setFreighterNetwork(networkDetails);
+      } catch {
+        // Silent — user can connect manually via WalletCard
+      }
+    });
+  }, []); // intentionally run once on mount
+
+  // ── Freighter ──────────────────────────────────────────────────────────────
+  const connectFreighter = useCallback(async () => {
+    setFreighterInstalled(freighterAvailable());
+    if (!freighterAvailable()) {
+      throw new Error("Freighter extension not installed. Visit freighter.app to install it.");
+    }
+    setFreighterConnecting(true);
+    try {
+      const publicKey = await getFreighterPublicKey();
+      let networkDetails: FreighterNetworkDetails;
+      try {
+        networkDetails = await getFreighterNetworkDetails();
+      } catch {
+        // Older Freighter versions may not expose getNetworkDetails — use defaults
+        networkDetails = {
+          network: "TESTNET",
+          networkUrl: "https://horizon-testnet.stellar.org",
+          networkPassphrase: "Test SDF Network ; September 2015",
+        };
+      }
+      setFreighterPublicKey(publicKey);
+      setFreighterNetwork(networkDetails);
+      // Promote installed state
+      setFreighterInstalled(true);
+    } finally {
+      setFreighterConnecting(false);
+    }
+  }, []);
+
+  const disconnectFreighter = useCallback(() => {
+    setFreighterPublicKey(null);
+    setFreighterNetwork(null);
+  }, []);
+
   const value = useMemo(
     () => ({
+      currentUser,
       walletConnected,
       toggleWallet,
       toast,
@@ -101,8 +208,15 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       dispatch,
       setProgressToast,
       dismissToast,
+      freighterPublicKey,
+      freighterNetwork,
+      freighterInstalled,
+      freighterConnecting,
+      connectFreighter,
+      disconnectFreighter,
     }),
     [
+      currentUser,
       walletConnected,
       toggleWallet,
       toast,
@@ -110,6 +224,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       dispatch,
       setProgressToast,
       dismissToast,
+      freighterPublicKey,
+      freighterNetwork,
+      freighterInstalled,
+      freighterConnecting,
+      connectFreighter,
+      disconnectFreighter,
     ],
   );
 

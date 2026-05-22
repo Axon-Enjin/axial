@@ -11,6 +11,29 @@
     },
     "app/api/dashboard/summary/route.ts": {
       "maxDuration": 30
+    },
+    "app/api/eis/worker/route.ts": {
+      "maxDuration": 60
+    },
+    "app/api/eis/horizon-poll/route.ts": {
+      "maxDuration": 30
+    },
+    "app/api/reconciliation/scan/route.ts": {
+      "maxDuration": 30
     }
-  }
+  },
+  "crons": [
+    {
+      "path": "/api/eis/worker",
+      "schedule": "0 */6 * * *"
+    },
+    {
+      "path": "/api/eis/horizon-poll",
+      "schedule": "*/10 * * * *"
+    },
+    {
+      "path": "/api/reconciliation/scan",
+      "schedule": "0 2 * * *"
+    }
+  ]
 }

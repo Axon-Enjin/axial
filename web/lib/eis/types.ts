@@ -61,6 +61,13 @@ export type EisSubmission = {
   createdAt: string;
   updatedAt: string;
   error?: string;
+  /**
+   * T+3 BIR EIS deadline: transactionDate + 3 calendar days.
+   * Submissions not in memo_written by this time are considered expired.
+   */
+  dueBy?: string;
+  /** ISO timestamp when the BIR submission was dispatched (status → submitted). */
+  submittedAt?: string;
 };
 
 export type BirAcknowledgement = {

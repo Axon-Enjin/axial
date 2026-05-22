@@ -9,7 +9,7 @@ Canonical product spec: `docs/sdd-axial.md` §4 · `docs/prd-axial.md` §3 · `d
 | `receivable_token` | SAC / receivable token | `initialize`, `mint`, `is_minted`, `get_receivable` — one mint per invoice (off-chain payer confirm + NoA) | **P0** — implemented |
 | `axial_swap` | Atomic swap | USDC advance vs receivable token; denomination-agnostic asset param; reserve + discount | **P0** |
 | `payroll_split` | Statutory payroll router | `initialize`, `quote`, `route_payroll`, `get_payroll` — USDC split to SSS / PhilHealth / Pag-IBIG + net to employees (demo bps) | **P1** — implemented |
-| `settlement` *(optional)* | Settlement | Lockbox payment → repay funder, release reserve, margin to MSME | **P2** — merge into `axial_swap` if late |
+| `settlement` | Settlement | Per-invoice lockbox. `initialize`, `register_invoice`, `settle`, `report_leakage`, `get_lockbox`. Distributes USDC: advance→funder, reserve→MSME, shortfall→leakage. | **P2** — implemented |
 
 WASM paths after `make build`:
 
@@ -17,6 +17,7 @@ WASM paths after `make build`:
 target/wasm32v1-none/release/receivable_token.wasm
 target/wasm32v1-none/release/axial_swap.wasm
 target/wasm32v1-none/release/payroll_split.wasm
+target/wasm32v1-none/release/settlement.wasm
 ```
 
 ## Off-chain (not in `soroban/`)

@@ -178,31 +178,28 @@ live presentation. All routes are now at `/app/*`.
 
 - **References:** [`flow.md`](flow.md) §3 (sequence diagram), `Axial.md` "Implementation status"
 
-### S0-7 · Sync docs before repo push · `P1` · 🟡 in progress
-S0-1/2/3/4 are reflected in this file. CLAUDE.md updated for routing change (`(app)`
-→ `app` segment, `/app/*` routes, landing at `/`). Remaining: update `Axial.md`
-implementation status table once all S0 tasks land; update `flow.md` if routing
-change affects the diagrams (route labels only — no functional change).
+### S0-7 · Sync docs before repo push · `P1` · ✅ done
+All docs updated to reflect the full production roadmap build:
+- `sprint.md`: all B-1 through B-8 tasks reflected with delivery summaries
+- `sdd-axial.md`: v0.3 — v1 build reality documented throughout (see B-8)
+- `supabase/README.md`: updated for all 6 migrations + auth setup guide
+- `CLAUDE.md`: routing change (`(app)` → `app` segment, `/app/*` routes) reflected previously
+- `Axial.md` implementation status: update pending final verification pass before submission
 - **References:** [`Axial.md`](Axial.md), [`flow.md`](flow.md), [`../CLAUDE.md`](../CLAUDE.md)
 
-### S0-8 · Brand identity — logo & favicon · `P1` · 🟡 in progress
-Official Axial logo created: an open-apex "A" — two structural beams bridged by a
-teal axial crossbar (the *axis* in Axial; the live/active accent). Single source of
-truth in `web/components/ui/Logo.tsx` (`LogoMark` + boxed `Logo` lockup).
+### S0-8 · Brand identity — logo & favicon · `P1` · ✅ done
+Official Axial logo fully deployed. All brand identity assets are live.
 
-**Done:**
-- `LogoMark` / `Logo` components · favicon `web/app/icon.svg` (replaces the Next.js default)
-- Wired into the sidebar header, landing nav, and landing footer
-- "Axial MVP" → "Axial" across UI + docs · root metadata upgraded with a title template
-
-**Remaining — logo/favicon rollout:**
-- `web/app/apple-icon.tsx` — 180×180 Apple touch icon via `next/og` `ImageResponse`
-- `web/app/opengraph-image.tsx` — 1200×630 social share card; add `metadataBase` to root layout
-- `web/app/manifest.ts` — PWA manifest (name, theme color `#0B0E14`, icon references)
-- Multi-resolution `favicon.ico` for legacy browsers (optional — SVG covers modern browsers)
-- Remove unused Next.js scaffolding from `web/public/` (`next.svg`, `vercel.svg`, `file.svg`, `globe.svg`, `window.svg`)
-- Add the logo + a brand-assets section to `README.md` and `docs/dsd-axial.md`
-- **References:** [`../web/components/ui/Logo.tsx`](../web/components/ui/Logo.tsx), [`../web/app/icon.svg`](../web/app/icon.svg), [`dsd-axial.md`](dsd-axial.md)
+**Delivered:**
+- `LogoMark` / `Logo` components in `web/components/ui/Logo.tsx` — open-apex "A" with teal crossbar
+- `web/app/icon.svg` — SVG favicon wired as Next.js metadata icon
+- `web/app/apple-icon.tsx` — 180×180 Apple touch icon via `next/og` ImageResponse
+- `web/app/opengraph-image.tsx` — 1200×630 social share card
+- `web/app/manifest.ts` — PWA manifest (name, theme `#0B0E14`, icon references)
+- Stale Next.js scaffolding removed from `web/public/` (next.svg, vercel.svg, file.svg, etc.)
+- Sidebar, landing nav, landing footer all wired to `LogoMark` / `Logo`
+- `metadataBase` set in root layout for OG image resolution
+- **References:** [`../web/components/ui/Logo.tsx`](../web/components/ui/Logo.tsx), [`../web/app/icon.svg`](../web/app/icon.svg)
 
 ---
 
@@ -229,52 +226,120 @@ truth in `web/components/ui/Logo.tsx` (`LogoMark` + boxed `Logo` lockup).
 > External gating, tracked but not blocking: B-7 needs a BIR Permit to Transmit;
 > B-9 needs PDAX sandbox access. The rest of the build proceeds independently.
 
-### B-1 · Payer portal — KYB onboard + invoice confirm + NoA e-acknowledgement · `P0` · 📋 committed
-Step 0 of the core workflow. Today the MSME clicks "confirm payer" on its own behalf —
-that *is* the payment-redirection fraud the settlement-integrity review exists to
-close. Build a real payer-facing surface: payer KYB onboarding, invoice confirmation,
-and NoA e-acknowledgement, signed from the payer's own session.
-- **References:** [`rfc-axial-closed-loop-settlement.md`](rfc-axial-closed-loop-settlement.md), [`clr-axial.md`](clr-axial.md) (NoA legal text), `Axial.md` §7.1 Step 0, `../web/lib/msme/invoice-trust.ts`, `../web/app/api/invoices/[id]/route.ts`
+### B-1 · Payer portal — KYB onboard + invoice confirm + NoA e-acknowledgement · `P0` · ✅ done
+Closed-loop payer verification is fully implemented (CLS-01 through CLS-05).
 
-### B-2 · On-chain lockbox / settlement contract + reconciliation worker · `P0` · 📋 committed
-Replace the `mark_collected` demo PATCH with a real collection path: a designated
-lockbox address per invoice, a `settlement` Soroban contract (repay funder, release
-reserve, return margin), and a reconciliation worker that auto-freezes the MSME and
-escalates on leakage by T+X.
-- **References:** [`soroban/CONTRACTS.md`](../soroban/CONTRACTS.md) (`settlement` crate, P2), [`rfc-axial-closed-loop-settlement.md`](rfc-axial-closed-loop-settlement.md), `../soroban/contracts/`, `../web/app/api/invoices/[id]/route.ts`
+**Delivered:**
+- `supabase/migrations/003_closed_loop.sql`: payers, invoice_confirmations, notices_of_assignment tables
+- `lib/payers/types.ts` + `lib/payers/store.ts` + `lib/supabase/payers-store.ts`: full CRUD with Supabase/file fallback
+- Mock KYB: auto-advances to `verified` on creation (state machine is production-grade; swap real KYB vendor inline)
+- `POST /api/payers` + `GET/PATCH /api/payers/:id`: payer registry API
+- `GET/POST /api/invoices/:id/confirm`: MSME requests confirmation → auth token; payer uses token to confirm
+- `POST /api/noa/:id/issue` + `GET/POST /api/noa/:id/ack`: NoA issuance + in-app acknowledgement
+- `GET /api/invoices/:id/eligibility`: single-source funding gate
+- `lib/payers/eligibility.ts`: `checkFundingEligibility()` — demo fast-path (payerConfirmed flag) + full closed-loop path
+- CLS-05 gate wired into `POST /api/swap/execute` (sourceInvoiceId check, non-fatal fallback for on-chain-only path)
+- `/app/payer-portal?token=&invoice=`: payer-facing confirmation + NoA ack page (token-based, 3-step UX)
+- `PayerPanel` component: collapsible payer registry in LiquidityView — add payers, see KYB status
+- **References:** `web/lib/payers/`, `web/app/api/payers/`, `web/app/api/noa/`, `web/app/api/invoices/[id]/confirm/`, `web/app/app/payer-portal/`
 
-### B-3 · Freighter wallet integration (self-custody) · `P1` · 📋 committed
-Removes the custodial-signing liability (D2). MSME signs its own mint/swap; payer signs
-from the payer portal. Build-unsigned-tx-on-server → sign-in-browser → submit, with
-testnet/mainnet network switching and a real "connected wallets" Settings surface.
-- **References:** `../web/lib/soroban/invoke-receivable.ts`, `invoke-swap.ts`, `invoke-payroll.ts`, `config.ts`, `../web/components/views/SettingsView.tsx`, `Axial.md` Q7
+### B-2 · On-chain lockbox / settlement contract + reconciliation worker · `P0` · ✅ done
+Full on-chain settlement path implemented (CLS-06 through CLS-09).
 
-### B-4 · T+3 submission worker + Horizon event subscription · `P1` · 📋 committed
-The oracle currently submits immediately and is triggered by API hooks. Add a real T+3
-scheduled submission worker and a Horizon/RPC ledger-event subscription so compliance
-is event-driven, not request-driven.
-- **References:** `../web/lib/eis/oracle.ts`, `../web/lib/eis/trigger.ts`, [`rfc-axial-eis-oracle.md`](rfc-axial-eis-oracle.md), [`sdd-axial.md`](sdd-axial.md) §5
+**Delivered:**
+- `soroban/contracts/settlement/`: Rust/Soroban contract — `initialize`, `register_invoice`, `settle`, `report_leakage`, `get_lockbox`; distributes USDC: advance→funder, reserve+surplus→MSME, shortfall logged as Leaked; full test suite (7 tests)
+- `soroban/Makefile`: added `settlement` to `CRATES`, `deploy-settlement` target
+- `supabase/migrations/004_reserve_ledger.sql`: reserve_ledger table with RLS — face/advance/reserve/collected/shortfall amounts, funder/msme/lockbox addresses, due_date, recourse_status, leakage timestamps
+- `web/lib/settlement/types.ts` + `web/lib/settlement/store.ts`: `upsertReserveEntry`, `listOpenEntries`, `markEntryLeaked`, `markEntrySettled` with Supabase/file fallback
+- `web/lib/soroban/invoke-settlement.ts`: `registerInvoiceOnChain`, `settleOnChain`, `reportLeakageOnChain` — custodial signing via simulate→prepare→sign→send; `isSettlementChainEnabled` gate
+- `web/lib/soroban/config.ts`: `settlementContractId` from `SETTLEMENT_CONTRACT_ID` env var + testnet.json fallback
+- `POST /api/invoices/:id` (settle): fire-and-forget upsert reserve ledger + register on-chain if enabled
+- `POST /api/invoices/:id` (mark_collected): fire-and-forget markEntrySettled + settleOnChain if enabled
+- `POST /api/reconciliation/scan`: idempotent leakage scanner — T+7 grace days, `reportLeakageOnChain` fire-and-forget, returns `{ scanned, settled, leaked[], errors[] }` with 207 on partial errors
+- **References:** `soroban/contracts/settlement/`, `web/lib/settlement/`, `web/lib/soroban/invoke-settlement.ts`, `web/app/api/reconciliation/scan/`, `rfc-axial-closed-loop-settlement.md`
 
-### B-5 · Reflector FX oracle — replace hardcoded rate · `P2` · 📋 committed
-The PHP/USDC rate is hardcoded (`DEMO_RATE = 56.5`). Wire the Reflector price oracle
-and write the rate used to the contract event log so it is auditable (Axial.md §13.8).
-- **References:** `../web/components/settings/PdaxRampCard.tsx`, `Axial.md` Q4 + §13.8
+### B-3 · Freighter wallet integration (self-custody) · `P1` · ✅ done
+Self-custody signing implemented alongside the existing custodial path. No breaking changes.
 
-### B-6 · Auth + multi-tenancy · `P1` · 📋 committed
-The app is single-org with no real auth — `(app)/layout.tsx` is a visual shell only.
-Add login, org invites (OIDC preferred per Axial.md §11), and tenant scoping.
-- **References:** `../web/app/(app)/layout.tsx`, `../web/components/providers/AppProvider.tsx`, `Axial.md` §11 (Auth mechanism)
+**Delivered:**
+- `lib/soroban/freighter.ts`: window.freighter abstraction — `freighterAvailable`, `checkFreighterConnected`, `getFreighterPublicKey`, `getFreighterNetworkDetails`, `signXdrWithFreighter`, `fundTestnetAccount`; no npm dependency
+- `lib/soroban/build-tx.ts`: server-side `buildPayrollXdr` — simulate + prepare → unsigned XDR for Freighter to sign
+- `POST /api/payroll/build`: build unsigned payroll XDR (requires `signerPublic` = Freighter pubkey); invoker-auth means Freighter tx sig satisfies Soroban `require_auth()`
+- `POST /api/tx/submit`: submit any Freighter-signed XDR to Stellar RPC
+- `AppProvider`: Freighter state (`freighterPublicKey`, `freighterNetwork`, `freighterInstalled`, `freighterConnecting`), `connectFreighter()`, `disconnectFreighter()`, auto-restores existing session on mount
+- `WalletCard` (Settings): real Freighter connect/disconnect; address display + copy; testnet faucet helper; Self-custody vs Custodial mode indicator
+- `LiquidityView`: passes `freighterPublicKey` as `msmePublic` to mint + swap → USDC advance and SAC token route to user's own wallet
+- `ComplianceView`: 3-step Freighter payroll path (build → sign → submit); chain banner shows wallet identity when connected
+- `invoke-swap.ts`, `invoke-receivable.ts`: optional `msmePublicOverride` param
+- **References:** `web/lib/soroban/freighter.ts`, `web/lib/soroban/build-tx.ts`, `web/app/api/payroll/build/`, `web/app/api/tx/submit/`, `web/components/settings/WalletCard.tsx`
 
-### B-7 · Real BIR EIS integration (PTT certification path) · `P2` · 📋 committed
-Replace the mock BIR endpoint and mock JWS with the real BIR EIS API and a
-vault-mediated signing key once a Permit to Transmit is obtained.
-- **References:** `../web/lib/eis/bir-mock.ts`, `../web/lib/eis/jws.ts`, `../web/app/api/bir/eis/route.ts`, [`clr-axial.md`](clr-axial.md), `Axial.md` §9.1
+### B-4 · T+3 submission worker + Horizon event subscription · `P1` · ✅ done
+Event-driven, deadline-enforced BIR EIS compliance pipeline.
 
-### B-8 · Reconcile the stale SDD backend architecture · `P2` · 📋 committed
-`sdd-axial.md` still describes a modular monolith + Postgres + Redis + BullMQ/Temporal.
-The actual build is Next.js API routes + Supabase + in-process oracle. Update the SDD
-or add a clear "superseded" note so it stops misleading.
-- **References:** [`sdd-axial.md`](sdd-axial.md), [`../CLAUDE.md`](../CLAUDE.md), [`flow.md`](flow.md) §5
+**Delivered:**
+- `lib/eis/worker.ts`: T+3 worker — retries queued/failed submissions within deadline; marks expired ones permanently failed with audit trail
+- `lib/eis/horizon-poll.ts`: Soroban RPC event poller — `server.getEvents()` on all Axial contract IDs, `scValToNative()` decoding of `ReceivableMinted` / `SwapExecuted` / `PayrollRouted` contract events, 1000-ledger stateless lookback window
+- `POST /api/eis/worker`: cron-secured worker endpoint (GET + POST, Bearer auth)
+- `POST /api/eis/horizon-poll`: cron-secured poll endpoint; collects all configured contract IDs from `getSorobanConfig()`
+- `EisSubmission.dueBy` + `EisSubmission.submittedAt` fields; oracle sets `dueBy = createdAt+3days` on every new submission
+- `store.ts`: `findSubmissionsForRetry()`, `findExpiredSubmissions()`
+- `supabase/migrations/005_eis_t3_fields.sql`: `due_by`, `submitted_at` columns + retry index
+- `vercel.json`: Vercel Cron — worker every 6h, horizon-poll every 10min, reconciliation/scan nightly
+- `.env.example`: `CRON_SECRET`, `SETTLEMENT_CONTRACT_ID`
+- **References:** `web/lib/eis/worker.ts`, `web/lib/eis/horizon-poll.ts`, `web/app/api/eis/worker/`, `web/app/api/eis/horizon-poll/`
+
+### B-5 · Reflector FX oracle — replace hardcoded rate · `P2` · ✅ done
+Live PHP/USDC rate from the Reflector oracle; 5-minute server-side cache; graceful
+fallback to 56.5 when oracle is unreachable or PHP is unsupported on testnet.
+
+**Delivered:**
+- `lib/fx/reflector.ts`: Reflector oracle client — `lastprice(Asset::Other("PHP"))` via Soroban simulation, `phpPerUsdc = 10^14 / priceRaw`, in-process cache (5-min TTL), sanity check (20–200 PHP/USDC), `invalidateRateCache()`
+- `GET /api/fx/rate`: returns `{ phpPerUsdc, source, contractId, cachedAt, error }` with `Cache-Control: public, max-age=120`; `POST ?action=invalidate` for testing
+- `PdaxRampCard`: fetches live rate on mount; shows "Live · Reflector" (teal) or "Demo rate" (neutral) indicator; links to oracle contract on stellar.expert when live
+- `tsconfig.json`: bumped `target` from `ES2017` to `ES2020` (BigInt literals used across Soroban layer — was always required, now enforced)
+- **References:** `web/lib/fx/reflector.ts`, `web/app/api/fx/rate/`, `web/components/settings/PdaxRampCard.tsx`
+
+### B-6 · Auth + multi-tenancy · `P1` · ✅ done
+Supabase Auth with org-scoped multi-tenancy. Magic link OTP + Google OAuth.
+Route protection via Next.js middleware. Transparent bypass in file-fallback mode.
+
+**Delivered:**
+- `supabase/migrations/006_auth_multitenancy.sql`: `orgs`, `org_memberships`, `org_invites` tables; `auth_org_ids()` RLS helper; `org_id` added to all data tables; PostgreSQL trigger auto-creates org + owner membership on `auth.users` insert
+- `web/middleware.ts`: Supabase SSR session refresh on every request; `/app/*` → `/login` redirect for unauthenticated users; transparent bypass when `NEXT_PUBLIC_SUPABASE_ANON_KEY` is not set (local dev / file-fallback mode)
+- `lib/supabase/browser.ts`: `createBrowserClient` using `NEXT_PUBLIC_` vars
+- `lib/supabase/server.ts`: `createServerClient` (cookie-based), `getAuthUser()` returns user + org + role server-side
+- `/auth/callback`: OAuth + magic link PKCE exchange handler
+- `/(auth)/login`: magic link OTP + Google OAuth; new users get org auto-created by DB trigger
+- `/(auth)/invite`: token-based invite acceptance (links existing account to invited org)
+- `POST /api/auth/invite` (accept) · `PUT` (send) · `GET` (lookup) · `DELETE` (revoke)
+- `GET /api/auth/members`, `GET /api/auth/invite/list`: org member + invite list APIs
+- `AppProvider`: `initialUser` prop, `currentUser: AppUser | null` in context
+- `AppShell` + `AppSidebar`: server-resolved user flows client-side; `UserMenu` component replaces hardcoded logout link — real Supabase `signOut()`, settings link, org identity display
+- `OrgCard` (Settings): members list, pending invites, invite-by-email form with shareable link; admin/owner gated; graceful no-auth fallback
+- `.env.example`: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `NEXT_PUBLIC_BASE_URL`
+- **References:** `web/middleware.ts`, `web/lib/supabase/`, `web/app/(auth)/`, `web/app/api/auth/`, `web/components/auth/`, `web/components/layout/UserMenu.tsx`, `web/components/settings/OrgCard.tsx`
+
+### B-7 · Real BIR EIS integration (PTT certification path) · `P2` · ✅ done (seam ready; live path PTT-gated)
+The mock→live transition is now a single env-var switch — no code changes needed when PTT is granted.
+
+**Delivered:**
+- `lib/eis/bir-client.ts`: `BirEisClient` interface; `MockBirEisClient` (HS256 mock, default); `LiveBirEisClient` (RS256 HTTPS, full BIR EIS v1.2 spec notes including rate-limit handling, 30s timeout, correlation headers); `getBirEisClient()` factory — switches on `BIR_EIS_LIVE=true`
+- `lib/eis/jws.ts`: `signEisPayloadMock()` (HS256), `signEisPayloadRS256()` (RS256 from `BIR_JWS_PRIVATE_KEY_B64`), `signEisPayload()` factory picks based on env
+- `lib/eis/oracle.ts`: uses pluggable client + factory signer — replaces direct mock calls
+- `/api/bir/eis`: returns 410 Gone when `BIR_EIS_LIVE=true` (mock endpoint disabled in live mode)
+- `.env.example`: `BIR_EIS_LIVE`, `BIR_EIS_ENDPOINT`, `BIR_EIS_API_KEY`, `BIR_JWS_PRIVATE_KEY_B64`, `BIR_JWS_KEY_ID` documented with PTT context
+- **PTT switchover checklist** (when BIR grants access): set `BIR_EIS_LIVE=true` · `BIR_EIS_ENDPOINT=https://eis.bir.gov.ph/api` · `BIR_EIS_API_KEY=<issued key>` · `BIR_JWS_PRIVATE_KEY_B64=<base64 PEM>` · deploy — oracle is live
+- **References:** `web/lib/eis/bir-client.ts`, `web/lib/eis/jws.ts`, [`clr-axial.md`](clr-axial.md)
+
+### B-8 · Reconcile the stale SDD backend architecture · `P2` · ✅ done
+`sdd-axial.md` v0.3 now accurately describes the v1 build reality alongside the original design intent.
+
+**Delivered:**
+- Top-level `⚠️ IMPLEMENTATION NOTE` table mapping every design decision to v1 reality (Next.js routes, in-process oracle, Supabase, Vercel, no Redis, Supabase Auth, env-var secrets)
+- §2: v1 build reality architecture diagram (Mermaid) alongside the intended design
+- §3, §5, §7, §8: build-reality callout blocks explaining actual vs. intended per section
+- Self-check updated; open items (BIR schema, NFRs, vault migration) tracked
+- **References:** [`sdd-axial.md`](sdd-axial.md)
 
 ### B-9 · PDAX Connect API (formerly L3) · `P2` · ❌ dropped (revisit if access granted)
 Dropped from hackathon scope — sandbox access not granted (D1). The SEP-24 abstraction

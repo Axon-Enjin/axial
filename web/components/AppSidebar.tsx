@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { LogoMark } from "@/components/ui/Logo";
+import { UserMenu } from "@/components/layout/UserMenu";
+import type { AuthUser } from "@/lib/supabase/server";
 
 const NAV = [
   { href: "/app", label: "Command Center", icon: "dashboard" },
@@ -43,10 +45,11 @@ function NavLink({
 
 type AppSidebarProps = {
   network: string;
+  user?: AuthUser | null;
   onNewTransaction?: () => void;
 };
 
-export function AppSidebar({ network, onNewTransaction }: AppSidebarProps) {
+export function AppSidebar({ network, user, onNewTransaction }: AppSidebarProps) {
   const pathname = usePathname();
 
   return (
@@ -102,23 +105,28 @@ export function AppSidebar({ network, onNewTransaction }: AppSidebarProps) {
         ))}
       </div>
 
+      {/* Footer: user identity + help */}
       <div className="mt-auto flex flex-col gap-1 border-t border-outline-variant/10 px-2 pt-4">
         <Link
-          href="#"
+          href="https://github.com/axial-ph"
+          target="_blank"
+          rel="noreferrer"
           className="flex items-center gap-3 rounded-r-full border-r-2 border-transparent px-4 py-3 font-label-md text-label-md text-on-surface-variant transition-all duration-300 hover:bg-surface-variant/20 hover:text-on-surface"
         >
-          <span className="material-symbols-outlined text-[20px]">
-            help_outline
-          </span>
+          <span className="material-symbols-outlined text-[20px]">help_outline</span>
           Support
         </Link>
-        <Link
-          href="#"
-          className="flex items-center gap-3 rounded-r-full border-r-2 border-transparent px-4 py-3 font-label-md text-label-md text-on-surface-variant transition-all duration-300 hover:bg-surface-variant/20 hover:text-on-surface"
-        >
-          <span className="material-symbols-outlined text-[20px]">logout</span>
-          Sign Out
-        </Link>
+
+        {/* User menu — real logout when auth is configured */}
+        {user ? (
+          <div className="px-2 pb-2">
+            <UserMenu
+              email={user.email}
+              orgName={user.orgName}
+              role={user.role}
+            />
+          </div>
+        ) : null}
       </div>
     </nav>
   );

@@ -30,6 +30,13 @@ export async function executeAdvanceOnChain(
   cfg: SorobanConfig,
   invoiceId: string,
   faceAmount: number,
+  /**
+   * Optional Freighter wallet public key to use as the MSME recipient.
+   * When provided, the USDC advance is sent directly to the user's
+   * self-custodied wallet instead of the server-managed MSME account.
+   * Falls back to cfg.msmePublic if not set.
+   */
+  msmePublicOverride?: string,
 ): Promise<ExecuteAdvanceResult> {
   if (
     !cfg.swapContractId ||
@@ -39,6 +46,8 @@ export async function executeAdvanceOnChain(
   ) {
     throw new Error("Soroban swap env is not configured");
   }
+
+  const msmePublic = msmePublicOverride ?? cfg.msmePublic;
 
   const server = new rpc.Server(cfg.rpcUrl);
   const funder = Keypair.fromSecret(cfg.funderSecret);
@@ -57,7 +66,7 @@ export async function executeAdvanceOnChain(
       contract.call(
         "execute_advance",
         new Address(cfg.funderPublic).toScVal(),
-        new Address(cfg.msmePublic).toScVal(),
+        new Address(msmePublic).toScVal(),
         nativeToScVal(invoiceId, { type: "string" }),
         nativeToScVal(BigInt(Math.trunc(faceAmount)), { type: "i128" }),
       ),

@@ -14,7 +14,7 @@ ifeq ($(NETWORK),)
 endif
 
 WASM_DIR := target/wasm32v1-none/release
-CRATES := receivable_token axial_swap payroll_split
+CRATES := receivable_token axial_swap payroll_split settlement
 DEPLOY_JSON := deployments/testnet.json
 
 .PHONY: build test fmt clean setup check-testnet testnet-demo deploy-testnet deploy-all $(addprefix deploy-,$(CRATES))
@@ -61,3 +61,6 @@ deploy-axial_swap: build
 
 deploy-payroll_split: build
 	stellar contract deploy --wasm $(WASM_DIR)/payroll_split.wasm --source $(SOURCE) --network $(NETWORK)
+
+deploy-settlement: build
+	stellar contract deploy --wasm $(WASM_DIR)/settlement.wasm --source $(SOURCE) --network $(NETWORK)
