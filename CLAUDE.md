@@ -47,7 +47,8 @@ axial/
 ├── soroban/      # Rust/Soroban workspace — 3 contract crates (build/deploy from WSL)
 ├── web/          # Next.js 15 App Router — UI + API routes + backend logic
 ├── supabase/     # SQL migrations for the hosted Supabase project
-├── docs/         # Product docs: Axial.md (canonical), brd/prd/sdd/dsd/gtm, rfc-*
+├── docs/         # Product docs: Axial.md (canonical), pitch-deck.html, brd/prd/sdd/dsd/gtm, rfc-*
+├── scripts/      # Tooling and scripts (e.g., pdf-generation for the pitch deck)
 ├── FMD/          # Document templates (BRD, PRD, SDD, RFC, GTM) — no code
 ├── prototype/    # Early UI scratch (not the live app — ignore)
 └── claude-design/ # Design scratch (not wired into the app)

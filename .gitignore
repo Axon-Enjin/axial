@@ -23,6 +23,9 @@ out/
 claude-design/
 .tmp/
 
+# Pitch Deck PDF (HTML is committed, PDF is generated locally)
+docs/pitch-deck.pdf
+
 # OS
 .DS_Store
 Thumbs.db

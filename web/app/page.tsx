@@ -11,8 +11,8 @@ export const metadata: Metadata = {
 const STEPS = [
   {
     n: "01",
-    title: "Upload invoice",
-    body: "Drop a PDF or XML. OCR extracts the invoice number, buyer, amount, and due date.",
+    title: "Payer confirms invoice",
+    body: "B2B payer verifies the receivable and acknowledges the Notice of Assignment.",
   },
   {
     n: "02",
@@ -21,18 +21,18 @@ const STEPS = [
   },
   {
     n: "03",
-    title: "Receive an instant USDC advance",
-    body: "An atomic swap delivers 85% of face value in USDC directly to your Stellar wallet.",
+    title: "Receive instant USDC advance",
+    body: "An atomic swap delivers ~85% of face value in USDC to your Stellar wallet.",
   },
   {
     n: "04",
     title: "Route statutory payroll",
-    body: "A single transaction splits SSS, PhilHealth, and Pag-IBIG contributions on-chain.",
+    body: "A single Soroban transaction splits SSS, PhilHealth, and Pag-IBIG contributions on-chain.",
   },
   {
     n: "05",
     title: "BIR EIS filed silently",
-    body: "The compliance oracle assembles 20 BIR fields, JWS-signs the payload, and submits to BIR within T+3 — no manual input.",
+    body: "The compliance oracle assembles 20 BIR fields, JWS-signs, and submits within T+3 — no manual input.",
   },
 ];
 

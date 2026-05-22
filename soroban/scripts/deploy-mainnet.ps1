@@ -204,6 +204,6 @@ Write-Host "STELLAR_FUNDER_PUBLIC=$ADMIN"
 Write-Host "STELLAR_MSME_PUBLIC=$ADMIN"
 Write-Host ""
 Write-Host "IMPORTANT: also set STELLAR_FUNDER_SECRET, STELLAR_MSME_SECRET, STELLAR_ISSUER_SECRET"
-Write-Host "in Vercel → Settings → Environment Variables (Sensitive)"
+Write-Host "in Vercel -> Settings -> Environment Variables (Sensitive)"
 Write-Host ""
 Write-Host "Deploy complete." -ForegroundColor Green

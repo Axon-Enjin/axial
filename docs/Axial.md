@@ -112,6 +112,9 @@ Audit-derived task board: [`docs/sprint.md`](sprint.md).
 
 **Demo order:** Overview (treasury) → Liquidity (upload or seed row → confirm payer → tokenize & swap) → Compliance (payroll + EIS) → Settings (PDAX toast).
 
+### Deliverables
+- **Pitch Deck:** [Interactive HTML](pitch-deck.html) | [PDF Export](pitch-deck.pdf)
+
 ### Open questions for the dev team
 
 Decisions Carlos doesn't have a strong opinion on. Resolve early so they don't bottleneck later. **Pick one and move** — bias toward decisions you can reverse cheaply.

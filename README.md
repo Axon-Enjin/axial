@@ -272,7 +272,7 @@ See [`docs/vercel-deployment.md`](docs/vercel-deployment.md) for Vercel-specific
 
 - 🎬 **Demo Video:** [YouTube](https://youtu.be/6-CpnsPGJK0)
 - 🔗 **Live App:** _Deployed on Vercel (link TBD)_
-- 🖼️ **Pitch Deck:** _Google Slides (link TBD)_
+- 🖼️ **Pitch Deck:** [Interactive HTML](docs/pitch-deck.html) | [PDF Export](docs/pitch-deck.pdf)
 
 ### Demo Walkthrough
 
