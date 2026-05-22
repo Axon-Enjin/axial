@@ -49,6 +49,20 @@
     animation: spin 1s linear infinite;
   }
 
+  /* 3D perspective utilities */
+  .perspective-1000 {
+    perspective: 1000px;
+  }
+
+  .logo-3d-hover {
+    transform-style: preserve-3d;
+    transition: transform 0.5s ease-out;
+  }
+
+  .group:hover .logo-3d-hover {
+    transform: rotateY(12deg) rotateX(6deg) scale(1.05);
+  }
+
   .bioluminescent-glow {
     box-shadow: 0 0 15px rgba(45, 212, 191, 0.3);
   }

@@ -64,34 +64,58 @@ export default function LandingPage() {
 
       {/* ── Hero ── */}
       <section className="mx-auto max-w-[1440px] px-5 py-16 sm:px-8 sm:py-20 md:px-[64px] md:py-24 lg:py-32">
-        <p className="mb-4 sm:mb-5 font-label-sm text-[10px] sm:text-label-sm uppercase tracking-wider text-[#2DD4BF]">
-          Build on Stellar Philippines · Hackathon 2026
-        </p>
-        <h1 className="max-w-3xl font-headline-xl text-[32px] leading-[1.15] sm:text-[40px] md:text-headline-xl text-on-surface">
-          Instant Capital,<br />Invisible Compliance.
-        </h1>
-        <p className="mt-5 sm:mt-6 max-w-xl font-body-md text-[15px] leading-relaxed sm:font-body-lg sm:text-body-lg text-on-surface-variant">
-          Philippine MSMEs lose months of cash flow to Net 60–90 B2B payment terms.
-          Axial unlocks that capital through tokenized receivables on Stellar — and
-          files BIR EIS automatically, on every transaction.
-        </p>
-        <div className="mt-8 sm:mt-10 flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center gap-3 sm:gap-4">
-          <Link
-            href="/app"
-            className="inline-flex items-center justify-center gap-2 sm:gap-2.5 rounded-lg sm:rounded-xl bg-primary px-5 py-3 sm:px-6 sm:py-3.5 font-label-md text-sm sm:text-label-md font-semibold text-on-primary shadow-[0_0_20px_rgba(190,198,224,0.15)] transition-opacity hover:opacity-90"
-          >
-            Launch demo
-            <span className="material-symbols-outlined text-[16px] sm:text-[18px]">arrow_forward</span>
-          </Link>
-          <a
-            href="https://github.com/Axon-Enjin/axial"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center justify-center gap-2 font-label-md text-sm sm:text-label-md text-on-surface-variant transition-colors hover:text-on-surface"
-          >
-            <span className="material-symbols-outlined text-[16px] sm:text-[18px]">code</span>
-            View source
-          </a>
+        <div className="flex flex-col lg:flex-row gap-8 lg:gap-6 xl:gap-8 items-center">
+          {/* Left side - Logo with 3D effect (30% width) - Hidden on mobile */}
+          <div className="hidden lg:flex lg:order-1 justify-end lg:w-[30%] flex-shrink-0 lg:pr-4">
+            <div className="group perspective-1000">
+              <div className="logo-3d-hover relative">
+                {/* Glow effect on hover */}
+                <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-[#2DD4BF]/0 via-[#2DD4BF]/0 to-[#2DD4BF]/0 opacity-0 blur-2xl transition-all duration-500 group-hover:opacity-100 group-hover:from-[#2DD4BF]/30 group-hover:via-[#2DD4BF]/20 group-hover:to-primary/30 -z-10" style={{ transform: 'translateZ(-20px)' }} />
+                
+                {/* Logo container */}
+                <div className="relative flex h-72 w-72 xl:h-96 xl:w-96 items-center justify-center rounded-2xl border border-outline-variant/20 bg-gradient-to-br from-surface-container to-surface-container-high shadow-[0_8px_32px_rgba(0,0,0,0.12)] backdrop-blur-xl transition-all duration-500 group-hover:border-[#2DD4BF]/40 group-hover:shadow-[0_12px_48px_rgba(45,212,191,0.2)]" style={{ transform: 'translateZ(0px)' }}>
+                  <LogoMark size={180} className="text-primary transition-all duration-500 group-hover:text-[#2DD4BF] xl:hidden" />
+                  <LogoMark size={240} className="text-primary transition-all duration-500 group-hover:text-[#2DD4BF] hidden xl:block" />
+                  
+                  {/* Shine effect */}
+                  <div className="absolute inset-0 rounded-2xl bg-gradient-to-tr from-transparent via-white/0 to-transparent opacity-0 transition-opacity duration-500 group-hover:opacity-10" style={{ transform: 'translateZ(1px)' }} />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Right side - Content (70% width on desktop, full width on mobile) */}
+          <div className="lg:order-2 lg:w-[70%] w-full">
+            <p className="mb-4 sm:mb-5 font-label-sm text-[10px] sm:text-label-sm uppercase tracking-wider text-[#2DD4BF]">
+              Build on Stellar Philippines · Hackathon 2026
+            </p>
+            <h1 className="font-headline-xl text-[32px] leading-[1.15] sm:text-[40px] md:text-headline-xl text-on-surface">
+              Instant Capital,<br />Invisible Compliance.
+            </h1>
+            <p className="mt-5 sm:mt-6 font-body-md text-[15px] leading-relaxed sm:font-body-lg sm:text-body-lg text-on-surface-variant">
+              Philippine MSMEs lose months of cash flow to Net 60–90 B2B payment terms.
+              Axial unlocks that capital through tokenized receivables on Stellar — and
+              files BIR EIS automatically, on every transaction.
+            </p>
+            <div className="mt-8 sm:mt-10 flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center gap-3 sm:gap-4">
+              <Link
+                href="/app"
+                className="inline-flex items-center justify-center gap-2 sm:gap-2.5 rounded-lg sm:rounded-xl bg-primary px-5 py-3 sm:px-6 sm:py-3.5 font-label-md text-sm sm:text-label-md font-semibold text-on-primary shadow-[0_0_20px_rgba(190,198,224,0.15)] transition-opacity hover:opacity-90"
+              >
+                Launch demo
+                <span className="material-symbols-outlined text-[16px] sm:text-[18px]">arrow_forward</span>
+              </Link>
+              <a
+                href="https://github.com/Axon-Enjin/axial"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center justify-center gap-2 font-label-md text-sm sm:text-label-md text-on-surface-variant transition-colors hover:text-on-surface"
+              >
+                <span className="material-symbols-outlined text-[16px] sm:text-[18px]">code</span>
+                View source
+              </a>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -253,6 +277,85 @@ export default function LandingPage() {
             </h3>
             <p className="font-body-md text-[13px] leading-relaxed sm:text-body-md text-on-surface-variant">
               Settlement triggers compliance oracle within T+3. Compliance as a background process.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* ── Team ── */}
+      <section className="mx-auto max-w-[1440px] px-5 pb-16 sm:px-8 sm:pb-20 md:px-[64px] md:pb-24">
+        <h2 className="mb-2 font-headline-lg text-[24px] sm:text-headline-lg text-on-surface text-center">
+          The Team
+        </h2>
+        <p className="mb-10 sm:mb-14 font-body-md text-[15px] sm:font-body-lg sm:text-body-lg text-on-surface-variant text-center">
+          Team Axon Enjin · Four builders. Seven days. One pipeline.
+        </p>
+        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 sm:gap-8 lg:grid-cols-4 lg:gap-6 max-w-6xl mx-auto">
+          <div className="group flex flex-col items-center text-center p-6 rounded-xl border border-outline-variant/10 bg-surface-container/30 backdrop-blur-sm transition-all duration-300 hover:border-[#2DD4BF]/40 hover:bg-surface-container/50">
+            <div className="relative mb-4 sm:mb-5">
+              <div className="absolute inset-0 rounded-full bg-[#2DD4BF]/20 blur-xl opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+              <img
+                src="/pics/DelaTorre.webp"
+                alt="Carlos Jerico Dela Torre"
+                className="relative h-32 w-32 sm:h-40 sm:w-40 rounded-full border-2 border-[#2DD4BF]/20 object-cover transition-all duration-300 group-hover:border-[#2DD4BF]/60 group-hover:scale-105 shadow-lg"
+              />
+            </div>
+            <h3 className="font-headline-sm text-[15px] sm:text-headline-sm font-semibold text-on-surface mb-2">
+              Carlos Jerico Dela Torre
+            </h3>
+            <p className="font-body-sm text-[12px] sm:text-body-sm text-on-surface-variant mb-1">
+              Product & Business Architect
+            </p>
+            <p className="font-label-sm text-[11px] sm:text-label-sm text-[#2DD4BF] uppercase tracking-wider">
+              Team Lead
+            </p>
+          </div>
+          <div className="group flex flex-col items-center text-center p-6 rounded-xl border border-outline-variant/10 bg-surface-container/30 backdrop-blur-sm transition-all duration-300 hover:border-[#2DD4BF]/40 hover:bg-surface-container/50">
+            <div className="relative mb-4 sm:mb-5">
+              <div className="absolute inset-0 rounded-full bg-[#2DD4BF]/20 blur-xl opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+              <img
+                src="/pics/Tiu.webp"
+                alt="Aidan Tiu"
+                className="relative h-32 w-32 sm:h-40 sm:w-40 rounded-full border-2 border-[#2DD4BF]/20 object-cover transition-all duration-300 group-hover:border-[#2DD4BF]/60 group-hover:scale-105 shadow-lg"
+              />
+            </div>
+            <h3 className="font-headline-sm text-[15px] sm:text-headline-sm font-semibold text-on-surface mb-2">
+              Aidan Tiu
+            </h3>
+            <p className="font-body-sm text-[12px] sm:text-body-sm text-on-surface-variant">
+              DevOps Engineer
+            </p>
+          </div>
+          <div className="group flex flex-col items-center text-center p-6 rounded-xl border border-outline-variant/10 bg-surface-container/30 backdrop-blur-sm transition-all duration-300 hover:border-[#2DD4BF]/40 hover:bg-surface-container/50">
+            <div className="relative mb-4 sm:mb-5">
+              <div className="absolute inset-0 rounded-full bg-[#2DD4BF]/20 blur-xl opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+              <img
+                src="/pics/Berongoy.webp"
+                alt="Gerald Berongoy"
+                className="relative h-32 w-32 sm:h-40 sm:w-40 rounded-full border-2 border-[#2DD4BF]/20 object-cover transition-all duration-300 group-hover:border-[#2DD4BF]/60 group-hover:scale-105 shadow-lg"
+              />
+            </div>
+            <h3 className="font-headline-sm text-[15px] sm:text-headline-sm font-semibold text-on-surface mb-2">
+              Gerald Berongoy
+            </h3>
+            <p className="font-body-sm text-[12px] sm:text-body-sm text-on-surface-variant">
+              Full Stack Engineer
+            </p>
+          </div>
+          <div className="group flex flex-col items-center text-center p-6 rounded-xl border border-outline-variant/10 bg-surface-container/30 backdrop-blur-sm transition-all duration-300 hover:border-[#2DD4BF]/40 hover:bg-surface-container/50">
+            <div className="relative mb-4 sm:mb-5">
+              <div className="absolute inset-0 rounded-full bg-[#2DD4BF]/20 blur-xl opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+              <img
+                src="/pics/Sales.webp"
+                alt="Rhandie Sales Jr."
+                className="relative h-32 w-32 sm:h-40 sm:w-40 rounded-full border-2 border-[#2DD4BF]/20 object-cover transition-all duration-300 group-hover:border-[#2DD4BF]/60 group-hover:scale-105 shadow-lg"
+              />
+            </div>
+            <h3 className="font-headline-sm text-[15px] sm:text-headline-sm font-semibold text-on-surface mb-2">
+              Rhandie Sales Jr.
+            </h3>
+            <p className="font-body-sm text-[12px] sm:text-body-sm text-on-surface-variant">
+              Full Stack Engineer
             </p>
           </div>
         </div>
