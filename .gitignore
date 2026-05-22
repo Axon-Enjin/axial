@@ -4,20 +4,26 @@
 skills-lock.json
 
 # Secrets — never commit
-.env
-.env.local
-**/.env
-!**/.env.example
+.env*
+**/.env*
+!**/*.example
+!**/*.example.json
 
 # Soroban local + deployment overrides (team commits *.example.json only)
-soroban/.env
 soroban/deployments/testnet.json
 soroban/deployments/mainnet.json
+soroban/target/
+.soroban/
+.stellar/
 
-# Node
+# Node & Vercel
 node_modules/
 .next/
 out/
+.vercel/
+
+# Ad-hoc local scripts
+derive.js
 
 # Internal working directories (not product code)
 claude-design/
@@ -28,4 +34,4 @@ docs/pitch-deck.pdf
 
 # OS
 .DS_Store
-Thumbs.db
+Thumbs.db
