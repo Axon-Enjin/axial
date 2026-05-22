@@ -244,7 +244,7 @@ export function OverviewView() {
           <Card padding="lg" className="h-full">
             <div className="pointer-events-none absolute -top-24 -right-24 h-64 w-64 rounded-full bg-primary/10 blur-[80px]" />
             <div className="relative flex flex-col sm:flex-row items-start justify-between gap-4 sm:gap-0">
-              <div className="flex-1 flex flex-col justify-between">
+              <div className="flex-1">
                 <div>
                   <div className="mb-1.5 flex items-center gap-2 text-on-surface-variant">
                     <Icon name="account_balance" size={18} />
