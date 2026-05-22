@@ -5,6 +5,7 @@ on:
     branches:
       - main
       - deploy-cloudrun
+  workflow_dispatch:
 
 jobs:
   deploy:
