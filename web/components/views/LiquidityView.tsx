@@ -185,12 +185,13 @@ function UploadZone({
           </a>
           {" · "}
           <a
-            href="/samples/invoices/invoice-inv-2023-8912.png"
-            download="axial-demo-invoice-ocr.png"
+            href="/samples/invoices/invoice-inv-2023-8918.png"
+            download="axial-demo-invoice-8918.png"
             className="text-[#2DD4BF] hover:underline"
           >
-            demo PNG (OCR)
+            demo PNG
           </a>
+          {" "}(INV-2023-8918 · OCR)
         </p>
       </div>
     </Card>

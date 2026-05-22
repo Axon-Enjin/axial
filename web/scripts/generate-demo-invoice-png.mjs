@@ -24,6 +24,16 @@ const DEMOS = [
     terms: "Net 45",
     description: "Freight forwarding and customs clearance",
   },
+  {
+    file: "invoice-inv-2023-8918.png",
+    invoiceNo: "INV-2023-8918",
+    date: "May 22, 2026",
+    buyer: "Pacific Rim Trading Corp",
+    buyerTin: "222-333-444-00000",
+    amount: "180,500.00",
+    terms: "Net 30",
+    description: "Wholesale inventory and distribution",
+  },
 ];
 
 function escapeXml(s) {
@@ -73,11 +83,11 @@ function buildInvoiceSvg(demo) {
   <text x="640" y="550" font-family="Arial, Helvetica, sans-serif" font-size="20" fill="#111111">PHP ${e(demo.amount)}</text>
   <text x="900" y="550" font-family="Arial, Helvetica, sans-serif" font-size="20" fill="#111111">PHP ${e(demo.amount)}</text>
 
-  <text x="720" y="640" font-family="Arial, Helvetica, sans-serif" font-size="20" fill="#444444">Subtotal (PHP)</text>
-  <text x="980" y="640" font-family="Arial, Helvetica, sans-serif" font-size="20" fill="#111111" text-anchor="end">PHP ${e(demo.amount)}</text>
-  <text x="720" y="680" font-family="Arial, Helvetica, sans-serif" font-size="22" font-weight="700" fill="#111111">TOTAL AMOUNT DUE</text>
-  <text x="980" y="680" font-family="Arial, Helvetica, sans-serif" font-size="26" font-weight="700" fill="#111111" text-anchor="end">PHP ${e(demo.amount)}</text>
-  <line x1="720" y1="695" x2="980" y2="695" stroke="#111111" stroke-width="2"/>
+  <text x="720" y="630" font-family="Arial, Helvetica, sans-serif" font-size="20" fill="#444444">Subtotal (PHP)</text>
+  <text x="980" y="630" font-family="Arial, Helvetica, sans-serif" font-size="20" fill="#111111" text-anchor="end">PHP ${e(demo.amount)}</text>
+  <text x="720" y="675" font-family="Arial, Helvetica, sans-serif" font-size="20" font-weight="700" fill="#111111">TOTAL AMOUNT DUE</text>
+  <text x="980" y="710" font-family="Arial, Helvetica, sans-serif" font-size="28" font-weight="700" fill="#111111" text-anchor="end">PHP ${e(demo.amount)}</text>
+  <line x1="720" y1="722" x2="980" y2="722" stroke="#111111" stroke-width="2"/>
 
   <text x="80" y="760" font-family="Arial, Helvetica, sans-serif" font-size="20" font-weight="700" fill="#333333">PAYMENT TERMS</text>
   <text x="80" y="795" font-family="Arial, Helvetica, sans-serif" font-size="22" fill="#111111">${e(demo.terms)}</text>
