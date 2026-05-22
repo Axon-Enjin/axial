@@ -19,7 +19,17 @@ import {
   type FreighterNetworkDetails,
 } from "@/lib/soroban/freighter";
 
+export type AppUser = {
+  id: string;
+  email: string | null;
+  orgId: string | null;
+  orgName: string | null;
+  role: string | null;
+};
+
 type AppContextValue = {
+  /** Authenticated user (null if unauthenticated / auth not configured). */
+  currentUser: AppUser | null;
   walletConnected: boolean;
   toggleWallet: () => void;
   toast: ToastState | null;
@@ -55,7 +65,15 @@ type AppContextValue = {
 
 const AppContext = createContext<AppContextValue | null>(null);
 
-export function AppProvider({ children }: { children: React.ReactNode }) {
+export function AppProvider({
+  children,
+  initialUser = null,
+}: {
+  children: React.ReactNode;
+  initialUser?: AppUser | null;
+}) {
+  const [currentUser] = useState<AppUser | null>(initialUser);
+  // currentUser is initialised from server-side session (see initialUser prop)
   const [walletConnected, setWalletConnected] = useState(false);
   const [toast, setToast] = useState<ToastState | null>(null);
   const [lastSwapAdvancePhp, setLastSwapAdvancePhp] = useState<number | null>(null);
@@ -181,6 +199,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const value = useMemo(
     () => ({
+      currentUser,
       walletConnected,
       toggleWallet,
       toast,
@@ -197,6 +216,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       disconnectFreighter,
     }),
     [
+      currentUser,
       walletConnected,
       toggleWallet,
       toast,

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { OrgCard } from "@/components/settings/OrgCard";
 import { PdaxRampCard } from "@/components/settings/PdaxRampCard";
 import { WalletCard } from "@/components/settings/WalletCard";
 import { Button } from "@/components/ui/Button";
@@ -156,6 +157,8 @@ export function SettingsView() {
       <p className="font-body-lg text-body-lg text-on-surface-variant">
         Configure autonomous systems, regulatory credentials, and API bridges.
       </p>
+
+      <OrgCard />
 
       <div className="grid grid-cols-1 gap-gutter md:grid-cols-12">
         <div className="md:col-span-8">
