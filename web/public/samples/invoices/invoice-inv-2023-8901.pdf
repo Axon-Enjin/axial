@@ -1,0 +1,74 @@
+%PDF-1.4
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents 4 0 R /Resources << /Font << /F1 5 0 R >> >> >>
+endobj
+4 0 obj
+<< /Length 874 >>
+stream
+BT
+/F1 11 Tf
+1 0 0 1 50 740 Tm
+(AXIAL DEMO — B2B INVOICE) Tj
+1 0 0 1 50 725 Tm
+( ) Tj
+1 0 0 1 50 710 Tm
+(Invoice Number: INV-2023-8901) Tj
+1 0 0 1 50 695 Tm
+(Invoice Date: May 15, 2025) Tj
+1 0 0 1 50 680 Tm
+( ) Tj
+1 0 0 1 50 665 Tm
+(FROM) Tj
+1 0 0 1 50 650 Tm
+(Axial Demo MSME Inc.) Tj
+1 0 0 1 50 635 Tm
+(TIN: 123-456-789-00000) Tj
+1 0 0 1 50 620 Tm
+( ) Tj
+1 0 0 1 50 605 Tm
+(BILL TO) Tj
+1 0 0 1 50 590 Tm
+(Acme Logistics Corp) Tj
+1 0 0 1 50 575 Tm
+(TIN: 987-654-321-00000) Tj
+1 0 0 1 50 560 Tm
+( ) Tj
+1 0 0 1 50 545 Tm
+(Payment Terms: Net 60) Tj
+1 0 0 1 50 530 Tm
+( ) Tj
+1 0 0 1 50 515 Tm
+(Description                          Amount) Tj
+1 0 0 1 50 500 Tm
+(Logistics and platform services      PHP 100,000.00) Tj
+1 0 0 1 50 485 Tm
+(Tax                                  PHP 25,000.00) Tj
+1 0 0 1 50 470 Tm
+( ) Tj
+1 0 0 1 50 455 Tm
+(TOTAL AMOUNT DUE: PHP 125,000.00) Tj
+ET
+endstream
+endobj
+5 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+xref
+0 6
+0000000000 65535 f 
+0000000009 00000 n 
+0000000058 00000 n 
+0000000115 00000 n 
+0000000241 00000 n 
+0000001165 00000 n 
+trailer
+<< /Size 6 /Root 1 0 R >>
+startxref
+1235
+%%EOF

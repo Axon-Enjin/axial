@@ -158,7 +158,7 @@ function UploadZone({
           {parsing ? "Reading invoice…" : "Browse Files"}
         </Button>
         <p className="mt-4 font-label-sm text-label-sm text-on-surface-variant">
-          On Vercel, use{" "}
+          Demo:{" "}
           <button
             type="button"
             disabled={parsing}
@@ -166,8 +166,16 @@ function UploadZone({
             className="text-[#2DD4BF] hover:underline disabled:opacity-50"
           >
             sample invoice
-          </button>{" "}
-          (no OCR) or a text-based PDF.
+          </button>
+          {" · "}
+          <a
+            href="/samples/invoices/invoice-inv-2023-8901.pdf"
+            download="axial-demo-invoice.pdf"
+            className="text-[#2DD4BF] hover:underline"
+          >
+            demo PDF
+          </a>
+          {" "}(text-based, fast parse)
         </p>
       </div>
     </Card>
