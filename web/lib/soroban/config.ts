@@ -1,4 +1,5 @@
 import { loadDeployment } from "./deployments";
+import { cleanEnvString } from "./env-sanitize";
 
 export type SorobanConfig = {
   rpcUrl: string;
@@ -25,36 +26,34 @@ export function getSorobanConfig(): SorobanConfig {
   const deployment = loadDeployment(isMainnet ? "mainnet" : "testnet");
   const fromFile = Boolean(deployment?.contracts?.axial_swap);
 
-  const swapContractId =
-    process.env.AXIAL_SWAP_CONTRACT_ID ??
-    deployment?.contracts?.axial_swap ??
-    null;
-  const receivableContractId =
+  const swapContractId = cleanEnvString(
+    process.env.AXIAL_SWAP_CONTRACT_ID ?? deployment?.contracts?.axial_swap ?? null,
+  );
+  const receivableContractId = cleanEnvString(
     process.env.RECEIVABLE_TOKEN_CONTRACT_ID ??
-    deployment?.contracts?.receivable_token ??
-    null;
-  const payrollContractId =
+      deployment?.contracts?.receivable_token ??
+      null,
+  );
+  const payrollContractId = cleanEnvString(
     process.env.PAYROLL_SPLIT_CONTRACT_ID ??
-    deployment?.contracts?.payroll_split ??
-    null;
-  const settlementContractId =
-    process.env.SETTLEMENT_CONTRACT_ID ??
-    deployment?.contracts?.settlement ??
-    null;
-  const usdcTokenId =
-    process.env.SOROBAN_USDC_TOKEN_ID ??
-    deployment?.contracts?.usdc_token ??
-    null;
-  const funderPublic =
-    process.env.STELLAR_FUNDER_PUBLIC ??
-    deployment?.roles?.funder_public ??
-    null;
-  const issuerPublic =
-    process.env.STELLAR_ISSUER_PUBLIC ??
-    deployment?.roles?.admin_public ??
-    null;
-  const msmePublic =
-    process.env.STELLAR_MSME_PUBLIC ?? deployment?.roles?.msme_public ?? null;
+      deployment?.contracts?.payroll_split ??
+      null,
+  );
+  const settlementContractId = cleanEnvString(
+    process.env.SETTLEMENT_CONTRACT_ID ?? deployment?.contracts?.settlement ?? null,
+  );
+  const usdcTokenId = cleanEnvString(
+    process.env.SOROBAN_USDC_TOKEN_ID ?? deployment?.contracts?.usdc_token ?? null,
+  );
+  const funderPublic = cleanEnvString(
+    process.env.STELLAR_FUNDER_PUBLIC ?? deployment?.roles?.funder_public ?? null,
+  );
+  const issuerPublic = cleanEnvString(
+    process.env.STELLAR_ISSUER_PUBLIC ?? deployment?.roles?.admin_public ?? null,
+  );
+  const msmePublic = cleanEnvString(
+    process.env.STELLAR_MSME_PUBLIC ?? deployment?.roles?.msme_public ?? null,
+  );
 
   const hasEnv =
     Boolean(process.env.AXIAL_SWAP_CONTRACT_ID) ||
@@ -70,11 +69,11 @@ export function getSorobanConfig(): SorobanConfig {
 
   return {
     rpcUrl:
-      process.env.SOROBAN_RPC_URL ??
+      cleanEnvString(process.env.SOROBAN_RPC_URL) ??
       deployment?.rpc ??
       "https://soroban-testnet.stellar.org",
     networkPassphrase:
-      process.env.STELLAR_NETWORK_PASSPHRASE ??
+      cleanEnvString(process.env.STELLAR_NETWORK_PASSPHRASE) ??
       deployment?.passphrase ??
       "Test SDF Network ; September 2015",
     network: deployment?.network ?? "testnet",
@@ -83,11 +82,11 @@ export function getSorobanConfig(): SorobanConfig {
     payrollContractId,
     settlementContractId,
     usdcTokenId,
-    funderSecret: process.env.STELLAR_FUNDER_SECRET ?? null,
+    funderSecret: cleanEnvString(process.env.STELLAR_FUNDER_SECRET),
     funderPublic,
-    issuerSecret: process.env.STELLAR_ISSUER_SECRET ?? null,
+    issuerSecret: cleanEnvString(process.env.STELLAR_ISSUER_SECRET),
     issuerPublic,
-    msmeSecret: process.env.STELLAR_MSME_SECRET ?? null,
+    msmeSecret: cleanEnvString(process.env.STELLAR_MSME_SECRET),
     msmePublic,
     configSource,
   };

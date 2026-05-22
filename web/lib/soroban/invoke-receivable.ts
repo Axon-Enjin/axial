@@ -4,9 +4,42 @@ import {
   Keypair,
   nativeToScVal,
   rpc,
+  StrKey,
   TransactionBuilder,
 } from "@stellar/stellar-sdk";
 import type { SorobanConfig } from "./config";
+import { cleanEnvString } from "./env-sanitize";
+
+function keypairFromSecret(secret: string, label: string): Keypair {
+  const cleaned = cleanEnvString(secret) ?? secret;
+  try {
+    return Keypair.fromSecret(cleaned);
+  } catch {
+    throw new Error(
+      `${label} is invalid (Stellar SDK: invalid encoded string). ` +
+        "Use the testnet secret starting with S from admin-key — not the G public address. " +
+        "In GCP Secret Manager, remove trailing newlines and quotes.",
+    );
+  }
+}
+
+function assertContractId(id: string, label: string): string {
+  const cleaned = cleanEnvString(id) ?? id;
+  if (!StrKey.isValidContract(cleaned)) {
+    throw new Error(
+      `${label} is not a valid Soroban contract id (C...). Check GitHub vars / Cloud Run env.`,
+    );
+  }
+  return cleaned;
+}
+
+function assertPublicKey(key: string, label: string): string {
+  const cleaned = cleanEnvString(key) ?? key;
+  if (!StrKey.isValidEd25519PublicKey(cleaned)) {
+    throw new Error(`${label} is not a valid Stellar public key (G...).`);
+  }
+  return cleaned;
+}
 
 export type MintReceivableResult = {
   txHash: string;
@@ -68,7 +101,7 @@ export async function mintReceivableOnChain(
     .addOperation(
       contract.call(
         "mint",
-        new Address(cfg.issuerPublic).toScVal(),
+        new Address(issuerPublic).toScVal(),
         new Address(msmePublic).toScVal(),
         nativeToScVal(invoiceId, { type: "string" }),
         nativeToScVal(BigInt(Math.trunc(faceAmount)), { type: "i128" }),
