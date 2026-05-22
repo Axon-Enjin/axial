@@ -333,8 +333,12 @@ export function LiquidityView() {
       setPipelineStage("reading");
 
       try {
+        const { compressImageForUpload } = await import(
+          "@/lib/invoices/compress-upload"
+        );
+        const uploadFile = await compressImageForUpload(file);
         const body = new FormData();
-        body.append("file", file);
+        body.append("file", uploadFile);
 
         const res = await fetch("/api/invoices/parse", { method: "POST", body });
         let data: {

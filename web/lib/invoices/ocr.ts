@@ -11,8 +11,19 @@ function ocrBudgetMs(): number {
   return CLOUD_RUN_OCR_BUDGET_MS;
 }
 
+function isCloudRun(): boolean {
+  return Boolean(process.env.K_SERVICE);
+}
+
 function isServerlessHost(): boolean {
-  return process.env.VERCEL === "1" || Boolean(process.env.K_SERVICE);
+  return process.env.VERCEL === "1" || isCloudRun();
+}
+
+/** Cold Tesseract init on Cloud Run can exceed 8s; Vercel Hobby stays tight. */
+function workerStartupBudgetMs(): number {
+  if (isCloudRun()) return 60_000;
+  if (process.env.VERCEL === "1") return 8_000;
+  return 30_000;
 }
 
 /** Tesseract is heavy on cold serverless; PDF text + sample import stay enabled. */
@@ -77,13 +88,12 @@ export async function extractTextFromBuffer(
 }
 
 async function normalizeImageForOcr(buffer: Buffer): Promise<Buffer> {
-  if (buffer.length < 600_000) return buffer;
   try {
     const sharp = (await import("sharp")).default;
     return await sharp(buffer)
       .rotate()
       .resize(1600, 1600, { fit: "inside", withoutEnlargement: true })
-      .jpeg({ quality: 82, mozjpeg: true })
+      .jpeg({ quality: 80, mozjpeg: true })
       .toBuffer();
   } catch {
     return buffer;
@@ -138,11 +148,14 @@ async function extractPdfText(buffer: Buffer): Promise<string> {
 
 async function runTesseract(buffer: Buffer): Promise<string> {
   const budget = ocrBudgetMs();
-  const recognizeMs = Math.max(8_000, budget - 8_000);
+  const startupMs = workerStartupBudgetMs();
+  const recognizeMs = Math.max(8_000, budget - startupMs);
 
-  const worker = isServerlessHost()
-    ? await withTimeout(getSharedWorker(), 8_000, "Tesseract worker startup")
-    : await getSharedWorker();
+  const worker = await withTimeout(
+    getSharedWorker(),
+    startupMs,
+    "Tesseract worker startup",
+  );
 
   try {
     const { data } = await withTimeout(
