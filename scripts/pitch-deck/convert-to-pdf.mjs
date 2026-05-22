@@ -1,5 +1,6 @@
 import puppeteer from "puppeteer-core";
 import { join, dirname } from "path";
+import { existsSync } from "fs";
 import { fileURLToPath } from "url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -7,11 +8,30 @@ const htmlPath = join(__dirname, "../../docs/pitch-deck.html");
 const pdfPath = join(__dirname, "../../docs/pitch-deck.pdf");
 const TOTAL_SLIDES = 12;
 
+function getExecutablePath() {
+  const paths = [
+    "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
+    "C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe",
+    "C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe",
+  ];
+  for (const p of paths) {
+    if (existsSync(p)) return p;
+  }
+  return null;
+}
+
 (async () => {
   console.log("Launching browser...");
-  const browser = await puppeteer.launch({ 
+  const executablePath = getExecutablePath();
+  if (!executablePath) {
+    throw new Error(
+      "No local Chrome or Edge found. Install one or set BROWSER_PATH env var."
+    );
+  }
+  console.log(`Using browser: ${executablePath}`);
+  const browser = await puppeteer.launch({
     headless: true,
-    executablePath: "C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe" 
+    executablePath,
   });
   const page = await browser.newPage();
 
@@ -24,7 +44,23 @@ const TOTAL_SLIDES = 12;
     timeout: 30000,
   });
 
-  console.log("Page loaded. Preparing print layout...");
+  console.log("Page loaded. Waiting for images...");
+
+  // Wait for all images to finish loading
+  await page.evaluate(async () => {
+    const images = Array.from(document.querySelectorAll("img"));
+    await Promise.all(
+      images.map((img) => {
+        if (img.complete) return;
+        return new Promise((resolve) => {
+          img.addEventListener("load", resolve);
+          img.addEventListener("error", resolve);
+        });
+      })
+    );
+  });
+
+  console.log("Preparing print layout...");
 
   // Inject CSS to show all slides stacked for print, each filling one page
   await page.evaluate((total) => {
@@ -69,8 +105,7 @@ const TOTAL_SLIDES = 12;
     });
   }, TOTAL_SLIDES);
 
-  // Wait for fonts and images to load
-  await page.waitForNetworkIdle({ timeout: 10000 }).catch(() => {});
+  // Extra settle time for fonts/rendering
   await new Promise((r) => setTimeout(r, 2000));
 
   console.log("Generating PDF...");

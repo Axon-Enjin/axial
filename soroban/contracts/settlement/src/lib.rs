@@ -2,9 +2,12 @@
 
 //! Settlement contract — CLS-06/07/08
 //!
-//! Serves as the per-invoice lockbox. Payer sends USDC directly to this
-//! contract's address (keyed by invoice_id memo). Admin calls `settle` once
-//! payment lands; contract distributes:
+//! Serves as the per-invoice lockbox. The payer sends USDC to this contract's
+//! address; the admin then calls `settle(invoice_id, collected_amount)` to
+//! attribute that payment to an invoice and distribute it. Soroban token
+//! transfers carry no memo — per-invoice attribution is asserted by the admin
+//! in the `settle` call and tracked off-chain in the reserve ledger, not
+//! derived on-chain. The contract distributes:
 //!   advance_paid  → funder  (principal repayment)
 //!   remainder     → msme    (reserve release + margin)
 //! If collected < advance_paid the shortfall is recorded as leakage and
@@ -62,7 +65,7 @@ pub enum LockboxStatus {
 }
 
 #[contracttype]
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct LockboxRecord {
     pub invoice_id: String,
     pub funder: Address,

@@ -73,7 +73,7 @@ fn register_records_lockbox_state() {
 fn settle_full_payment_distributes_correctly() {
     let env = Env::default();
     env.ledger().with_mut(|li| li.sequence_number = 100);
-    let (client, admin, funder, msme, payer, usdc_id, token) = setup(&env);
+    let (client, admin, funder, msme, payer, _usdc_id, token) = setup(&env);
 
     register_invoice(&client, &env, &admin, &funder, &msme, "INV-002");
 
@@ -97,7 +97,7 @@ fn settle_full_payment_distributes_correctly() {
 #[test]
 fn settle_partial_payment_records_shortfall() {
     let env = Env::default();
-    let (client, admin, funder, msme, payer, usdc_id, token) = setup(&env);
+    let (client, admin, funder, msme, payer, _usdc_id, token) = setup(&env);
 
     register_invoice(&client, &env, &admin, &funder, &msme, "INV-003");
 
@@ -141,7 +141,7 @@ fn cannot_register_same_invoice_twice() {
 #[should_panic]
 fn cannot_settle_already_settled_invoice() {
     let env = Env::default();
-    let (client, admin, funder, msme, payer, usdc_id, token) = setup(&env);
+    let (client, admin, funder, msme, payer, _usdc_id, token) = setup(&env);
 
     register_invoice(&client, &env, &admin, &funder, &msme, "INV-005");
 
