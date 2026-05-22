@@ -5,6 +5,7 @@ export type TestnetDeployment = {
   network: string;
   passphrase: string;
   rpc: string;
+  deployed_at?: string;
   roles?: {
     admin_public?: string;
     funder_public?: string;
@@ -21,8 +22,27 @@ export type TestnetDeployment = {
 
 /** Loads soroban/deployments/testnet.json (repo root relative to web/). */
 export function loadTestnetDeployment(): TestnetDeployment | null {
+  return loadDeployment("testnet");
+}
+
+/** Loads soroban/deployments/mainnet.json (repo root relative to web/). */
+export function loadMainnetDeployment(): TestnetDeployment | null {
+  return loadDeployment("mainnet");
+}
+
+/**
+ * Loads a deployment JSON by network name.
+ * Returns null if the file doesn't exist (not deployed yet).
+ */
+export function loadDeployment(network: "testnet" | "mainnet"): TestnetDeployment | null {
   try {
-    const path = join(process.cwd(), "..", "soroban", "deployments", "testnet.json");
+    const path = join(
+      process.cwd(),
+      "..",
+      "soroban",
+      "deployments",
+      `${network}.json`,
+    );
     return JSON.parse(readFileSync(path, "utf8")) as TestnetDeployment;
   } catch {
     return null;

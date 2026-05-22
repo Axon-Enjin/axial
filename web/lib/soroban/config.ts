@@ -1,4 +1,4 @@
-import { loadTestnetDeployment } from "./deployments";
+import { loadDeployment } from "./deployments";
 
 export type SorobanConfig = {
   rpcUrl: string;
@@ -19,7 +19,10 @@ export type SorobanConfig = {
 };
 
 export function getSorobanConfig(): SorobanConfig {
-  const deployment = loadTestnetDeployment();
+  const isMainnet =
+    process.env.STELLAR_NETWORK_PASSPHRASE?.includes("Public Global") ||
+    process.env.STELLAR_NETWORK === "mainnet";
+  const deployment = loadDeployment(isMainnet ? "mainnet" : "testnet");
   const fromFile = Boolean(deployment?.contracts?.axial_swap);
 
   const swapContractId =

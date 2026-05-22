@@ -1,0 +1,21 @@
+{
+    "network": "mainnet",
+    "passphrase": "Public Global Stellar Network ; September 2015",
+    "rpc": "https://mainnet.sorobanrpc.com",
+    "deployed_at": "YYYY-MM-DDTHH:MM:SSZ",
+    "roles": {
+        "admin_key": "my-key",
+        "admin_public": "<DEPLOYER_PUBLIC_KEY>",
+        "funder_key": "my-key",
+        "funder_public": "<DEPLOYER_PUBLIC_KEY>",
+        "msme_key": "my-key",
+        "msme_public": "<DEPLOYER_PUBLIC_KEY>"
+    },
+    "contracts": {
+        "axial_swap": "<CONTRACT_ID>",
+        "usdc_token": "CCW67TSZV3SSS2HXMBQ5JFGCKJNXKZM7UQUWUZPUTHXSTZLEO7SJMI75",
+        "receivable_token": "<CONTRACT_ID>",
+        "payroll_split": "<CONTRACT_ID>",
+        "settlement": "<CONTRACT_ID>"
+    }
+}
