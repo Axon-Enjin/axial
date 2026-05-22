@@ -1,11 +1,16 @@
 /**
- * Freighter browser extension API (client-side only).
- * Uses the window.freighter global injected by the Freighter extension.
- * https://docs.freighter.app/docs/guide/gettingStarted
- *
- * Never import this in server-only code — all functions guard against
- * SSR by checking typeof window !== "undefined".
+ * Freighter browser extension (client-side only).
+ * Uses @stellar/freighter-api — the supported integration path for current Freighter.
+ * https://docs.freighter.app/docs/guide/usingfreighterwebapp/
  */
+
+import {
+  getAddress,
+  getNetworkDetails,
+  isConnected,
+  requestAccess,
+  signTransaction,
+} from "@stellar/freighter-api";
 
 export type FreighterNetworkDetails = {
   network: string;
@@ -13,113 +18,149 @@ export type FreighterNetworkDetails = {
   networkPassphrase: string;
 };
 
-export type FreighterState = {
-  publicKey: string;
-  networkDetails: FreighterNetworkDetails;
-};
-
-// Type the global Freighter extension injection
-// Handles both v1 (returns string) and v2 (returns object) signTransaction APIs.
-interface FreighterExtension {
-  isConnected(): Promise<boolean | { isConnected: boolean }>;
-  getPublicKey(): Promise<string>;
-  signTransaction(
-    xdr: string,
-    opts?: {
-      network?: string;
-      networkPassphrase?: string;
-      accountToSign?: string;
-    },
-  ): Promise<string | { signedTxXdr: string; signerAddress: string }>;
-  getNetworkDetails(): Promise<FreighterNetworkDetails>;
-  requestAccess?(): Promise<{ publicKey: string }>;
-}
-
-declare global {
-  interface Window {
-    freighter?: FreighterExtension;
+function freighterErrorMessage(err: unknown, fallback: string): string {
+  if (err && typeof err === "object" && "message" in err) {
+    const msg = (err as { message: string }).message;
+    if (msg) return msg;
   }
+  return fallback;
 }
 
-/** Returns true if the Freighter extension is installed and the page is in a browser. */
-export function freighterAvailable(): boolean {
-  return typeof window !== "undefined" && Boolean(window.freighter);
+/** Quick sync hint for SSR/hydration — async probe refines this in AppProvider. */
+export function freighterMaybeInstalled(): boolean {
+  return typeof window !== "undefined";
 }
 
-/**
- * Checks whether Freighter is currently connected (has an active session).
- * Returns false if the extension is not installed.
- */
-export async function checkFreighterConnected(): Promise<boolean> {
-  if (!freighterAvailable()) return false;
+/** Whether the Freighter extension is installed. */
+export async function probeFreighterInstalled(): Promise<boolean> {
+  if (typeof window === "undefined") return false;
   try {
-    const result = await window.freighter!.isConnected();
-    // v2 API returns { isConnected: boolean }; v1 API returns boolean
-    if (typeof result === "object" && result !== null) {
-      return (result as { isConnected: boolean }).isConnected;
-    }
-    return Boolean(result);
+    const result = await isConnected();
+    return Boolean(result.isConnected);
   } catch {
     return false;
   }
 }
 
+/** @deprecated Use probeFreighterInstalled — kept for sync call sites during hydration */
+export function freighterAvailable(): boolean {
+  return freighterMaybeInstalled();
+}
+
+export async function checkFreighterConnected(): Promise<boolean> {
+  try {
+    const conn = await isConnected();
+    if (!conn.isConnected) return false;
+    const addr = await getAddress();
+    if (addr.error) return false;
+    return Boolean(addr.address?.startsWith("G"));
+  } catch {
+    return false;
+  }
+}
+
+/** Restore session without popup if app is already on Freighter Allow List. */
+export async function tryRestoreFreighterSession(): Promise<{
+  publicKey: string;
+  networkDetails: FreighterNetworkDetails;
+} | null> {
+  try {
+    const conn = await isConnected();
+    if (!conn.isConnected) return null;
+    const addr = await getAddress();
+    if (addr.error || !addr.address?.startsWith("G")) return null;
+    const details = await getFreighterNetworkDetails().catch(
+      (): FreighterNetworkDetails => ({
+        network: "TESTNET",
+        networkUrl: "https://horizon-testnet.stellar.org",
+        networkPassphrase: "Test SDF Network ; September 2015",
+      }),
+    );
+    return { publicKey: addr.address, networkDetails: details };
+  } catch {
+    return null;
+  }
+}
+
 /**
- * Prompts Freighter for the user's public key.
- * On Freighter v2+, requestAccess is preferred; falls back to getPublicKey.
- * Throws if the extension is not installed or the user rejects.
+ * Prompts Freighter for the user's public key (Allow List / connect popup).
  */
 export async function getFreighterPublicKey(): Promise<string> {
-  if (!freighterAvailable()) {
-    throw new Error("Freighter extension not installed. Install it from freighter.app.");
+  const conn = await isConnected();
+  if (!conn.isConnected) {
+    throw new Error(
+      "Freighter extension not installed. Install it from https://freighter.app and refresh this page.",
+    );
   }
-  const ext = window.freighter!;
-  // Prefer requestAccess (grants permission + returns key in one step)
-  if (typeof ext.requestAccess === "function") {
-    const result = await ext.requestAccess();
-    return result.publicKey;
+
+  const access = await requestAccess();
+  if (access.error) {
+    throw new Error(
+      freighterErrorMessage(access.error, "Freighter access denied or cancelled."),
+    );
   }
-  return ext.getPublicKey();
+  if (access.address?.startsWith("G")) {
+    return access.address;
+  }
+
+  const addr = await getAddress();
+  if (addr.error) {
+    throw new Error(freighterErrorMessage(addr.error, "Could not read Freighter address."));
+  }
+  if (addr.address?.startsWith("G")) {
+    return addr.address;
+  }
+
+  throw new Error(
+    "Freighter did not return a public key. Unlock Freighter, approve this site, and try again.",
+  );
 }
 
-/** Returns the network Freighter is currently pointed at. */
 export async function getFreighterNetworkDetails(): Promise<FreighterNetworkDetails> {
-  if (!freighterAvailable()) {
+  const conn = await isConnected();
+  if (!conn.isConnected) {
     throw new Error("Freighter extension not installed.");
   }
-  return window.freighter!.getNetworkDetails();
+
+  const details = await getNetworkDetails();
+  if (details.error) {
+    throw new Error(freighterErrorMessage(details.error, "Could not read Freighter network."));
+  }
+
+  return {
+    network: details.network ?? "UNKNOWN",
+    networkUrl: details.networkUrl ?? "",
+    networkPassphrase: details.networkPassphrase ?? "",
+  };
 }
 
-/**
- * Signs a prepared Soroban transaction XDR string with Freighter.
- * Returns the signed XDR string (base64 envelope).
- *
- * @param xdr - Unsigned prepared transaction XDR (from /api/[type]/build endpoints)
- * @param opts.networkPassphrase - Must match the Stellar network
- * @param opts.accountToSign - The account that must sign (Freighter will prompt)
- */
 export async function signXdrWithFreighter(
   xdr: string,
   opts: { networkPassphrase?: string; accountToSign?: string },
 ): Promise<string> {
-  if (!freighterAvailable()) {
+  const conn = await isConnected();
+  if (!conn.isConnected) {
     throw new Error("Freighter extension not installed.");
   }
-  const result = await window.freighter!.signTransaction(xdr, opts);
-  // Handle both v1 (returns string) and v2 (returns { signedTxXdr, signerAddress })
-  if (typeof result === "string") return result;
-  return (result as { signedTxXdr: string; signerAddress: string }).signedTxXdr;
+
+  const result = await signTransaction(xdr, {
+    networkPassphrase: opts.networkPassphrase,
+    address: opts.accountToSign,
+  });
+
+  if (result.error) {
+    throw new Error(freighterErrorMessage(result.error, "Freighter signing failed."));
+  }
+  if (!result.signedTxXdr) {
+    throw new Error("Freighter did not return a signed transaction.");
+  }
+  return result.signedTxXdr;
 }
 
-/** Stellar testnet friendbot URL to fund a new account. */
 export function friendbotUrl(publicKey: string): string {
   return `https://friendbot.stellar.org/?addr=${encodeURIComponent(publicKey)}`;
 }
 
-/**
- * Funds a Stellar testnet account via the friendbot faucet.
- * Throws if the request fails.
- */
 export async function fundTestnetAccount(publicKey: string): Promise<void> {
   const res = await fetch(friendbotUrl(publicKey));
   if (!res.ok) {

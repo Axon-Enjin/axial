@@ -34,12 +34,15 @@ export function FreighterConnectGate({
     setError(null);
     try {
       await connectFreighter();
-      const details = await getFreighterNetworkDetails();
-      if (!details.networkPassphrase.includes("Public Global")) {
-        const onTestnet = details.networkPassphrase.includes("Test SDF");
-        if (!onTestnet) {
-          setError("Could not read Freighter network. Switch to Testnet or Mainnet in Freighter, then try again.");
-        }
+      const details = await getFreighterNetworkDetails().catch(() => null);
+      if (
+        details?.networkPassphrase &&
+        !details.networkPassphrase.includes("Public Global") &&
+        !details.networkPassphrase.includes("Test SDF")
+      ) {
+        setError(
+          "Freighter network not recognized. In Freighter → Settings, choose Mainnet or Testnet.",
+        );
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Connection failed");

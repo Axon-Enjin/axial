@@ -12,14 +12,15 @@
     "generate:demo-png": "node scripts/generate-demo-invoice-png.mjs"
   },
   "dependencies": {
+    "@stellar/freighter-api": "^4.1.0",
     "@stellar/stellar-sdk": "^13.3.0",
     "@supabase/ssr": "^0.10.3",
     "@supabase/supabase-js": "^2.106.1",
     "next": "15.5.18",
     "pdf-parse": "^2.4.5",
-    "sharp": "^0.34.2",
     "react": "19.1.0",
     "react-dom": "19.1.0",
+    "sharp": "^0.34.2",
     "stellar-hd-wallet": "^1.0.2",
     "tesseract.js": "^7.0.0"
   },

@@ -12,10 +12,10 @@ import {
 import { AppToast, type ToastState } from "@/components/ui/AppToast";
 import { demoActionMessage, type DemoActionKind } from "@/lib/demo-actions";
 import {
-  checkFreighterConnected,
-  freighterAvailable,
   getFreighterNetworkDetails,
   getFreighterPublicKey,
+  probeFreighterInstalled,
+  tryRestoreFreighterSession,
   type FreighterNetworkDetails,
 } from "@/lib/soroban/freighter";
 
@@ -138,42 +138,38 @@ export function AppProvider({
 
   // Detect Freighter on mount and auto-restore an existing session
   useEffect(() => {
-    const installed = freighterAvailable();
-    setFreighterInstalled(installed);
-    if (!installed) return;
-    void checkFreighterConnected().then(async (connected) => {
-      if (!connected) return;
-      try {
-        const publicKey = await getFreighterPublicKey();
-        const networkDetails = await getFreighterNetworkDetails().catch(
-          (): FreighterNetworkDetails => ({
-            network: "TESTNET",
-            networkUrl: "https://horizon-testnet.stellar.org",
-            networkPassphrase: "Test SDF Network ; September 2015",
-          }),
-        );
-        setFreighterPublicKey(publicKey);
-        setFreighterNetwork(networkDetails);
-      } catch {
-        // Silent — user can connect manually via WalletCard
-      }
-    });
+    void probeFreighterInstalled()
+      .then((installed) => {
+        setFreighterInstalled(installed);
+        if (!installed) return null;
+        return tryRestoreFreighterSession();
+      })
+      .then((session) => {
+        if (!session) return;
+        setFreighterPublicKey(session.publicKey);
+        setFreighterNetwork(session.networkDetails);
+      })
+      .catch(() => {
+        setFreighterInstalled(false);
+      });
   }, []); // intentionally run once on mount
 
   // ── Freighter ──────────────────────────────────────────────────────────────
   const connectFreighter = useCallback(async () => {
-    setFreighterInstalled(freighterAvailable());
-    if (!freighterAvailable()) {
-      throw new Error("Freighter extension not installed. Visit freighter.app to install it.");
-    }
     setFreighterConnecting(true);
     try {
+      const installed = await probeFreighterInstalled();
+      setFreighterInstalled(installed);
+      if (!installed) {
+        throw new Error(
+          "Freighter extension not installed. Install it from https://freighter.app and refresh this page.",
+        );
+      }
       const publicKey = await getFreighterPublicKey();
       let networkDetails: FreighterNetworkDetails;
       try {
         networkDetails = await getFreighterNetworkDetails();
       } catch {
-        // Older Freighter versions may not expose getNetworkDetails — use defaults
         networkDetails = {
           network: "TESTNET",
           networkUrl: "https://horizon-testnet.stellar.org",
