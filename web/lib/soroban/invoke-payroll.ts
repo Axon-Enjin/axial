@@ -15,7 +15,7 @@ export type RoutePayrollResult = {
 
 function formatSimulationError(error: string): string {
   if (error.includes("Error(Contract, #4)")) {
-    return "This payroll batch was already routed on testnet.";
+    return "This payroll batch was already routed on chain.";
   }
   if (error.includes("Error(Contract, #5)")) {
     return "Invalid gross payroll amount.";

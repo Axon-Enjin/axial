@@ -8,7 +8,7 @@ A Stellar/Soroban-powered liquidity and compliance engine for Philippine MSMEs â
 
 <p>
   <img src="https://img.shields.io/badge/Soroban-Rust%20%7C%20WASM-blue" alt="Soroban Badge" />
-  <img src="https://img.shields.io/badge/Stellar-Testnet%20%2B%20Mainnet-brightgreen" alt="Stellar Badge" />
+  <img src="https://img.shields.io/badge/Stellar-Mainnet-brightgreen" alt="Stellar Badge" />
   <img src="https://img.shields.io/badge/Settlement-USDC-purple" alt="USDC Badge" />
   <img src="https://img.shields.io/badge/Hackathon-Build%20on%20Stellar%20PH%202026-orange" alt="Hackathon Badge" />
 </p>

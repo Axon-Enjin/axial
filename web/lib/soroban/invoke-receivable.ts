@@ -17,7 +17,7 @@ function keypairFromSecret(secret: string, label: string): Keypair {
   } catch {
     throw new Error(
       `${label} is invalid (Stellar SDK: invalid encoded string). ` +
-        "Use the testnet secret starting with S from admin-key — not the G public address. " +
+        "Use the Stellar secret starting with S — not the G public address. " +
         "In GCP Secret Manager, remove trailing newlines and quotes.",
     );
   }
@@ -48,7 +48,7 @@ export type MintReceivableResult = {
 
 function formatSimulationError(error: string): string {
   if (error.includes("Error(Contract, #4)")) {
-    return "This invoice is already tokenized on testnet.";
+    return "This invoice is already tokenized on chain.";
   }
   if (error.includes("Error(Contract, #5)")) {
     return "Invalid face amount for receivable.";

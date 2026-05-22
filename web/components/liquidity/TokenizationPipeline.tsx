@@ -77,7 +77,7 @@ export function TokenizationPipeline({ stage }: { stage: PipelineStage }) {
     swapSub = "Executing USDC atomic advance…";
     swapProgress = 0.85;
   } else if (stage === "complete") {
-    swapSub = "Mint and swap confirmed on testnet.";
+    swapSub = "Mint and swap confirmed on Mainnet.";
   }
 
   return (

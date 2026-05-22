@@ -5,10 +5,7 @@ import { useApp } from "@/components/providers/AppProvider";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { Icon } from "@/components/ui/Icon";
-import {
-  fundTestnetAccount,
-  getFreighterNetworkDetails,
-} from "@/lib/soroban/freighter";
+import { getFreighterNetworkDetails } from "@/lib/soroban/freighter";
 
 const MAINNET_FREIGHTER_PUBLIC =
   "GDSCTQZRRGF23F5GWNE3FYLLPEGO23BB3RQ6AYO5756C7A4HJLEXZVTQ";
@@ -19,18 +16,29 @@ function truncateKey(key: string): string {
 }
 
 function NetworkPill({ network }: { network: string }) {
-  const isTestnet = network.toLowerCase().includes("testnet") || network === "TESTNET";
+  const isMainnet =
+    network.toLowerCase().includes("public") ||
+    network.toLowerCase().includes("mainnet");
   return (
     <span
       className={[
         "inline-flex items-center rounded-full px-2 py-0.5 font-label-sm text-label-sm uppercase tracking-wider",
-        isTestnet
-          ? "bg-[#2DD4BF]/15 text-[#2DD4BF]"
-          : "bg-violet-500/15 text-violet-400",
+        isMainnet
+          ? "bg-violet-500/15 text-violet-400"
+          : "bg-amber-500/15 text-amber-300",
       ].join(" ")}
     >
-      {isTestnet ? "testnet" : network.toLowerCase()}
+      {isMainnet ? "mainnet" : "wrong network"}
     </span>
+  );
+}
+
+function freighterOnMainnet(network: { network: string; networkPassphrase: string } | null): boolean {
+  if (!network) return false;
+  return (
+    network.networkPassphrase.includes("Public Global") ||
+    network.network.toLowerCase().includes("mainnet") ||
+    network.network === "PUBLIC"
   );
 }
 
@@ -45,16 +53,9 @@ export function WalletCard() {
   } = useApp();
 
   const [copyDone, setCopyDone] = useState(false);
-  const [fundingState, setFundingState] = useState<"idle" | "loading" | "done" | "error">(
-    "idle",
-  );
-  const [fundError, setFundError] = useState<string | null>(null);
   const [connectError, setConnectError] = useState<string | null>(null);
 
-  const isTestnet =
-    !freighterNetwork ||
-    freighterNetwork.network.toLowerCase().includes("testnet") ||
-    freighterNetwork.network === "TESTNET";
+  const onMainnet = freighterOnMainnet(freighterNetwork);
 
   const isDeployWallet =
     freighterPublicKey != null && freighterPublicKey === MAINNET_FREIGHTER_PUBLIC;
@@ -64,9 +65,9 @@ export function WalletCard() {
     try {
       await connectFreighter();
       const details = await getFreighterNetworkDetails();
-      if (!details.networkPassphrase.includes("Public Global")) {
+      if (!freighterOnMainnet(details)) {
         setConnectError(
-          "Freighter is on Testnet. In Freighter → Settings → switch to Mainnet, then connect again.",
+          "Freighter is not on Mainnet. In Freighter → Settings → switch to Mainnet, then connect again.",
         );
       }
     } catch (err) {
@@ -82,19 +83,6 @@ export function WalletCard() {
       setTimeout(() => setCopyDone(false), 2000);
     } catch {
       // Clipboard not available in some environments
-    }
-  };
-
-  const handleFundTestnet = async () => {
-    if (!freighterPublicKey) return;
-    setFundingState("loading");
-    setFundError(null);
-    try {
-      await fundTestnetAccount(freighterPublicKey);
-      setFundingState("done");
-    } catch (err) {
-      setFundError(err instanceof Error ? err.message : "Faucet request failed");
-      setFundingState("error");
     }
   };
 
@@ -149,12 +137,12 @@ export function WalletCard() {
             <div className="mt-2 font-mono text-xs break-all text-on-surface-variant/60">
               {freighterPublicKey}
             </div>
-            {isDeployWallet && !isTestnet ? (
+            {isDeployWallet && onMainnet ? (
               <p className="mt-2 font-body-sm text-body-sm text-violet-300/90">
                 Mainnet deploy wallet — matches Axial issuer / funder / MSME config.
               </p>
             ) : null}
-            {!isTestnet && freighterPublicKey && !isDeployWallet ? (
+            {onMainnet && freighterPublicKey && !isDeployWallet ? (
               <p className="mt-2 font-body-sm text-body-sm text-amber-300/90">
                 Connected key differs from configured mainnet deploy wallet (
                 {truncateKey(MAINNET_FREIGHTER_PUBLIC)}).
@@ -167,7 +155,7 @@ export function WalletCard() {
             Payroll splits are signed by you — not held by Axial.
           </p>
 
-          {!isTestnet && freighterPublicKey && !isDeployWallet ? (
+          {onMainnet && freighterPublicKey && !isDeployWallet ? (
             <div className="rounded-lg border border-amber-500/25 bg-amber-500/5 p-3.5">
               <div className="mb-2 font-label-sm text-label-sm uppercase tracking-wider text-amber-200/90">
                 Mainnet USDC
@@ -181,30 +169,15 @@ export function WalletCard() {
             </div>
           ) : null}
 
-          {isTestnet ? (
-            <div className="rounded-lg border border-outline-variant/30 bg-surface-container-low p-3.5">
-              <div className="mb-2 font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant">
-                Testnet Funding
+          {!onMainnet ? (
+            <div className="rounded-lg border border-amber-500/25 bg-amber-500/5 p-3.5">
+              <div className="mb-2 font-label-sm text-label-sm uppercase tracking-wider text-amber-200/90">
+                Switch to Mainnet
               </div>
-              <p className="mb-3 font-body-md text-body-md text-on-surface-variant">
-                Your wallet needs testnet XLM to sign payroll transactions.
+              <p className="font-body-md text-body-md text-on-surface-variant">
+                Axial runs on Stellar Mainnet only. In Freighter → Settings → switch to
+                Mainnet, disconnect, and connect again.
               </p>
-              {fundError ? (
-                <p className="mb-2 font-body-md text-body-md text-red-400/90">{fundError}</p>
-              ) : null}
-              {fundingState === "done" ? (
-                <p className="font-body-md text-body-md text-[#2DD4BF]">
-                  Funded with 10,000 testnet XLM.
-                </p>
-              ) : (
-                <Button
-                  variant="secondary"
-                  onClick={handleFundTestnet}
-                  disabled={fundingState === "loading"}
-                >
-                  {fundingState === "loading" ? "Requesting…" : "Fund via Stellar Testnet Faucet"}
-                </Button>
-              )}
             </div>
           ) : null}
 

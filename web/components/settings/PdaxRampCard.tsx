@@ -122,7 +122,7 @@ export function PdaxRampCard() {
           </div>
           {fxRate?.contractId && isLive ? (
             <a
-              href={`https://stellar.expert/explorer/testnet/contract/${fxRate.contractId}`}
+              href={`https://stellar.expert/explorer/public/contract/${fxRate.contractId}`}
               target="_blank"
               rel="noreferrer"
               className="mt-2 block font-mono text-xs text-on-surface-variant/60 underline-offset-2 hover:text-primary hover:underline"
@@ -132,7 +132,7 @@ export function PdaxRampCard() {
           ) : null}
           {fxRate?.error && !isLive ? (
             <p className="mt-1.5 font-body-md text-body-md text-on-surface-variant/70 text-xs">
-              {fxRate.error.includes("null") ? "PHP not available on testnet oracle" : fxRate.error}
+              {fxRate.error.includes("null") ? "PHP rate unavailable from oracle" : fxRate.error}
             </p>
           ) : null}
         </div>

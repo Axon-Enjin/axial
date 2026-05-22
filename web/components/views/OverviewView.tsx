@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { CardHeader } from "@/components/ui/CardHeader";
 import { Icon } from "@/components/ui/Icon";
-import { TestnetTreasuryCard } from "@/components/overview/TestnetTreasuryCard";
+import { TreasuryBalancesCard } from "@/components/overview/TreasuryBalancesCard";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 
 type BarSpec = { h: number; active?: boolean };
@@ -263,7 +263,7 @@ export function OverviewView() {
                   </p>
                   {summary?.treasury?.funderUsdc ? (
                     <p className="mt-1 font-label-sm text-[11px] sm:text-label-sm text-[#2DD4BF]">
-                      Treasury USDC {summary.treasury.funderUsdc} · testnet
+                      Treasury USDC {summary.treasury.funderUsdc} · mainnet
                     </p>
                   ) : null}
                 </div>
@@ -318,7 +318,7 @@ export function OverviewView() {
         </div>
 
         <div className="flex flex-col gap-4 sm:gap-5 md:gap-gutter md:col-span-4">
-          <TestnetTreasuryCard />
+          <TreasuryBalancesCard />
           <Card>
             <CardHeader
               icon="policy"

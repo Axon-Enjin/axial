@@ -22,7 +22,7 @@ export function formatMemoText(birReferenceId: string): string {
 export async function writeBirMemoToStellar(
   birReferenceId: string,
   sourceTxHash: string,
-  network: StellarNetworkId = "testnet",
+  network: StellarNetworkId = "mainnet",
 ): Promise<{ memoTxHash: string; memoText: string }> {
   const cfg: SorobanConfig = getSorobanConfig(network);
   const secret = cfg.issuerSecret;

@@ -75,7 +75,7 @@ export async function processLedgerEvent(
       const memo = await writeBirMemoToStellar(
         ack.birReferenceId,
         event.stellarTxHash,
-        event.network ?? "testnet",
+        event.network ?? "mainnet",
       );
       sub.memoTxHash = memo.memoTxHash;
       sub.memoText = memo.memoText;

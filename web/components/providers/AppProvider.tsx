@@ -177,9 +177,9 @@ export function AppProvider({
         networkDetails = await getFreighterNetworkDetails();
       } catch {
         networkDetails = {
-          network: "TESTNET",
-          networkUrl: "https://horizon-testnet.stellar.org",
-          networkPassphrase: "Test SDF Network ; September 2015",
+          network: "PUBLIC",
+          networkUrl: "https://horizon.stellar.org",
+          networkPassphrase: "Public Global Stellar Network ; September 2015",
         };
       }
       setFreighterPublicKey(publicKey);

@@ -369,7 +369,7 @@ export default function LandingPage() {
           </h2>
           <p className="max-w-2xl font-body-md text-[15px] leading-relaxed sm:font-body-lg sm:text-body-lg text-on-surface-variant px-4 sm:px-0">
             Upload a real invoice, mint a receivable, execute an atomic USDC swap, and
-            watch BIR EIS file itself — all in one session. Full E2E pipeline operational on Stellar Testnet and Mainnet.
+            watch BIR EIS file itself — all in one session. Full E2E pipeline operational on Stellar Mainnet.
           </p>
           <Link
             href="/app"

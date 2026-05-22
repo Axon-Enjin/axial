@@ -633,7 +633,7 @@ export function LiquidityView() {
 
       <FreighterConnectGate
         title="Connect Freighter first"
-        description="Upload, tokenize, and swap require your wallet. Connect Freighter (Mainnet or Testnet to match Settings), then continue."
+        description="Upload, tokenize, and swap require your wallet. Connect Freighter on Mainnet, then continue."
       />
 
       <div
@@ -670,7 +670,7 @@ export function LiquidityView() {
             <StatTile
               label="Soroban contracts"
               value={String(summary?.contractsDeployed ?? 0)}
-              unit={chain?.network ?? "testnet"}
+              unit={chain?.network ?? "mainnet"}
             />
           </div>
         </div>
@@ -865,7 +865,7 @@ export function LiquidityView() {
                             swapTxHash={row.swapTxHash}
                             explorerTxBase={
                               chain?.explorerTxBase ??
-                              "https://stellar.expert/explorer/testnet/tx"
+                              "https://stellar.expert/explorer/public/tx"
                             }
                           />
                         ) : null}

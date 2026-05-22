@@ -36,9 +36,12 @@ async function simulateAndPrepareXdr(
   try {
     account = await server.getAccount(sourcePublic);
   } catch {
+    const fundHint =
+      cfg.network === "mainnet"
+        ? "Fund it with XLM on Mainnet before signing."
+        : `Fund it with XLM via https://friendbot.stellar.org/?addr=${sourcePublic}`;
     throw new Error(
-      `Account ${sourcePublic.slice(0, 8)}… not found on ${cfg.network}. ` +
-        `Fund it with testnet XLM via https://friendbot.stellar.org/?addr=${sourcePublic}`,
+      `Account ${sourcePublic.slice(0, 8)}… not found on ${cfg.network}. ${fundHint}`,
     );
   }
 
@@ -55,7 +58,7 @@ async function simulateAndPrepareXdr(
   if (rpc.Api.isSimulationError(simulation)) {
     const msg = simulation.error;
     if (msg.includes("Error(Contract, #4)")) {
-      throw new Error("This operation was already processed on testnet (duplicate id).");
+      throw new Error("This operation was already processed on chain (duplicate id).");
     }
     if (msg.includes("Error(Contract, #1)")) {
       throw new Error("Contract is not initialized on this deployment.");

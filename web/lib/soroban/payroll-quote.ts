@@ -11,7 +11,7 @@ export type PayrollQuoteResult = {
   pagibigBps: number;
 };
 
-/** Demo statutory rates (must match contract `initialize` bps on testnet). */
+/** Demo statutory rates (must match contract `initialize` bps on Mainnet). */
 export const DEFAULT_PAYROLL_BPS = {
   sss: 1_100,
   philhealth: 500,

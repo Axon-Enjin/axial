@@ -20,7 +20,7 @@ export default function AuthLayout({
       <div className="w-full max-w-md">{children}</div>
 
       <p className="mt-10 font-body-md text-body-md text-on-surface-variant/50">
-        Stellar testnet · Supabase · Philippines-first
+        Stellar Mainnet · Supabase · Philippines-first
       </p>
     </div>
   );

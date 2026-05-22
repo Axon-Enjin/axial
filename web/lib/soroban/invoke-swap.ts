@@ -15,7 +15,7 @@ export type ExecuteAdvanceResult = {
 
 function formatSimulationError(error: string): string {
   if (error.includes("Error(Contract, #4)")) {
-    return "This invoice is already funded on testnet. Each invoice ID can only be swapped once.";
+    return "This invoice is already funded on chain. Each invoice ID can only be swapped once.";
   }
   if (error.includes("Error(Contract, #5)")) {
     return "Invalid face amount for swap.";

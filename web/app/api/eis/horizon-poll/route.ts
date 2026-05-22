@@ -41,7 +41,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const networks: StellarNetworkId[] = ["testnet", "mainnet"];
+  const networks: StellarNetworkId[] = ["mainnet"];
   const polled: StellarNetworkId[] = [];
   let eventsScanned = 0;
   let newEnqueued = 0;

@@ -60,7 +60,7 @@ export function isNetworkDeployedInRepo(network: StellarNetworkId): boolean {
 }
 
 export function getSorobanConfig(
-  network: StellarNetworkId = "testnet",
+  network: StellarNetworkId = "mainnet",
 ): SorobanConfig {
   const deployment = loadDeployment(network);
   const fromFile = Boolean(deployment?.contracts?.axial_swap);

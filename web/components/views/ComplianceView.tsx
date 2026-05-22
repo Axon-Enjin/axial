@@ -175,7 +175,7 @@ export function ComplianceView() {
 
   const gross = lastSwapAdvancePhp ?? FALLBACK_GROSS;
   const explorerTx =
-    chain?.explorerTxBase ?? "https://stellar.expert/explorer/testnet/tx";
+    chain?.explorerTxBase ?? "https://stellar.expert/explorer/public/tx";
 
   const loadEis = useCallback(() => {
     fetch("/api/eis/submissions")
@@ -593,7 +593,7 @@ export function ComplianceView() {
               </Button>
             ) : txHash ? (
               <a
-                href={`${chain?.explorerTxBase ?? "https://stellar.expert/explorer/testnet/tx"}/${txHash}`}
+                href={`${chain?.explorerTxBase ?? "https://stellar.expert/explorer/public/tx"}/${txHash}`}
                 target="_blank"
                 rel="noreferrer"
                 className="inline-flex items-center gap-1 font-label-md text-label-md text-[#2DD4BF] underline-offset-2 hover:underline"

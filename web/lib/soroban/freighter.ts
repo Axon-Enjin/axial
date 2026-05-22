@@ -71,9 +71,9 @@ export async function tryRestoreFreighterSession(): Promise<{
     if (addr.error || !addr.address?.startsWith("G")) return null;
     const details = await getFreighterNetworkDetails().catch(
       (): FreighterNetworkDetails => ({
-        network: "TESTNET",
-        networkUrl: "https://horizon-testnet.stellar.org",
-        networkPassphrase: "Test SDF Network ; September 2015",
+        network: "PUBLIC",
+        networkUrl: "https://horizon.stellar.org",
+        networkPassphrase: "Public Global Stellar Network ; September 2015",
       }),
     );
     return { publicKey: addr.address, networkDetails: details };

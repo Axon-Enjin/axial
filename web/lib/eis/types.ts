@@ -17,7 +17,7 @@ export type ChainLedgerEvent = {
   stellarTxHash: string;
   amount: number;
   advanceAmount?: number;
-  /** Stellar network for memo write-back and RPC (defaults to testnet when omitted). */
+  /** Stellar network for memo write-back and RPC (defaults to mainnet when omitted). */
   network?: "testnet" | "mainnet";
 };
 

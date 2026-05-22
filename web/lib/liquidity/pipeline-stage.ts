@@ -42,7 +42,7 @@ export function pipelineModalContent(stage: PipelineStage): PipelineModalContent
         step: 2,
         icon: "token",
         title: "Tokenize & swap",
-        sub: "Minting receivable SAC on Stellar testnet…",
+        sub: "Minting receivable SAC on Stellar Mainnet…",
         progress: 0.45,
         loading: true,
         success: false,

@@ -32,7 +32,7 @@ function usdcLow(usdc: string | null): boolean {
   return !Number.isFinite(n) || n < 1;
 }
 
-export function TestnetTreasuryCard() {
+export function TreasuryBalancesCard() {
   const [data, setData] = useState<BalancesResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [showAll, setShowAll] = useState(false);
@@ -60,7 +60,7 @@ export function TestnetTreasuryCard() {
   if (loading && !data) {
     return (
       <Card>
-        <CardHeader icon="account_balance_wallet" label="Testnet treasury" />
+        <CardHeader icon="account_balance_wallet" label="Treasury balances" />
         <p className="font-body-md text-[13px] sm:text-body-md text-on-surface-variant">
           Reading Stellar balances…
         </p>
@@ -71,7 +71,7 @@ export function TestnetTreasuryCard() {
   if (!data?.wallets?.length) {
     return (
       <Card>
-        <CardHeader icon="account_balance_wallet" label="Testnet treasury" />
+        <CardHeader icon="account_balance_wallet" label="Treasury balances" />
         <p className="font-body-md text-[13px] sm:text-body-md text-on-surface-variant">
           Add wallet public keys in web/.env.local to show live balances.
         </p>
@@ -79,7 +79,6 @@ export function TestnetTreasuryCard() {
     );
   }
 
-  const isTestnet = data.network !== "mainnet";
   const wallets = data.wallets;
   const displayedWallets = showAll ? wallets : wallets.slice(0, 2);
   const hasMore = wallets.length > 2;
@@ -88,7 +87,7 @@ export function TestnetTreasuryCard() {
     <Card>
       <CardHeader
         icon="account_balance_wallet"
-        label={isTestnet ? "Testnet treasury" : "Treasury balances"}
+        label="Treasury balances"
         action={
           <button
             type="button"
@@ -100,9 +99,7 @@ export function TestnetTreasuryCard() {
         }
       />
       <p className="mb-3 font-body-md text-[13px] sm:text-body-md text-on-surface-variant">
-        {isTestnet
-          ? "Free test XLM and USDC — fund via Friendbot and Circle faucet before swaps."
-          : "Live balances for demo wallets configured in the environment."}
+        Live Mainnet balances for demo wallets configured in the environment.
       </p>
 
       <div className="flex flex-col gap-2 sm:gap-2.5">
@@ -125,16 +122,6 @@ export function TestnetTreasuryCard() {
                   {shortKey(w.publicKey)}
                 </a>
               </div>
-              {w.friendbotUrl ? (
-                <a
-                  href={w.friendbotUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="font-label-sm text-[11px] sm:text-label-sm text-[#2DD4BF] hover:underline shrink-0"
-                >
-                  + XLM
-                </a>
-              ) : null}
             </div>
             <div className="mt-2 sm:mt-2.5 grid grid-cols-2 gap-2 sm:gap-2.5">
               <div>
@@ -160,7 +147,7 @@ export function TestnetTreasuryCard() {
             {w.role === "funder" && usdcLow(w.usdc) ? (
               <p className="mt-2 flex items-center gap-1 font-label-sm text-[10px] sm:text-label-sm text-amber-400/90">
                 <Icon name="info" size={14} className="shrink-0" />
-                <span className="break-words">Low USDC — use Circle faucet before Tokenize &amp; Swap</span>
+                <span className="break-words">Low USDC — fund the funder wallet before Tokenize &amp; Swap</span>
               </p>
             ) : null}
             {w.role === "msme" && usdcLow(w.usdc) ? (
@@ -180,22 +167,8 @@ export function TestnetTreasuryCard() {
           className="mt-3 w-full flex items-center justify-center gap-1.5 rounded-lg border border-outline-variant/20 bg-surface-container/50 py-2 font-label-sm text-[11px] sm:text-label-sm text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors"
         >
           <Icon name="expand_more" size={16} />
-          Show {wallets.length - 2} more wallet{wallets.length - 2 > 1 ? 's' : ''}
+          Show {wallets.length - 2} more wallet{wallets.length - 2 > 1 ? "s" : ""}
         </button>
-      ) : null}
-
-      {isTestnet && data.faucets ? (
-        <p className="mt-3 font-label-sm text-[11px] sm:text-label-sm text-on-surface-variant">
-          USDC:{" "}
-          <a
-            href={data.faucets.usdc}
-            target="_blank"
-            rel="noreferrer"
-            className="text-[#2DD4BF] hover:underline break-all"
-          >
-            Circle testnet faucet
-          </a>
-        </p>
       ) : null}
     </Card>
   );

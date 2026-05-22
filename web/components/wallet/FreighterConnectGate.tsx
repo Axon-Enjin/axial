@@ -41,7 +41,7 @@ export function FreighterConnectGate({
         !details.networkPassphrase.includes("Test SDF")
       ) {
         setError(
-          "Freighter network not recognized. In Freighter → Settings, choose Mainnet or Testnet.",
+          "Freighter network not recognized. In Freighter → Settings, choose Mainnet.",
         );
       }
     } catch (err) {
