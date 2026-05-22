@@ -115,7 +115,7 @@ target/wasm32v1-none/release/payroll_split.wasm
 cd "$AXIAL_ROOT/soroban"
 
 WASM=target/wasm32v1-none/release/axial_swap.wasm
-SOURCE=axial-deployer
+SOURCE=mainnet-wallet
 NETWORK=testnet
 
 # Upload + install + deploy (CLI prints contract ID)
@@ -208,11 +208,19 @@ stellar contract invoke --id "$PAYROLL_ID" --source-account my-key --network tes
 
 ```bash
 # Fund deployer with Mainnet XLM (no friendbot) — use your funded account or:
-# stellar keys generate axial-deployer-main --network mainnet
+# stellar keys generate mainnet-wallet --network mainnet
 
+Make sure it's funded on Mainnet. Then run:
+```bash
+stellar contract deploy \
+  --wasm target/wasm32v1-none/release/receivable_token.wasm \
+  --source mainnet-wallet \
+  --network mainnet
+
+# Deploy Swap Contract
 stellar contract deploy \
   --wasm target/wasm32v1-none/release/axial_swap.wasm \
-  --source axial-deployer-main \
+  --source mainnet-wallet \
   --network mainnet
 ```
 
@@ -221,7 +229,7 @@ Establish a USDC trustline on the demo account before swap demos:
 ```bash
 # USDC asset code + issuer (Mainnet)
 stellar tx new change-trust \
-  --source axial-deployer-main \
+  --source mainnet-wallet \
   --network mainnet \
   --asset USDC:GA5ZSEJYB37JRC5AVCIA5MOP4RHTM335X2KGX3IHOJAPP5RE34K4KZVN
 # … sign and submit per `stellar tx` help

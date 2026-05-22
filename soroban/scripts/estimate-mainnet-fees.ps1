@@ -108,7 +108,7 @@ if ($identityName) {
     Write-Host "  Stellar CLI identity : $identityName" -ForegroundColor Green
 } else {
     Write-Host "  Stellar CLI identity : NOT IMPORTED" -ForegroundColor Yellow
-    Write-Host "  To import: stellar keys add axial-deployer --secret-key"
+    Write-Host "  To import: stellar keys add mainnet-wallet --secret-key"
 }
 Write-Host ""
 

@@ -6,7 +6,7 @@ export
 
 SOURCE ?= $(STELLAR_SOURCE)
 ifeq ($(SOURCE),)
-  SOURCE := axial-deployer
+  SOURCE := mainnet-wallet
 endif
 NETWORK ?= $(STELLAR_NETWORK)
 ifeq ($(NETWORK),)

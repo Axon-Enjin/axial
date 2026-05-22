@@ -107,6 +107,6 @@ Test XLM ≠ USDC. For swap demos use [Circle testnet faucet](https://faucet.cir
 | Issue | Fix |
 |-------|-----|
 | `stellar` not found | Use WSL, not PowerShell |
-| `axial-deployer` missing | Use your key in `.env`; README default is only an example |
+| `mainnet-wallet` missing | Use your key in `.env`; README default is only an example |
 | Permission errors on `/mnt/c` | `chmod +x scripts/*.sh` or run `bash scripts/setup-dev.sh` |
 | Crate download timeout | Retry `make build`; clone repo under `~/projects/axial` in WSL |

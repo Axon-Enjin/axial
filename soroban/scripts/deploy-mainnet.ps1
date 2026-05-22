@@ -4,7 +4,7 @@
 #
 # Prerequisites:
 #   1. Import your deployer secret key (one-time):
-#        stellar keys add axial-deployer --secret-key
+#        stellar keys add mainnet-wallet --secret-key
 #        (enter the secret key for GB6TMTI6DB6BETQEPMKXOAYAMYKGNHR4AJVZHKEQ5LCVFINGEDQDKCFI)
 #   2. Fund GB6TMTI6DB6BETQEPMKXOAYAMYKGNHR4AJVZHKEQ5LCVFINGEDQDKCFI with >= 10 XLM on mainnet
 #   3. cargo build --target wasm32v1-none --release already ran (or run `stellar contract build`)
@@ -17,7 +17,7 @@ $ErrorActionPreference = "Stop"
 
 # ── Configuration ─────────────────────────────────────────────────────────────
 
-$SOURCE_KEY    = "axial-deployer"  # stellar identity name — run 'stellar keys ls' to verify
+$SOURCE_KEY    = "mainnet-wallet"  # stellar identity name — run 'stellar keys ls' to verify
 $NETWORK       = "mainnet"
 $PASSPHRASE    = "Public Global Stellar Network ; September 2015"
 $RPC_URL       = "https://mainnet.sorobanrpc.com"   # or https://rpc.stellar.org
