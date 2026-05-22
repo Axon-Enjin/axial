@@ -245,6 +245,10 @@ See [`docs/vercel-deployment.md`](docs/vercel-deployment.md) for Vercel-specific
 
 - **Network:** Stellar Testnet (Soroban RPC)
 - **RPC:** `https://soroban-testnet.stellar.org:443`
+- **Deployed Contracts:**
+  - **Axial Swap:** [`CDDAIDM4D62OZL5MQPKO5ZFWE7TBRFJD5Y3L2UZKP5OVGP2VHZ2UU736`](https://stellar.expert/explorer/testnet/contract/CDDAIDM4D62OZL5MQPKO5ZFWE7TBRFJD5Y3L2UZKP5OVGP2VHZ2UU736)
+  - **Receivable Token:** [`CAQEEFBO44FONQKGCEHR2QFTLOIIO232Z7WM6722ZDA6MNAL2NNU7SOP`](https://stellar.expert/explorer/testnet/contract/CAQEEFBO44FONQKGCEHR2QFTLOIIO232Z7WM6722ZDA6MNAL2NNU7SOP)
+  - **Payroll Split:** [`CBJCEJMDGRGLVU7VHAFR2VSVSBIKIWZA6LBQN6SCLZVJU6YROTETY3MB`](https://stellar.expert/explorer/testnet/contract/CBJCEJMDGRGLVU7VHAFR2VSVSBIKIWZA6LBQN6SCLZVJU6YROTETY3MB)
 - **Demo Wallets:**
 
 | Name | Role | Address |
@@ -259,6 +263,12 @@ See [`docs/vercel-deployment.md`](docs/vercel-deployment.md) for Vercel-specific
 
 ### Mainnet
 
+- **Network:** Stellar Mainnet (Soroban RPC)
+- **Deployed Contracts:**
+  - **Axial Swap:** [`CDAWI7O7XGPCSXDRUUJCKSJNKXIARW4VAV4KD3OBXUBI27Q3OH7PEKUP`](https://stellar.expert/explorer/public/contract/CDAWI7O7XGPCSXDRUUJCKSJNKXIARW4VAV4KD3OBXUBI27Q3OH7PEKUP)
+  - **Receivable Token:** [`CALEBRJO7CI3KB24SL2RAP7B76AIRXC6IPQFD2AJK2DK6WXSJBAVGILL`](https://stellar.expert/explorer/public/contract/CALEBRJO7CI3KB24SL2RAP7B76AIRXC6IPQFD2AJK2DK6WXSJBAVGILL)
+  - **Payroll Split:** [`CA27UILZDBSHVSO7HUNRQBTMZKDS5SEOYUOVRCGD7DRJWC6LLTDZUSFT`](https://stellar.expert/explorer/public/contract/CA27UILZDBSHVSO7HUNRQBTMZKDS5SEOYUOVRCGD7DRJWC6LLTDZUSFT)
+  - **Settlement:** [`CDMHMQNPO7GHJH6YRDCDT2L24SSUVKBOWNOY6F3QRWZRWLSH7G2DDG6K`](https://stellar.expert/explorer/public/contract/CDMHMQNPO7GHJH6YRDCDT2L24SSUVKBOWNOY6F3QRWZRWLSH7G2DDG6K)
 - **XLM Wallet Address:** `GB6TMTI6DB6BETQEPMKXOAYAMYKGNHR4AJVZHKEQ5LCVFINGEDQDKCFI`
 - **USDC Issuer (Circle):** `GA5ZSEJYB37JRC5AVCIA5MOP4RHTM335X2KGX3IHOJAPP5RE34K4KZVN`
 
@@ -271,7 +281,7 @@ See [`docs/vercel-deployment.md`](docs/vercel-deployment.md) for Vercel-specific
 ## 🎥 Demo
 
 - 🎬 **Demo Video:** [YouTube](https://youtu.be/6-CpnsPGJK0)
-- 🔗 **Live App:** _Deployed on Vercel (link TBD)_
+- 🔗 **Live App:** _Deployed on Vercel (https://axial-hackathon.vercel.app - Replace with actual URL)_
 - 🖼️ **Pitch Deck:** [Interactive HTML](docs/pitch-deck.html) | [PDF Export](docs/pitch-deck.pdf)
 
 ### Demo Walkthrough
