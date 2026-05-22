@@ -66,13 +66,16 @@ We merged tokenized invoice factoring with automated EIS reporting and statutory
 
 ## ✨ Features
 
-- **Tokenized Invoice Factoring** — Mint verified receivables as Stellar Asset Contracts (SAC) on Soroban. Payer onboarding, invoice confirmation, and Notice of Assignment (NoA) gate ensure only real, confirmed invoices are fundable.
-- **Instant Liquidity via Atomic Swap** — Soroban contract advances ~80–90% of face value in USDC instantly, with holdback reserve and MSME recourse. No physical collateral. Denomination-agnostic — works with any Stellar asset.
-- **Programmable Statutory Payroll Splitting** — Soroban contract calculates and routes exact SSS, PhilHealth, and Pag-IBIG deductions (employee + employer shares) to government agency wallets in real-time.
-- **BIR EIS Compliance Oracle** — Off-chain service maps Stellar transaction metadata to the 20-field BIR EIS schema, JWS-signs the payload, and submits within T+3. Success reference written back to Stellar transaction memo as immutable proof.
-- **Invoice OCR & Management** — Upload, parse, and manage the factoring book with OCR-powered invoice extraction.
-- **Testnet Treasury Dashboard** — Real-time wallet balances, liquidity metrics, and contract status on the Overview tab.
-- **PHP-Denominated UX** — All amounts displayed in Philippine Pesos. Settlement in USDC on Stellar. FX conversion at the edge via Reflector oracle or reference rate.
+- **Payer Portal & KYB** — Closed-loop payer verification, Notice of Assignment (NoA) gate, and external portal for enterprise payers to acknowledge invoices before factoring.
+- **Tokenized Invoice Factoring** — Mint verified receivables as Stellar Asset Contracts (SAC) on Soroban. Only real, confirmed invoices are fundable.
+- **Instant Liquidity via Atomic Swap** — Soroban contract advances ~80–90% of face value in USDC instantly, with holdback reserve and MSME recourse. Denomination-agnostic.
+- **Programmable Statutory Payroll Splitting** — Soroban contract calculates and routes exact SSS, PhilHealth, and Pag-IBIG deductions to government wallets in real-time.
+- **On-chain Lockbox Settlement** — Smart contracts autonomously manage payer settlements, releasing reserves back to MSMEs and reconciling state automatically.
+- **BIR EIS Compliance Oracle** — Off-chain service maps transaction metadata to the 20-field BIR EIS schema, JWS-signs the payload, and submits within T+3. Immutable proof written to Stellar memo.
+- **Freighter Wallet Integration** — Full support for self-custody non-custodial signing via Freighter, alongside embedded custodial paths.
+- **Auth & Multi-tenancy** — Organization-scoped authentication, Magic Links, and role-based access control powered by Supabase.
+- **Event-driven Cron Workers** — Automated T+3 compliance scheduling and Horizon event polling for autonomous system state reconciliation.
+- **PHP-Denominated UX** — All amounts displayed in Philippine Pesos. Settlement in USDC on Stellar. Real-time FX conversion via Reflector oracle integration.
 
 ---
 
@@ -80,13 +83,14 @@ We merged tokenized invoice factoring with automated EIS reporting and statutory
 
 | Layer | Technology |
 | --- | --- |
-| **Smart Contracts** | Rust, Soroban SDK, WASM (3 crates: `receivable_token`, `axial_swap`, `payroll_split`) |
+| **Smart Contracts** | Rust, Soroban SDK, WASM (4 crates: `receivable_token`, `axial_swap`, `payroll_split`, `settlement`) |
 | **Frontend** | Next.js 15 (App Router), React 19, TypeScript 5, Tailwind CSS 4 |
-| **Backend** | Next.js API Routes, Supabase (PostgreSQL), BIR EIS Oracle |
+| **Backend** | Next.js API Routes, Vercel Cron, BIR EIS Oracle |
+| **Database & Auth** | Supabase (PostgreSQL, Row Level Security, Auth / Multi-tenancy) |
 | **Blockchain** | Stellar (Soroban smart contracts, Horizon API, Stellar SDK) |
 | **Settlement** | USDC on Stellar (Circle-issued) |
+| **Wallets** | Freighter Integration (Self-custody) |
 | **Design** | Dark glassmorphic, Geist typography, Material Symbols |
-| **OCR** | Tesseract.js, pdf-parse |
 | **Hosting** | Vercel |
 
 ---
@@ -98,7 +102,9 @@ We merged tokenized invoice factoring with automated EIS reporting and statutory
 ```mermaid
 graph TD
     subgraph Client ["Client (Next.js + React)"]
-        UI["Four-Tab UI<br/>Overview · Liquidity · Compliance · Settings"]
+        UI["App Dashboard<br/>Overview · Liquidity · Compliance"]
+        PORTAL["Payer Portal<br/>Invoice Acknowledgment"]
+        FREIGHTER["Freighter Wallet<br/>(Self-Custody)"]
     end
 
     subgraph Stellar ["Stellar Network"]
@@ -106,30 +112,42 @@ graph TD
         RT{"receivable_token"}
         AS{"axial_swap"}
         PS{"payroll_split"}
+        SET{"settlement"}
     end
 
     subgraph Backend ["Backend (API Routes + Workers)"]
         API["Next.js API"]
-        DB["Supabase / PostgreSQL"]
+        CRON["Event Polling & Workers"]
+        DB["Supabase (PostgreSQL + Auth)"]
         ORACLE["BIR EIS Oracle"]
     end
 
-    subgraph BIR ["BIR"]
-        EIS["EIS API (mock)"]
+    subgraph External ["External Services"]
+        EIS["BIR EIS API"]
+        REFLECTOR["Reflector FX Oracle"]
     end
 
     UI --> API
-    UI --> |"Sign Txns"| RPC
+    PORTAL --> API
+    UI <--> FREIGHTER
+    FREIGHTER --> |"Sign Txns"| RPC
     API --> DB
     API --> RPC
+    CRON --> RPC
+    CRON --> DB
 
     RPC --> RT
     RPC --> AS
     RPC --> PS
+    RPC --> SET
+    
+    API -.-> |"fetch rates"| REFLECTOR
 
-    RT -.-> |"mint (payer-confirmed receivable)"| AS
-    AS -.-> |"USDC advance to MSME"| PS
-    PS -.-> |"SSS + PhilHealth + Pag-IBIG split"| ORACLE
+    PORTAL -.-> |"confirm NoA"| RT
+    RT -.-> |"mint (confirmed receivable)"| AS
+    AS -.-> |"USDC advance"| PS
+    PS -.-> |"SSS/PhilHealth/Pag-IBIG split"| ORACLE
+    SET -.-> |"payer pays lockbox"| AS
 
     ORACLE --> |"JWS-signed JSON"| EIS
     EIS --> |"success ref → Stellar memo"| ORACLE
@@ -142,14 +160,16 @@ graph TD
 | `receivable_token` | SAC mint — `initialize`, `mint`, `is_minted`, `get_receivable`. One mint per confirmed invoice. | ✅ Deployed |
 | `axial_swap` | USDC atomic swap — advance vs receivable token. Denomination-agnostic asset param, configurable advance bps, reserve + discount. | ✅ Deployed |
 | `payroll_split` | Statutory payroll router — `initialize`, `quote`, `route_payroll`, `get_payroll`. USDC split to SSS / PhilHealth / Pag-IBIG + net to employees. | ✅ Deployed |
+| `settlement` | Lockbox & Reconciliation — Receives payer funds, repays treasury, and routes remaining reserve to MSME. | ✅ Deployed |
 
 **Happy-path call order:**
 
 ```
-API gate (off-chain) → receivable_token::mint
+Payer Portal (off-chain) → receivable_token::mint
   → axial_swap::execute_advance
   → payroll_split::route_payroll
   → oracle submits EIS + memo (off-chain)
+  → settlement::process_payment (on maturity)
 ```
 
 ### Directory Structure
@@ -171,7 +191,8 @@ axial/
 │   ├── contracts/
 │   │   ├── receivable_token/ SAC mint (payer-confirmed receivable)
 │   │   ├── axial_swap/       USDC atomic swap + reserve
-│   │   └── payroll_split/    SSS / PhilHealth / Pag-IBIG routing
+│   │   ├── payroll_split/    SSS / PhilHealth / Pag-IBIG routing
+│   │   └── settlement/       Payer lockbox & reconciliation
 │   ├── scripts/              Deploy & demo scripts
 │   ├── deployments/          Testnet/Mainnet contract IDs
 │   ├── Makefile              build, test, deploy targets
@@ -180,6 +201,7 @@ axial/
 ├── web/                      Next.js frontend
 │   ├── app/
 │   │   ├── (app)/            Page routes (Overview, Liquidity, Compliance, Settings)
+│   │   ├── (portal)/         External Payer Portal routes
 │   │   └── api/              API routes (invoices, payroll, wallets, EIS, swap, etc.)
 │   ├── components/           UI components (sidebar, overview, liquidity, compliance, settings)
 │   └── lib/                  Shared utilities & Stellar SDK integration
@@ -228,7 +250,7 @@ cargo test
 
 ### Environment Variables
 
-Copy the example files and fill in your values:
+Copy the example files and fill in your values (Supabase credentials, Wallet keys, etc.):
 
 ```bash
 cp web/.env.example web/.env
@@ -249,6 +271,7 @@ See [`docs/vercel-deployment.md`](docs/vercel-deployment.md) for Vercel-specific
   - **Axial Swap:** [`CDDAIDM4D62OZL5MQPKO5ZFWE7TBRFJD5Y3L2UZKP5OVGP2VHZ2UU736`](https://stellar.expert/explorer/testnet/contract/CDDAIDM4D62OZL5MQPKO5ZFWE7TBRFJD5Y3L2UZKP5OVGP2VHZ2UU736)
   - **Receivable Token:** [`CAQEEFBO44FONQKGCEHR2QFTLOIIO232Z7WM6722ZDA6MNAL2NNU7SOP`](https://stellar.expert/explorer/testnet/contract/CAQEEFBO44FONQKGCEHR2QFTLOIIO232Z7WM6722ZDA6MNAL2NNU7SOP)
   - **Payroll Split:** [`CBJCEJMDGRGLVU7VHAFR2VSVSBIKIWZA6LBQN6SCLZVJU6YROTETY3MB`](https://stellar.expert/explorer/testnet/contract/CBJCEJMDGRGLVU7VHAFR2VSVSBIKIWZA6LBQN6SCLZVJU6YROTETY3MB)
+  - **Settlement:** [`CCBHKV5N42TYZZF632N66YQO7IFJHRHHTZMWXWOPK2T6K74R5QOMH2I2`](https://stellar.expert/explorer/testnet/contract/CCBHKV5N42TYZZF632N66YQO7IFJHRHHTZMWXWOPK2T6K74R5QOMH2I2)
 - **Demo Wallets:**
 
 | Name | Role | Address |
@@ -289,9 +312,9 @@ See [`docs/vercel-deployment.md`](docs/vercel-deployment.md) for Vercel-specific
 The demo follows this order to showcase the full pipeline:
 
 1. **Overview** — Treasury wallet balances, liquidity metrics, regulatory pulse (BIR EIS sync status, statutory splitting)
-2. **Liquidity** — Upload or seed an invoice → confirm payer → tokenize receivable (SAC mint) → execute atomic swap (USDC advance to MSME)
+2. **Liquidity** — Upload or seed an invoice → confirm payer (via portal) → tokenize receivable (SAC mint) → execute atomic swap (USDC advance to MSME)
 3. **Compliance** — Run payroll split (SSS + PhilHealth + Pag-IBIG routing) → trigger BIR EIS oracle → verify JWS-signed submission → success reference written to Stellar memo
-4. **Settings** — PDAX integration demo, environment configuration
+4. **Settings** — Wallet integrations (Freighter), environment configuration
 
 ---
 
@@ -313,7 +336,7 @@ The demo follows this order to showcase the full pipeline:
 | Phase | Focus | Status |
 | --- | --- | --- |
 | **Phase 1 — Wedge** | Production build on Stellar Testnet/Mainnet. Onboard software/creative agencies. | 🔄 Current |
-| **Phase 2 — Validation** | Real operational deployment. Atomic swaps, EIS oracle, and statutory flows in production. | ⬜ Next |
+| **Phase 2 — Validation** | Real operational deployment. Onboarding initial users with Atomic swaps, EIS oracle, and statutory flows in production. | ⬜ Next |
 | **Phase 3 — Expansion** | F&B suppliers and distributors. Larger invoice throughput. | ⬜ Planned |
 | **Phase 4 — Ad Tax Module** | Programmable treasury for BIR RMC 5-2024 (digital ad tax compliance). | ⬜ Future |
 
@@ -325,8 +348,7 @@ The demo follows this order to showcase the full pipeline:
 | 🔴 High | Legal sign-off on statutory contribution tables | SSS, PhilHealth, Pag-IBIG brackets must be attorney-reviewed |
 | 🔴 High | PDAX Connect API integration (PHP fiat rail) | Production on/off-ramp via SEP-24 anchor |
 | 🟡 Medium | Liquidity provider partnership agreements | Determines discount rate structure and funder yield |
-| 🟡 Medium | Multi-wallet support (Freighter, Albedo, Lobstr) | Broader wallet compatibility |
-| 🟢 Low | Reflector oracle integration for live PHP/USDC FX | Replace hardcoded reference rate with live oracle |
+| 🟡 Medium | Broader multi-wallet support (Albedo, Lobstr) | Freighter is already integrated; adding alternatives for broader compatibility |
 
 ---
 
