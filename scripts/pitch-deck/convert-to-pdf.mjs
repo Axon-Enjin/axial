@@ -3,8 +3,8 @@ import { join, dirname } from "path";
 import { fileURLToPath } from "url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const htmlPath = join(__dirname, "pitch-deck.html");
-const pdfPath = join(__dirname, "pitch-deck.pdf");
+const htmlPath = join(__dirname, "../../docs/pitch-deck.html");
+const pdfPath = join(__dirname, "../../docs/pitch-deck.pdf");
 const TOTAL_SLIDES = 12;
 
 (async () => {
@@ -16,7 +16,7 @@ const TOTAL_SLIDES = 12;
   const page = await browser.newPage();
 
   // Set viewport to 16:9 landscape
-  await page.setViewport({ width: 1920, height: 1080, deviceScaleFactor: 2 });
+  await page.setViewport({ width: 1024, height: 576, deviceScaleFactor: 2 });
 
   // Load the HTML file
   await page.goto(`file:///${htmlPath.replace(/\\/g, "/")}`, {
@@ -36,11 +36,11 @@ const TOTAL_SLIDES = 12;
     // Make body scrollable and sized for print
     document.body.style.overflow = "visible";
     document.body.style.height = "auto";
-    document.body.style.width = "1920px";
+    document.body.style.width = "1024px";
 
     const deck = document.querySelector(".deck");
     deck.style.position = "relative";
-    deck.style.width = "1920px";
+    deck.style.width = "1024px";
     deck.style.height = "auto";
 
     // Stack all slides vertically, each exactly one viewport
@@ -50,8 +50,8 @@ const TOTAL_SLIDES = 12;
       slide.style.opacity = "1";
       slide.style.transform = "none";
       slide.style.pointerEvents = "auto";
-      slide.style.width = "1920px";
-      slide.style.height = "1080px";
+      slide.style.width = "1024px";
+      slide.style.height = "576px";
       slide.style.pageBreakAfter = "always";
       slide.style.pageBreakInside = "avoid";
       slide.classList.add("active");
@@ -77,8 +77,8 @@ const TOTAL_SLIDES = 12;
 
   await page.pdf({
     path: pdfPath,
-    width: "1920px",
-    height: "1080px",
+    width: "1024px",
+    height: "576px",
     printBackground: true,
     margin: { top: 0, right: 0, bottom: 0, left: 0 },
     preferCSSPageSize: false,
