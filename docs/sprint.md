@@ -276,16 +276,31 @@ Self-custody signing implemented alongside the existing custodial path. No break
 - `invoke-swap.ts`, `invoke-receivable.ts`: optional `msmePublicOverride` param
 - **References:** `web/lib/soroban/freighter.ts`, `web/lib/soroban/build-tx.ts`, `web/app/api/payroll/build/`, `web/app/api/tx/submit/`, `web/components/settings/WalletCard.tsx`
 
-### B-4 · T+3 submission worker + Horizon event subscription · `P1` · 📋 committed
-The oracle currently submits immediately and is triggered by API hooks. Add a real T+3
-scheduled submission worker and a Horizon/RPC ledger-event subscription so compliance
-is event-driven, not request-driven.
-- **References:** `../web/lib/eis/oracle.ts`, `../web/lib/eis/trigger.ts`, [`rfc-axial-eis-oracle.md`](rfc-axial-eis-oracle.md), [`sdd-axial.md`](sdd-axial.md) §5
+### B-4 · T+3 submission worker + Horizon event subscription · `P1` · ✅ done
+Event-driven, deadline-enforced BIR EIS compliance pipeline.
 
-### B-5 · Reflector FX oracle — replace hardcoded rate · `P2` · 📋 committed
-The PHP/USDC rate is hardcoded (`DEMO_RATE = 56.5`). Wire the Reflector price oracle
-and write the rate used to the contract event log so it is auditable (Axial.md §13.8).
-- **References:** `../web/components/settings/PdaxRampCard.tsx`, `Axial.md` Q4 + §13.8
+**Delivered:**
+- `lib/eis/worker.ts`: T+3 worker — retries queued/failed submissions within deadline; marks expired ones permanently failed with audit trail
+- `lib/eis/horizon-poll.ts`: Soroban RPC event poller — `server.getEvents()` on all Axial contract IDs, `scValToNative()` decoding of `ReceivableMinted` / `SwapExecuted` / `PayrollRouted` contract events, 1000-ledger stateless lookback window
+- `POST /api/eis/worker`: cron-secured worker endpoint (GET + POST, Bearer auth)
+- `POST /api/eis/horizon-poll`: cron-secured poll endpoint; collects all configured contract IDs from `getSorobanConfig()`
+- `EisSubmission.dueBy` + `EisSubmission.submittedAt` fields; oracle sets `dueBy = createdAt+3days` on every new submission
+- `store.ts`: `findSubmissionsForRetry()`, `findExpiredSubmissions()`
+- `supabase/migrations/005_eis_t3_fields.sql`: `due_by`, `submitted_at` columns + retry index
+- `vercel.json`: Vercel Cron — worker every 6h, horizon-poll every 10min, reconciliation/scan nightly
+- `.env.example`: `CRON_SECRET`, `SETTLEMENT_CONTRACT_ID`
+- **References:** `web/lib/eis/worker.ts`, `web/lib/eis/horizon-poll.ts`, `web/app/api/eis/worker/`, `web/app/api/eis/horizon-poll/`
+
+### B-5 · Reflector FX oracle — replace hardcoded rate · `P2` · ✅ done
+Live PHP/USDC rate from the Reflector oracle; 5-minute server-side cache; graceful
+fallback to 56.5 when oracle is unreachable or PHP is unsupported on testnet.
+
+**Delivered:**
+- `lib/fx/reflector.ts`: Reflector oracle client — `lastprice(Asset::Other("PHP"))` via Soroban simulation, `phpPerUsdc = 10^14 / priceRaw`, in-process cache (5-min TTL), sanity check (20–200 PHP/USDC), `invalidateRateCache()`
+- `GET /api/fx/rate`: returns `{ phpPerUsdc, source, contractId, cachedAt, error }` with `Cache-Control: public, max-age=120`; `POST ?action=invalidate` for testing
+- `PdaxRampCard`: fetches live rate on mount; shows "Live · Reflector" (teal) or "Demo rate" (neutral) indicator; links to oracle contract on stellar.expert when live
+- `tsconfig.json`: bumped `target` from `ES2017` to `ES2020` (BigInt literals used across Soroban layer — was always required, now enforced)
+- **References:** `web/lib/fx/reflector.ts`, `web/app/api/fx/rate/`, `web/components/settings/PdaxRampCard.tsx`
 
 ### B-6 · Auth + multi-tenancy · `P1` · 📋 committed
 The app is single-org with no real auth — `(app)/layout.tsx` is a visual shell only.
