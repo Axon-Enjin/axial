@@ -6,7 +6,7 @@ import { upsertFromParse } from "@/lib/invoices/store";
 import { toClientInvoice } from "@/lib/invoices/types";
 
 export const runtime = "nodejs";
-export const maxDuration = 60;
+export const maxDuration = 120;
 
 const ALLOWED = new Set([
   "image/png",
@@ -41,6 +41,16 @@ export async function POST(request: Request) {
   const buffer = Buffer.from(await file.arrayBuffer());
   if (buffer.length === 0) {
     return NextResponse.json({ error: "Empty file" }, { status: 400 });
+  }
+
+  if (mimeType.startsWith("image/") && buffer.length > 3 * 1024 * 1024) {
+    return NextResponse.json(
+      {
+        error:
+          "Image is too large for OCR on the server (max 3MB). Use a smaller scan, a text PDF, or sample invoice.",
+      },
+      { status: 413 },
+    );
   }
 
   try {

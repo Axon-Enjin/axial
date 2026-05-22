@@ -1,13 +1,54 @@
-import { createWorker } from "tesseract.js";
+import { createWorker, PSM, type Worker } from "tesseract.js";
 
 const MAX_OCR_BYTES = 8 * 1024 * 1024;
-const TESSERACT_TIMEOUT_MS = 45_000;
+/** Cloud Run default request timeout is 30s — keep OCR under ~25s unless host allows more. */
+const SERVERLESS_OCR_BUDGET_MS = 25_000;
+const CLOUD_RUN_OCR_BUDGET_MS = 110_000;
 
-/** Tesseract cold start often exceeds Vercel Hobby's 10s limit; PDF text extract is lighter. */
+function ocrBudgetMs(): number {
+  if (process.env.K_SERVICE) return CLOUD_RUN_OCR_BUDGET_MS;
+  if (process.env.VERCEL === "1") return SERVERLESS_OCR_BUDGET_MS;
+  return CLOUD_RUN_OCR_BUDGET_MS;
+}
+
+function isServerlessHost(): boolean {
+  return process.env.VERCEL === "1" || Boolean(process.env.K_SERVICE);
+}
+
+/** Tesseract is heavy on cold serverless; PDF text + sample import stay enabled. */
 export function isImageOcrEnabled(): boolean {
   if (process.env.AXIAL_OCR_ENABLED === "true") return true;
   if (process.env.AXIAL_OCR_ENABLED === "false") return false;
-  return process.env.VERCEL !== "1";
+  if (process.env.VERCEL === "1") return false;
+  return true;
+}
+
+let sharedWorker: Worker | null = null;
+let sharedWorkerInit: Promise<Worker> | null = null;
+
+async function getSharedWorker(): Promise<Worker> {
+  if (sharedWorker) return sharedWorker;
+  if (!sharedWorkerInit) {
+    sharedWorkerInit = initWorker();
+  }
+  sharedWorker = await sharedWorkerInit;
+  return sharedWorker;
+}
+
+async function initWorker(): Promise<Worker> {
+  const isProd = process.env.NODE_ENV === "production";
+  const cachePath = isProd ? "/tmp" : process.cwd();
+  const langPath = isProd ? process.cwd() : undefined;
+
+  const worker = await createWorker("eng", 1, {
+    cachePath,
+    langPath,
+    logger: () => {},
+  });
+  await worker.setParameters({
+    tessedit_pageseg_mode: PSM.SINGLE_BLOCK,
+  });
+  return worker;
 }
 
 export async function extractTextFromBuffer(
@@ -25,13 +66,28 @@ export async function extractTextFromBuffer(
   if (mimeType.startsWith("image/")) {
     if (!isImageOcrEnabled()) {
       throw new Error(
-        "Image OCR is disabled on this host (Vercel serverless). Use a text-based PDF, click “sample invoice”, or set AXIAL_OCR_ENABLED=true on a Pro plan with 60s functions.",
+        "Image OCR is disabled on Vercel Hobby. Use a text-based PDF, click “sample invoice”, or deploy on Cloud Run.",
       );
     }
-    return runTesseract(buffer);
+    const normalized = await normalizeImageForOcr(buffer);
+    return runTesseract(normalized);
   }
 
   throw new Error("Unsupported file type. Use PNG, JPEG, or PDF.");
+}
+
+async function normalizeImageForOcr(buffer: Buffer): Promise<Buffer> {
+  if (buffer.length < 600_000) return buffer;
+  try {
+    const sharp = (await import("sharp")).default;
+    return await sharp(buffer)
+      .rotate()
+      .resize(1600, 1600, { fit: "inside", withoutEnlargement: true })
+      .jpeg({ quality: 82, mozjpeg: true })
+      .toBuffer();
+  } catch {
+    return buffer;
+  }
 }
 
 async function withTimeout<T>(
@@ -45,7 +101,7 @@ async function withTimeout<T>(
       () =>
         reject(
           new Error(
-            `${label} timed out after ${ms}ms — on Vercel Hobby the limit is 10s; image OCR needs Pro or use PDF / sample invoice.`,
+            `${label} timed out after ${Math.round(ms / 1000)}s. Try a smaller image, a text PDF, or sample invoice.`,
           ),
         ),
       ms,
@@ -59,12 +115,13 @@ async function withTimeout<T>(
 }
 
 async function extractPdfText(buffer: Buffer): Promise<string> {
+  const budget = ocrBudgetMs();
   const { PDFParse } = await import("pdf-parse");
   const parser = new PDFParse({ data: buffer });
   try {
     const result = await withTimeout(
       parser.getText(),
-      25_000,
+      Math.min(budget, 25_000),
       "PDF text extraction",
     );
     const text = (result.text ?? "").trim();
@@ -72,7 +129,7 @@ async function extractPdfText(buffer: Buffer): Promise<string> {
       return text;
     }
     throw new Error(
-      "PDF has little extractable text — export as PNG/JPEG locally or use the sample invoice button.",
+      "PDF has little extractable text — use sample invoice or a text-based PDF export.",
     );
   } finally {
     await parser.destroy();
@@ -80,26 +137,17 @@ async function extractPdfText(buffer: Buffer): Promise<string> {
 }
 
 async function runTesseract(buffer: Buffer): Promise<string> {
-  // In production (Cloud Run), the filesystem is read-only except for /tmp.
-  // We bake eng.traineddata into process.cwd() (/app) at build time, which is read-only.
-  const isProd = process.env.NODE_ENV === "production";
-  const cachePath = isProd ? "/tmp" : process.cwd();
-  const langPath = isProd ? process.cwd() : undefined;
+  const budget = ocrBudgetMs();
+  const recognizeMs = Math.max(8_000, budget - 8_000);
 
-  const worker = await withTimeout(
-    createWorker("eng", 1, {
-      cachePath,
-      langPath,
-      logger: () => {},
-    }),
-    30_000,
-    "Tesseract worker startup",
-  );
+  const worker = isServerlessHost()
+    ? await withTimeout(getSharedWorker(), 8_000, "Tesseract worker startup")
+    : await getSharedWorker();
 
   try {
     const { data } = await withTimeout(
       worker.recognize(buffer),
-      TESSERACT_TIMEOUT_MS,
+      recognizeMs,
       "Tesseract recognize",
     );
     const text = (data.text ?? "").trim();
@@ -107,7 +155,16 @@ async function runTesseract(buffer: Buffer): Promise<string> {
       throw new Error("OCR returned too little text — try a clearer scan or PDF.");
     }
     return text;
-  } finally {
-    await worker.terminate();
+  } catch (err) {
+    if (
+      err instanceof Error &&
+      /timed out/i.test(err.message) &&
+      isServerlessHost()
+    ) {
+      throw new Error(
+        `${err.message} On Cloud Run, redeploy with --timeout=120 (see deploy-cloudrun.yml).`,
+      );
+    }
+    throw err;
   }
 }
