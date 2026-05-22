@@ -50,6 +50,17 @@ RUN chown nextjs:nodejs .next
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
+# Next standalone tracing omits tesseract.js worker-script/ (MODULE_NOT_FOUND on '..')
+COPY --from=builder --chown=nextjs:nodejs /app/node_modules/tesseract.js ./node_modules/tesseract.js
+COPY --from=builder --chown=nextjs:nodejs /app/node_modules/tesseract.js-core ./node_modules/tesseract.js-core
+COPY --from=builder --chown=nextjs:nodejs /app/node_modules/bmp-js ./node_modules/bmp-js
+COPY --from=builder --chown=nextjs:nodejs /app/node_modules/idb-keyval ./node_modules/idb-keyval
+COPY --from=builder --chown=nextjs:nodejs /app/node_modules/is-url ./node_modules/is-url
+COPY --from=builder --chown=nextjs:nodejs /app/node_modules/node-fetch ./node_modules/node-fetch
+COPY --from=builder --chown=nextjs:nodejs /app/node_modules/regenerator-runtime ./node_modules/regenerator-runtime
+COPY --from=builder --chown=nextjs:nodejs /app/node_modules/wasm-feature-detect ./node_modules/wasm-feature-detect
+COPY --from=builder --chown=nextjs:nodejs /app/node_modules/zlibjs ./node_modules/zlibjs
+
 USER nextjs
 
 EXPOSE 3000
