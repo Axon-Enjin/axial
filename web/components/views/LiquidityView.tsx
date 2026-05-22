@@ -36,11 +36,11 @@ function ViewTxLinks({
   explorerTxBase: string;
 }) {
   const linkClass =
-    "inline-flex items-center gap-1 bg-transparent font-label-md text-label-md text-on-surface-variant hover:text-primary underline-offset-2 hover:underline";
+    "inline-flex items-center gap-1 bg-transparent font-label-md text-[10px] sm:text-[11px] md:text-label-md text-on-surface-variant hover:text-primary underline-offset-2 hover:underline";
 
   if (!mintTxHash && !swapTxHash) {
     return (
-      <span className="font-label-sm text-label-sm text-outline" title="No on-chain txs for this row">
+      <span className="font-label-sm text-[10px] sm:text-[11px] md:text-label-sm text-outline" title="No on-chain txs for this row">
         —
       </span>
     );
@@ -55,8 +55,9 @@ function ViewTxLinks({
           rel="noreferrer"
           className={linkClass}
         >
-          <Icon name="receipt_long" size={16} />
-          Mint TX
+          <Icon name="receipt_long" size={14} className="sm:hidden" />
+          <Icon name="receipt_long" size={16} className="hidden sm:block" />
+          <span className="whitespace-nowrap">Mint TX</span>
         </a>
       ) : null}
       {swapTxHash ? (
@@ -66,8 +67,9 @@ function ViewTxLinks({
           rel="noreferrer"
           className={linkClass}
         >
-          <Icon name="swap_horiz" size={16} />
-          Swap TX
+          <Icon name="swap_horiz" size={14} className="sm:hidden" />
+          <Icon name="swap_horiz" size={16} className="hidden sm:block" />
+          <span className="whitespace-nowrap">Swap TX</span>
         </a>
       ) : null}
     </span>
@@ -119,14 +121,14 @@ function UploadZone({
           handleFiles(e.dataTransfer.files);
         }}
         className={[
-          "flex flex-col items-center justify-center rounded-xl border-2 border-dashed px-6 py-12 text-center transition-colors duration-200",
+          "flex flex-col items-center justify-center rounded-lg sm:rounded-xl border-2 border-dashed px-4 py-8 sm:px-6 sm:py-10 md:py-12 text-center transition-colors duration-200",
           hover ? "border-primary/50" : "border-outline-variant/30",
           parsing ? "opacity-70" : "",
         ].join(" ")}
       >
         <div
           className={[
-            "mb-6 flex h-20 w-20 items-center justify-center rounded-full border transition-all duration-200",
+            "mb-4 sm:mb-6 flex h-16 w-16 sm:h-20 sm:w-20 items-center justify-center rounded-full border transition-all duration-200",
             hover
               ? "border-primary/30 bg-primary/10"
               : "border-outline-variant/40 bg-surface-variant/50",
@@ -134,19 +136,24 @@ function UploadZone({
         >
           <Icon
             name={parsing ? "document_scanner" : "upload_file"}
+            size={28}
+            className={`sm:hidden ${hover || parsing ? "text-primary" : "text-on-surface-variant"}`}
+          />
+          <Icon
+            name={parsing ? "document_scanner" : "upload_file"}
             size={36}
-            className={hover || parsing ? "text-primary" : "text-on-surface-variant"}
+            className={`hidden sm:block ${hover || parsing ? "text-primary" : "text-on-surface-variant"}`}
           />
         </div>
-        <h3 className="mb-2 font-headline-md text-headline-md tracking-tight text-on-surface">
+        <h3 className="mb-2 font-headline-md text-[18px] sm:text-headline-md tracking-tight text-on-surface">
           Upload B2B Invoice
         </h3>
-        <p className="mb-6 max-w-md font-body-md text-body-md text-on-surface-variant">
+        <p className="mb-4 sm:mb-6 max-w-md font-body-md text-[13px] sm:text-body-md text-on-surface-variant px-2">
           Drop PNG, JPEG, or PDF — OCR extracts invoice ID, buyer, amount, and terms into
           Active Factoring.
         </p>
         {parseError ? (
-          <p className="mb-4 max-w-md font-body-md text-body-md text-red-400/90">
+          <p className="mb-4 max-w-md font-body-md text-[13px] sm:text-body-md text-red-400/90 px-2">
             {parseError}
           </p>
         ) : null}
@@ -154,11 +161,12 @@ function UploadZone({
           variant="secondary"
           disabled={parsing}
           onClick={() => inputRef.current?.click()}
+          className="w-full sm:w-auto"
         >
           {parsing ? "Reading invoice…" : "Browse Files"}
         </Button>
-        <p className="mt-4 font-label-sm text-label-sm text-on-surface-variant">
-          Demo:{" "}
+        <p className="mt-3 sm:mt-4 font-label-sm text-[10px] sm:text-label-sm text-on-surface-variant px-2">
+          On Vercel, use{" "}
           <button
             type="button"
             disabled={parsing}
@@ -166,16 +174,8 @@ function UploadZone({
             className="text-[#2DD4BF] hover:underline disabled:opacity-50"
           >
             sample invoice
-          </button>
-          {" · "}
-          <a
-            href="/samples/invoices/invoice-inv-2023-8901.pdf"
-            download="axial-demo-invoice.pdf"
-            className="text-[#2DD4BF] hover:underline"
-          >
-            demo PDF
-          </a>
-          {" "}(text-based, fast parse)
+          </button>{" "}
+          (no OCR) or a text-based PDF.
         </p>
       </div>
     </Card>
@@ -538,45 +538,45 @@ export function LiquidityView() {
   );
 
   return (
-    <main className="mx-auto flex max-w-container-max flex-col gap-gutter px-margin-mobile py-7 md:px-margin-desktop">
+    <main className="mx-auto flex max-w-container-max flex-col gap-4 sm:gap-5 md:gap-gutter px-4 py-5 sm:px-6 sm:py-6 md:px-margin-desktop md:py-7">
       {chain ? (
         <div
           className={[
-            "flex flex-wrap items-center gap-2 rounded-xl border px-4 py-2.5 font-label-sm text-label-sm",
+            "flex flex-wrap items-center gap-2 rounded-lg sm:rounded-xl border px-3 py-2 sm:px-4 sm:py-2.5 font-label-sm text-[11px] sm:text-label-sm",
             chain.onChainReady
               ? "border-[#2DD4BF]/30 bg-[#2DD4BF]/10 text-[#2DD4BF]"
               : "border-outline-variant/30 bg-surface-container-high/60 text-on-surface-variant",
           ].join(" ")}
         >
-          <span className="material-symbols-outlined text-[16px]">hub</span>
-          <span>
+          <span className="material-symbols-outlined text-[14px] sm:text-[16px]">hub</span>
+          <span className="flex-1 min-w-0 break-words">
             {chain.onChainReady && chain.receivableReady
-              ? `Stellar ${chain.network} — mint receivable + swap on-chain`
+              ? `Stellar ${chain.network} — mint + swap on-chain`
               : chain.onChainReady
-                ? `Stellar ${chain.network} — swap on-chain (add STELLAR_ISSUER_SECRET for mint)`
-                : `Stellar ${chain.network} — demo mode (run soroban/scripts/write-web-env.sh)`}
+                ? `Stellar ${chain.network} — swap on-chain`
+                : `Stellar ${chain.network} — demo mode`}
           </span>
           {chain.swapContractId ? (
             <a
               href={`${chain.explorerContractBase}/${chain.swapContractId}`}
               target="_blank"
               rel="noreferrer"
-              className="ml-auto font-mono text-xs underline opacity-80 hover:opacity-100"
+              className="font-mono text-[10px] sm:text-xs underline opacity-80 hover:opacity-100 shrink-0"
             >
-              {chain.swapContractId.slice(0, 8)}…
+              {chain.swapContractId.slice(0, 6)}…
             </a>
           ) : null}
         </div>
       ) : null}
-      <div className="grid grid-cols-1 gap-gutter md:grid-cols-12">
-        <div className="flex flex-col gap-6 md:col-span-8">
+      <div className="grid grid-cols-1 gap-4 sm:gap-5 md:gap-gutter md:grid-cols-12">
+        <div className="flex flex-col gap-4 sm:gap-5 md:gap-6 md:col-span-8">
           <UploadZone
             parsing={parsing}
             parseError={parseError}
             onFiles={(files) => void parseInvoiceFiles(files)}
             onTrySample={() => void loadSampleInvoice()}
           />
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+          <div className="grid grid-cols-1 gap-3 sm:gap-4 sm:grid-cols-3">
             <StatTile
               label="Treasury USDC"
               value={summary?.treasury?.funderUsdc?.split(".")[0] ?? "—"}
@@ -602,11 +602,9 @@ export function LiquidityView() {
 
         <div className="md:col-span-4">
           <Card className="h-full">
-            <div className="mb-6 flex items-start justify-between">
-              <h3 className="font-headline-md text-headline-md tracking-tight text-on-surface">
-                Tokenization
-                <br />
-                Pipeline
+            <div className="mb-4 sm:mb-6 flex items-center justify-between">
+              <h3 className="font-headline-md text-[18px] sm:text-headline-md tracking-tight text-on-surface">
+                Tokenization Pipeline
               </h3>
               <Icon name="tune" size={20} className="text-on-surface-variant" />
             </div>
@@ -618,21 +616,21 @@ export function LiquidityView() {
       <PayerPanel onPayerRegistered={() => void loadInvoices(page, true)} />
 
       <Card padding="none">
-        <div className="flex items-start justify-between border-b border-outline-variant/15 p-6">
-          <div>
-            <h3 className="font-headline-md text-headline-md text-on-surface">Active Factoring</h3>
-            <p className="mt-1 font-body-md text-body-md text-on-surface-variant">
+        <div className="flex flex-col sm:flex-row items-start justify-between gap-3 sm:gap-4 border-b border-outline-variant/15 p-4 sm:p-5 md:p-6">
+          <div className="flex-1 min-w-0">
+            <h3 className="font-headline-md text-[18px] sm:text-headline-md text-on-surface">Active Factoring</h3>
+            <p className="mt-1 font-body-md text-[13px] sm:text-body-md text-on-surface-variant">
               Confirm payer → tokenize → collect at maturity.
             </p>
             {storeBackend ? (
-              <p className="mt-1 font-label-sm text-label-sm text-outline">
+              <p className="mt-1 font-label-sm text-[10px] sm:text-label-sm text-outline">
                 Store: {storeBackend} · {total} invoices
               </p>
             ) : null}
           </div>
           <Link
             href="/app/settings"
-            className="font-label-sm text-label-sm text-on-surface-variant hover:text-[#2DD4BF]"
+            className="font-label-sm text-[11px] sm:text-label-sm text-on-surface-variant hover:text-[#2DD4BF] shrink-0"
           >
             PHP ramp
           </Link>
@@ -648,7 +646,7 @@ export function LiquidityView() {
           ) : null}
           <table
             className={[
-              "w-full border-collapse transition-opacity duration-200",
+              "w-full border-collapse transition-opacity duration-200 min-w-[800px]",
               refreshing ? "opacity-80" : "opacity-100",
             ].join(" ")}
           >
@@ -666,8 +664,8 @@ export function LiquidityView() {
                   <th
                     key={h}
                     className={[
-                      "border-b border-outline-variant/15 px-6 py-3.5 font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant",
-                      i >= 3 && i <= 4 ? "text-right" : i === 5 ? "text-center" : "text-left",
+                      "border-b border-outline-variant/15 px-3 py-2.5 sm:px-4 sm:py-3 md:px-6 md:py-3.5 font-label-sm text-[10px] sm:text-[11px] md:text-label-sm uppercase tracking-wider text-on-surface-variant whitespace-nowrap",
+                      i >= 3 && i <= 4 ? "text-right" : i === 5 || i === 6 ? "text-center" : "text-left",
                     ].join(" ")}
                   >
                     {h}
@@ -679,7 +677,7 @@ export function LiquidityView() {
               {initialLoading ? (
                 Array.from({ length: 3 }).map((_, i) => (
                   <tr key={`skel-${i}`} className="border-b border-outline-variant/10">
-                    <td colSpan={7} className="px-6 py-4">
+                    <td colSpan={7} className="px-3 py-3 sm:px-4 sm:py-3.5 md:px-6 md:py-4">
                       <div className="h-4 max-w-md animate-pulse rounded bg-surface-container-high" />
                     </td>
                   </tr>
@@ -689,7 +687,7 @@ export function LiquidityView() {
                 <tr>
                   <td
                     colSpan={7}
-                    className="px-6 py-12 text-center font-body-md text-body-md text-on-surface-variant"
+                    className="px-3 py-8 sm:px-4 sm:py-10 md:px-6 md:py-12 text-center font-body-md text-[13px] sm:text-body-md text-on-surface-variant"
                   >
                     No invoices yet — upload one or seed demo data.
                   </td>
@@ -701,7 +699,7 @@ export function LiquidityView() {
                 return (
                 <Fragment key={row.id}>
                   <tr className="border-b border-outline-variant/10">
-                    <td className="px-6 py-4">
+                    <td className="px-3 py-3 sm:px-4 sm:py-3.5 md:px-6 md:py-4">
                       <button
                         type="button"
                         className="group flex flex-col items-start gap-0.5 text-left"
@@ -710,41 +708,41 @@ export function LiquidityView() {
                         }
                         disabled={!row.trust.lockboxAddress}
                       >
-                        <span className="font-mono text-sm font-medium text-on-surface group-hover:text-primary">
+                        <span className="font-mono text-[11px] sm:text-xs md:text-sm font-medium text-on-surface group-hover:text-primary">
                           {row.id}
                         </span>
                         {row.trust.lockboxAddress ? (
-                          <span className="font-label-sm text-label-sm text-on-surface-variant">
+                          <span className="font-label-sm text-[9px] sm:text-[10px] md:text-label-sm text-on-surface-variant">
                             {expandedId === row.id ? "Hide lockbox" : "Lockbox"}
                           </span>
                         ) : null}
                       </button>
                     </td>
-                    <td className="px-6 py-4">
-                      <div className="font-body-md text-body-md text-on-surface-variant">
+                    <td className="px-3 py-3 sm:px-4 sm:py-3.5 md:px-6 md:py-4">
+                      <div className="font-body-md text-[12px] sm:text-[13px] md:text-body-md text-on-surface-variant">
                         {row.party}
                       </div>
-                      <div className="mt-0.5 font-label-sm text-label-sm text-outline">
+                      <div className="mt-0.5 font-label-sm text-[9px] sm:text-[10px] md:text-label-sm text-outline">
                         {trustHint(row.trust)}
                       </div>
                     </td>
-                    <td className="px-6 py-4">
-                      <span className="rounded-sm bg-surface-container-high px-2.5 py-1 font-label-sm text-label-sm tracking-wide text-on-surface">
+                    <td className="px-3 py-3 sm:px-4 sm:py-3.5 md:px-6 md:py-4">
+                      <span className="rounded-sm bg-surface-container-high px-1.5 py-0.5 sm:px-2 sm:py-1 md:px-2.5 md:py-1 font-label-sm text-[10px] sm:text-[11px] md:text-label-sm tracking-wide text-on-surface whitespace-nowrap">
                         {row.terms}
                       </span>
                     </td>
-                    <td className="px-6 py-4 text-right font-mono text-sm text-on-surface">
+                    <td className="px-3 py-3 sm:px-4 sm:py-3.5 md:px-6 md:py-4 text-right font-mono text-[11px] sm:text-xs md:text-sm text-on-surface whitespace-nowrap">
                       ₱{row.face.toLocaleString()}.00
                     </td>
                     <td
                       className={[
-                        "px-6 py-4 text-right font-mono text-sm font-medium",
+                        "px-3 py-3 sm:px-4 sm:py-3.5 md:px-6 md:py-4 text-right font-mono text-[11px] sm:text-xs md:text-sm font-medium whitespace-nowrap",
                         row.immediate ? "text-primary" : "text-on-surface-variant",
                       ].join(" ")}
                     >
                       {row.immediate ? `₱${row.immediate.toLocaleString()}.00` : "—"}
                     </td>
-                    <td className="px-6 py-4 text-center">
+                    <td className="px-3 py-3 sm:px-4 sm:py-3.5 md:px-6 md:py-4 text-center">
                       {row.status === "fundable" ? (
                         <StatusBadge kind="minted">Ready</StatusBadge>
                       ) : null}
@@ -757,41 +755,45 @@ export function LiquidityView() {
                         </StatusBadge>
                       ) : null}
                     </td>
-                    <td className="px-6 py-4 text-right">
-                      {row.status === "fundable" ? (
-                        <Button
-                          variant="teal"
-                          size="sm"
-                          disabled={swappingId === row.id}
-                          onClick={() => void executeSwap(row.id, row.face)}
-                        >
-                          {swappingId === row.id
-                            ? swapStep === "mint"
-                              ? "Tokenizing…"
-                              : "Swapping…"
-                            : "Tokenize & Swap"}
-                        </Button>
-                      ) : null}
-                      {row.status === "awaiting_payer" ? (
-                        <Button
-                          variant="secondary"
-                          size="sm"
-                          disabled={confirmingId === row.id}
-                          onClick={() => void confirmPayerDemo(row.id)}
-                        >
-                          {confirmingId === row.id ? "Confirming…" : "Confirm payer"}
-                        </Button>
-                      ) : null}
-                      {row.status === "settled" ? (
-                        <ViewTxLinks
-                          mintTxHash={row.mintTxHash}
-                          swapTxHash={row.swapTxHash}
-                          explorerTxBase={
-                            chain?.explorerTxBase ??
-                            "https://stellar.expert/explorer/testnet/tx"
-                          }
-                        />
-                      ) : null}
+                    <td className="px-3 py-3 sm:px-4 sm:py-3.5 md:px-6 md:py-4">
+                      <div className="flex items-center justify-center">
+                        {row.status === "fundable" ? (
+                          <Button
+                            variant="teal"
+                            size="sm"
+                            disabled={swappingId === row.id}
+                            onClick={() => void executeSwap(row.id, row.face)}
+                            className="whitespace-nowrap"
+                          >
+                            {swappingId === row.id
+                              ? swapStep === "mint"
+                                ? "Tokenizing…"
+                                : "Swapping…"
+                              : "Tokenize & Swap"}
+                          </Button>
+                        ) : null}
+                        {row.status === "awaiting_payer" ? (
+                          <Button
+                            variant="secondary"
+                            size="sm"
+                            disabled={confirmingId === row.id}
+                            onClick={() => void confirmPayerDemo(row.id)}
+                            className="whitespace-nowrap"
+                          >
+                            {confirmingId === row.id ? "Confirming…" : "Confirm payer"}
+                          </Button>
+                        ) : null}
+                        {row.status === "settled" ? (
+                          <ViewTxLinks
+                            mintTxHash={row.mintTxHash}
+                            swapTxHash={row.swapTxHash}
+                            explorerTxBase={
+                              chain?.explorerTxBase ??
+                              "https://stellar.expert/explorer/testnet/tx"
+                            }
+                          />
+                        ) : null}
+                      </div>
                     </td>
                   </tr>
                   {showLockbox ? (
@@ -806,17 +808,18 @@ export function LiquidityView() {
             </tbody>
           </table>
         </div>
-        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-outline-variant/10 px-6 py-3">
-          <p className="font-label-sm text-label-sm text-on-surface-variant">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-t border-outline-variant/10 px-3 py-2.5 sm:px-4 sm:py-3 md:px-6 md:py-3">
+          <p className="font-label-sm text-[10px] sm:text-[11px] md:text-label-sm text-on-surface-variant">
             Page {page} of {totalPages}
             {total > 0 ? ` · showing ${invoices.length} of ${total}` : ""}
           </p>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 w-full sm:w-auto">
             <Button
               variant="ghost"
               size="sm"
               disabled={page <= 1 || initialLoading || refreshing}
               onClick={() => setPage((p) => Math.max(1, p - 1))}
+              className="flex-1 sm:flex-initial"
             >
               Previous
             </Button>
@@ -825,6 +828,7 @@ export function LiquidityView() {
               size="sm"
               disabled={page >= totalPages || initialLoading || refreshing}
               onClick={() => setPage((p) => p + 1)}
+              className="flex-1 sm:flex-initial"
             >
               Next
             </Button>

@@ -55,19 +55,19 @@ export function UserMenu({ email, orgName, role }: UserMenuProps) {
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
-        className="flex w-full items-center gap-2.5 rounded-lg px-2 py-1.5 text-left transition-colors hover:bg-surface-container-high"
+        className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left transition-colors hover:bg-surface-container-high"
         aria-label="User menu"
       >
         {/* Avatar */}
-        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary/20 font-label-sm text-label-sm text-primary">
+        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary/20 font-label-sm text-[12px] text-primary">
           {initials}
         </span>
         <div className="min-w-0 flex-1">
-          <p className="truncate font-label-sm text-label-sm text-on-surface">
+          <p className="truncate font-label-sm text-[13px] text-on-surface">
             {email}
           </p>
           {orgName ? (
-            <p className="truncate font-label-sm text-label-sm text-on-surface-variant/60" style={{ fontSize: "11px" }}>
+            <p className="truncate font-label-sm text-[11px] text-on-surface-variant/60">
               {orgName}{role ? ` · ${role}` : ""}
             </p>
           ) : null}
@@ -81,10 +81,10 @@ export function UserMenu({ email, orgName, role }: UserMenuProps) {
 
       {open ? (
         <div className="absolute bottom-full left-0 right-0 mb-1 overflow-hidden rounded-lg border border-outline-variant/20 bg-surface-container shadow-lg">
-          <div className="border-b border-outline-variant/10 px-3 py-2.5">
-            <p className="font-label-sm text-label-sm text-on-surface truncate">{email}</p>
+          <div className="border-b border-outline-variant/10 px-3 py-2">
+            <p className="font-label-sm text-[13px] text-on-surface truncate">{email}</p>
             {orgName ? (
-              <p className="font-label-sm text-label-sm text-on-surface-variant/70 truncate" style={{ fontSize: "11px" }}>
+              <p className="font-label-sm text-[11px] text-on-surface-variant/70 truncate">
                 {orgName}
               </p>
             ) : null}
@@ -93,7 +93,7 @@ export function UserMenu({ email, orgName, role }: UserMenuProps) {
           <button
             type="button"
             onClick={() => { setOpen(false); router.push("/app/settings"); }}
-            className="flex w-full items-center gap-2 px-3 py-2.5 font-label-sm text-label-sm text-on-surface-variant transition-colors hover:bg-surface-container-high hover:text-on-surface"
+            className="flex w-full items-center gap-2 px-3 py-2 font-label-sm text-[13px] text-on-surface-variant transition-colors hover:bg-surface-container-high hover:text-on-surface"
           >
             <Icon name="manage_accounts" size={16} />
             Account settings
@@ -103,7 +103,7 @@ export function UserMenu({ email, orgName, role }: UserMenuProps) {
             type="button"
             onClick={handleSignOut}
             disabled={signingOut}
-            className="flex w-full items-center gap-2 px-3 py-2.5 font-label-sm text-label-sm text-on-surface-variant transition-colors hover:bg-surface-container-high hover:text-on-surface disabled:opacity-50"
+            className="flex w-full items-center gap-2 px-3 py-2 font-label-sm text-[13px] text-on-surface-variant transition-colors hover:bg-surface-container-high hover:text-on-surface disabled:opacity-50"
           >
             <Icon name="logout" size={16} />
             {signingOut ? "Signing out…" : "Sign out"}
