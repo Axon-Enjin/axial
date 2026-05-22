@@ -57,7 +57,10 @@ function formatSimulationError(error: string): string {
     return "Only the issuer (admin) can mint receivables.";
   }
   if (error.includes("Error(Contract, #1)")) {
-    return "Receivable contract is not initialized.";
+    return (
+      "Receivable contract is not initialized. " +
+      "On mainnet, run soroban/scripts/initialize-mainnet.sh in WSL with the deployer key."
+    );
   }
   return error.length > 200 ? `${error.slice(0, 200)}…` : error;
 }

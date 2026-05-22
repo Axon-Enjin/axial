@@ -83,6 +83,10 @@ if $DO_DEPLOY; then
   export ADMIN_STELLAR_KEY="$DEPLOYER_KEY"
 else
   ensure_deployer_identity
+  echo "==> Ensure contracts are initialized (no-op if already done)"
+  bash "$ROOT/scripts/initialize-mainnet.sh" || {
+    echo "WARN: initialize-mainnet.sh failed — mint/swap will error until admin runs it in WSL"
+  }
 fi
 
 export MSME_FREIGHTER_PUBLIC="$FREIGHTER_MSME"

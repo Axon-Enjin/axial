@@ -23,6 +23,13 @@ const MESSAGES: Record<DemoActionKind, string | ((payload?: string) => string)> 
     if (!payload) {
       return "Atomic swap executed. USDC settling on Stellar.";
     }
+    if (
+      payload.includes("not initialized") ||
+      payload.includes("failed") ||
+      payload.includes("Tokenize")
+    ) {
+      return payload;
+    }
     if (payload.startsWith("tx:")) {
       const parts = payload.slice(3).split("|");
       const invoiceId = parts[0] ?? "invoice";

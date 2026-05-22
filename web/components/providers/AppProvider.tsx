@@ -127,7 +127,9 @@ export function AppProvider({
         payload != null &&
         (payload.includes("failed") ||
           payload.includes("Failed") ||
-          payload.includes("before funding"));
+          payload.includes("before funding") ||
+          payload.includes("not initialized") ||
+          payload.includes("Not initialized"));
       showToast(
         { message, variant: isError ? "error" : "success" },
         isError ? 4500 : 3200,
