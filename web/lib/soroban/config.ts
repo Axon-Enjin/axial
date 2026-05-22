@@ -7,6 +7,7 @@ export type SorobanConfig = {
   swapContractId: string | null;
   receivableContractId: string | null;
   payrollContractId: string | null;
+  settlementContractId: string | null;
   usdcTokenId: string | null;
   funderSecret: string | null;
   funderPublic: string | null;
@@ -32,6 +33,10 @@ export function getSorobanConfig(): SorobanConfig {
   const payrollContractId =
     process.env.PAYROLL_SPLIT_CONTRACT_ID ??
     deployment?.contracts?.payroll_split ??
+    null;
+  const settlementContractId =
+    process.env.SETTLEMENT_CONTRACT_ID ??
+    deployment?.contracts?.settlement ??
     null;
   const usdcTokenId =
     process.env.SOROBAN_USDC_TOKEN_ID ??
@@ -73,6 +78,7 @@ export function getSorobanConfig(): SorobanConfig {
     swapContractId,
     receivableContractId,
     payrollContractId,
+    settlementContractId,
     usdcTokenId,
     funderSecret: process.env.STELLAR_FUNDER_SECRET ?? null,
     funderPublic,
