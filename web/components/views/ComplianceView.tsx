@@ -3,7 +3,6 @@
 import { Fragment, useCallback, useEffect, useState } from "react";
 import { EisPayloadPanel } from "@/components/compliance/EisPayloadPanel";
 import { useApp } from "@/components/providers/AppProvider";
-import { FreighterConnectGate } from "@/components/wallet/FreighterConnectGate";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { Icon } from "@/components/ui/Icon";
@@ -148,6 +147,7 @@ type ChainStatus = {
   network: string;
   payrollReady: boolean;
   payrollContractId: string | null;
+  explorerContractBase: string;
   explorerTxBase: string;
 };
 
