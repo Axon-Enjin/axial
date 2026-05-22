@@ -4,8 +4,18 @@ on:
   push:
     branches:
       - main
-      - deploy-cloudrun
   workflow_dispatch:
+    inputs:
+      rerun:
+        description: 'Rerun deployment (forces fresh build)'
+        required: false
+        default: 'false'
+
+env:
+  PROJECT_ID: ${{ vars.GCP_PROJECT_ID }}
+  REGION: asia-southeast1
+  SERVICE: axial-web
+  IMAGE: asia-southeast1-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/cloud-run-source-deploy/axial-web
 
 jobs:
   deploy:
@@ -24,19 +34,55 @@ jobs:
       - name: Set up Google Cloud SDK
         uses: google-github-actions/setup-gcloud@v2
 
+      - name: Configure Docker for Artifact Registry
+        run: gcloud auth configure-docker asia-southeast1-docker.pkg.dev --quiet
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
       - name: Create .env.production for Next.js build-time vars
         run: |
           cat <<EOF > web/.env.production
-          NEXT_PUBLIC_SUPABASE_URL=${{ secrets.NEXT_PUBLIC_SUPABASE_URL || vars.NEXT_PUBLIC_SUPABASE_URL }}
-          NEXT_PUBLIC_SUPABASE_ANON_KEY=${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY || vars.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
-          NEXT_PUBLIC_BASE_URL=${{ secrets.NEXT_PUBLIC_BASE_URL || vars.NEXT_PUBLIC_BASE_URL }}
+          NEXT_PUBLIC_SUPABASE_URL=${{ vars.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY=${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+          NEXT_PUBLIC_BASE_URL=${{ vars.NEXT_PUBLIC_BASE_URL }}
           EOF
+
+      - name: Build and push Docker image (with layer caching)
+        uses: docker/build-push-action@v5
+        with:
+          context: ./web
+          push: true
+          tags: ${{ env.IMAGE }}:latest,${{ env.IMAGE }}:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
       - name: Deploy to Cloud Run
         run: |
-          cd web
-          gcloud run deploy axial-web \
-            --source . \
-            --region asia-southeast1 \
-            --project ${{ vars.GCP_PROJECT_ID }} \
-            --allow-unauthenticated
+          gcloud run deploy ${{ env.SERVICE }} \
+            --image ${{ env.IMAGE }}:${{ github.sha }} \
+            --region ${{ env.REGION }} \
+            --project ${{ env.PROJECT_ID }} \
+            --allow-unauthenticated \
+            --set-env-vars="SUPABASE_URL=${{ vars.NEXT_PUBLIC_SUPABASE_URL }}" \
+            --set-env-vars="SUPABASE_ANON_KEY=${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}" \
+            --set-env-vars="SOROBAN_RPC_URL=${{ vars.SOROBAN_RPC_URL }}" \
+            --set-env-vars="STELLAR_NETWORK_PASSPHRASE=${{ vars.STELLAR_NETWORK_PASSPHRASE }}" \
+            --set-env-vars="AXIAL_SWAP_CONTRACT_ID=${{ vars.AXIAL_SWAP_CONTRACT_ID }}" \
+            --set-env-vars="RECEIVABLE_TOKEN_CONTRACT_ID=${{ vars.RECEIVABLE_TOKEN_CONTRACT_ID }}" \
+            --set-env-vars="PAYROLL_SPLIT_CONTRACT_ID=${{ vars.PAYROLL_SPLIT_CONTRACT_ID }}" \
+            --set-env-vars="SOROBAN_USDC_TOKEN_ID=${{ vars.SOROBAN_USDC_TOKEN_ID }}" \
+            --set-env-vars="STELLAR_FUNDER_PUBLIC=${{ vars.STELLAR_FUNDER_PUBLIC }}" \
+            --set-env-vars="STELLAR_ISSUER_PUBLIC=${{ vars.STELLAR_ISSUER_PUBLIC }}" \
+            --set-env-vars="STELLAR_MSME_PUBLIC=${{ vars.STELLAR_MSME_PUBLIC }}" \
+            --update-secrets="SUPABASE_SERVICE_ROLE_KEY=SUPABASE_SERVICE_ROLE_KEY:latest" \
+            --update-secrets="STELLAR_ISSUER_SECRET=STELLAR_ISSUER_SECRET:latest" \
+            --update-secrets="STELLAR_FUNDER_SECRET=STELLAR_FUNDER_SECRET:latest" \
+            --update-secrets="STELLAR_MSME_SECRET=STELLAR_MSME_SECRET:latest"
+
+      - name: Show Cloud Run URL
+        run: |
+          gcloud run services describe ${{ env.SERVICE }} \
+            --region ${{ env.REGION }} \
+            --project ${{ env.PROJECT_ID }} \
+            --format='value(status.url)'
