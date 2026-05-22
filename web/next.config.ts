@@ -7,6 +7,12 @@ const turbopackRoot = path.dirname(fileURLToPath(import.meta.url));
 const nextConfig: NextConfig = {
   output: "standalone",
   serverExternalPackages: ["tesseract.js", "pdf-parse"],
+  outputFileTracingIncludes: {
+    "/app/api/**/*": [
+      "./node_modules/tesseract.js-core/**/*",
+      "./node_modules/tesseract.js/**/*",
+    ],
+  },
   turbopack: {
     root: turbopackRoot,
   },

@@ -80,12 +80,16 @@ async function extractPdfText(buffer: Buffer): Promise<string> {
 }
 
 async function runTesseract(buffer: Buffer): Promise<string> {
-  const cachePath =
-    process.env.VERCEL === "1" ? "/tmp" : process.cwd();
+  // In production (Cloud Run), the filesystem is read-only except for /tmp.
+  // We bake eng.traineddata into process.cwd() (/app) at build time, which is read-only.
+  const isProd = process.env.NODE_ENV === "production";
+  const cachePath = isProd ? "/tmp" : process.cwd();
+  const langPath = isProd ? process.cwd() : undefined;
 
   const worker = await withTimeout(
     createWorker("eng", 1, {
       cachePath,
+      langPath,
       logger: () => {},
     }),
     30_000,
