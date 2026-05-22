@@ -24,6 +24,14 @@ jobs:
       - name: Set up Google Cloud SDK
         uses: google-github-actions/setup-gcloud@v2
 
+      - name: Create .env.production for Next.js build-time vars
+        run: |
+          cat <<EOF > web/.env.production
+          NEXT_PUBLIC_SUPABASE_URL=${{ secrets.NEXT_PUBLIC_SUPABASE_URL || vars.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY=${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY || vars.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+          NEXT_PUBLIC_BASE_URL=${{ secrets.NEXT_PUBLIC_BASE_URL || vars.NEXT_PUBLIC_BASE_URL }}
+          EOF
+
       - name: Deploy to Cloud Run
         run: |
           cd web

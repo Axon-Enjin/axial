@@ -34,8 +34,9 @@ ENV NEXT_TELEMETRY_DISABLED=1
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 
-# Copy the Tesseract training data
-COPY --from=builder /app/eng.traineddata ./eng.traineddata
+# Download and bake Tesseract OCR English trained data
+ADD https://github.com/tesseract-ocr/tessdata_fast/raw/main/eng.traineddata ./eng.traineddata
+RUN chown nextjs:nodejs ./eng.traineddata
 
 COPY --from=builder /app/public ./public
 
