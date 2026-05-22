@@ -5,6 +5,7 @@ import { fileURLToPath } from "node:url";
 const turbopackRoot = path.dirname(fileURLToPath(import.meta.url));
 
 const nextConfig: NextConfig = {
+  output: "standalone",
   serverExternalPackages: ["tesseract.js", "pdf-parse"],
   turbopack: {
     root: turbopackRoot,
