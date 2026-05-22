@@ -293,7 +293,7 @@ export function OverviewView() {
 
         <div className="flex flex-col gap-4 sm:gap-5 md:gap-gutter md:col-span-4">
           <TestnetTreasuryCard />
-          <Card className="h-full">
+          <Card>
             <CardHeader
               icon="policy"
               label="Regulatory Pulse"
