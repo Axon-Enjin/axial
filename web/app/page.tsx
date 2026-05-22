@@ -398,14 +398,6 @@ export default function LandingPage() {
             >
               GitHub
             </a>
-            <a
-              href="https://youtu.be/6-CpnsPGJK0"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="font-label-sm text-[10px] sm:text-label-sm text-on-surface-variant hover:text-[#2DD4BF] transition-colors"
-            >
-              Demo Video
-            </a>
             <span className="font-label-sm text-[10px] sm:text-label-sm text-center sm:text-left text-on-surface-variant">
               Build on Stellar Philippines 2026
             </span>
