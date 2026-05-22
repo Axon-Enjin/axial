@@ -168,6 +168,10 @@ export function isPayrollBuildEnabled(cfg: SorobanConfig) {
   return Boolean(cfg.l1ContractsDeployed && cfg.payrollContractId);
 }
 
+export function isLockboxFundingEnabled(cfg: SorobanConfig): boolean {
+  return Boolean(cfg.settlementContractId && cfg.usdcTokenId);
+}
+
 /** Public-only snapshot for UI (no secrets). */
 export function getPublicChainStatus(cfg: SorobanConfig) {
   return {
@@ -183,6 +187,7 @@ export function getPublicChainStatus(cfg: SorobanConfig) {
     receivableReady: isReceivableChainEnabled(cfg),
     payrollReady: isPayrollChainEnabled(cfg),
     payrollBuildReady: isPayrollBuildEnabled(cfg),
+    lockboxFundingReady: isLockboxFundingEnabled(cfg),
     swapContractId: cfg.swapContractId,
     receivableContractId: cfg.receivableContractId,
     payrollContractId: cfg.payrollContractId,

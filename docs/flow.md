@@ -85,7 +85,7 @@ flowchart LR
   end
 
   subgraph phaseE [E — Collection]
-    E1["🟡 Payer pays lockbox — demo mark collected"]
+    E1["🟡 Payer pays lockbox — Freighter USDC transfer wired; on-chain settle pending (S5)"]
     E2["🟡 Settlement contract — deployed, app wiring pending"]
     E3["⬜ Funder repaid + reserve release"]
     E4["✅ Reconciliation cron — leakage scan"]
@@ -186,7 +186,7 @@ flowchart TD
   EIS --> UI2["✅ Compliance + Overview update"]
 ```
 
-**Not built:** real payer KYB onboarding; on-chain lockbox enforcement — `settlement` is deployed + initialized on Mainnet but not yet wired into the app (B-2 phases S3–S6).
+**Not built:** real payer KYB onboarding; on-chain `settle` + reconcile (B-2 S5) — `register_invoice` and payer Freighter lockbox funding are wired (S3–S4); S5–S6 remain.
 
 ---
 
@@ -287,7 +287,7 @@ stateDiagram-v2
 | Auth / multi-tenant | Prod | ✅ | Supabase SSR auth, org-scoped, invites |
 | Overview health dashboard | Must | ✅ | Live EIS + summary API + treasury |
 | Liquidity stat tiles | Should | ✅ | Summary API |
-| Closed-loop lockbox settlement | Must | 🟡 | `settlement` deployed + initialized on Mainnet; app wiring (B-2 S3–S6) pending |
+| Closed-loop lockbox settlement | Must | 🟡 | `settlement` on Mainnet; **S3–S4 wired** (`register_invoice`, Freighter lockbox funding); **S5** (`settle` + reconcile) open |
 | PDAX PHP ramp UI | L2 | ✅ | Settings `PdaxRampCard` |
 | Operating network | L1 | ✅ | Stellar Mainnet — all 4 contracts deployed + initialized; system runs Mainnet-only |
 | Live BIR submission | — | ⬜ | Mock by default; `BIR_EIS_LIVE` gates real client |

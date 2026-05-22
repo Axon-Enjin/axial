@@ -96,6 +96,27 @@ export async function buildPayrollXdr(
  * function is used — this variant is exposed for completeness but the
  * custodial path in invoke-receivable.ts is preferred for mint.
  */
+/**
+ * Build an unsigned USDC SAC `transfer` for payer Freighter signing.
+ * Sends USDC from the payer to the settlement contract lockbox address.
+ */
+export async function buildLockboxFundXdr(
+  cfg: SorobanConfig,
+  payerPublic: string,
+  amount: number,
+): Promise<string> {
+  if (!cfg.usdcTokenId || !cfg.settlementContractId) {
+    throw new Error(
+      "Lockbox funding not configured (usdcTokenId or settlementContractId missing).",
+    );
+  }
+  return simulateAndPrepareXdr(cfg, payerPublic, cfg.usdcTokenId, "transfer", [
+    new Address(payerPublic).toScVal(),
+    new Address(cfg.settlementContractId).toScVal(),
+    nativeToScVal(BigInt(Math.trunc(amount)), { type: "i128" }),
+  ]);
+}
+
 export async function buildMintXdr(
   cfg: SorobanConfig,
   invoiceId: string,

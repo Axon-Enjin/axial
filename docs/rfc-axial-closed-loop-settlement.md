@@ -97,7 +97,7 @@ CREATE TABLE notices_of_assignment (
   receivable_id   UUID NOT NULL REFERENCES receivables(id),
   payer_id        UUID NOT NULL REFERENCES payers(id),
   noa_document_ref TEXT NOT NULL,                       -- stored artifact (signed PDF / hash)
-  lockbox_address TEXT NOT NULL,                        -- the ONLY payment instruction
+  lockbox_address TEXT NOT NULL,                        -- the ONLY payment instruction (settlement contract ID on Mainnet; demo GAXL fallback when chain off)
   ack_status      TEXT NOT NULL CHECK (ack_status IN ('issued','acknowledged','refused')),
   ack_method      TEXT CHECK (ack_method IN ('in_app','signed_pdf')),
   acknowledged_at TIMESTAMPTZ
@@ -180,6 +180,7 @@ Reconciliation is a scheduled worker (same queue tech as the EIS submission work
 - The eligibility gate is the sole funding enforcement point; it is server-side and cannot be satisfied by client-supplied state.
 - Stellar assets issued **clawback-enabled** + `AUTH_REQUIRED`: a receivable token minted on a later-disproven invoice can be revoked; statutory tokens only flow to whitelisted government addresses.
 - Lockbox addresses are derived per-invoice and never reused; a leaked address cannot be repointed.
+- **Update (B-2 S4, 2026-05-22):** NoA `lockboxAddress` now resolves to the single Mainnet `settlement` contract ID (`cfg.settlementContractId`), not the earlier `deriveDemoLockbox` GAXL string — per-invoice attribution is recorded inside the contract via `register_invoice(invoice_id, …)` rather than via distinct on-chain addresses. The demo GAXL string remains only as an off-chain fallback when settlement chain config is absent.
 
 **Performance:**
 - Reconciliation scan is O(open invoices); bounded batch size, runs on schedule, never blocks a user request or chain confirmation.

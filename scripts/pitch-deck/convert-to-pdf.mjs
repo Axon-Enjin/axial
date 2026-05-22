@@ -6,7 +6,7 @@ import { fileURLToPath } from "url";
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const htmlPath = join(__dirname, "../../docs/pitch-deck.html");
 const pdfPath = join(__dirname, "../../docs/pitch-deck.pdf");
-const TOTAL_SLIDES = 12;
+const TOTAL_SLIDES = 13;
 
 function getExecutablePath() {
   const paths = [

@@ -8,11 +8,7 @@ import {
 import { deriveDemoLockbox, parseNetDays } from "@/lib/msme/invoice-trust";
 import { markEntrySettled, upsertReserveEntry } from "@/lib/settlement/store";
 import { resolveSorobanConfig } from "@/lib/soroban/server-config";
-import {
-  isSettlementChainEnabled,
-  registerInvoiceOnChain,
-  settleOnChain,
-} from "@/lib/soroban/invoke-settlement";
+import { isSettlementChainEnabled, settleOnChain } from "@/lib/soroban/invoke-settlement";
 import { toClientInvoice } from "@/lib/invoices/types";
 import { quoteAdvance } from "@/lib/soroban/quote";
 
@@ -84,7 +80,7 @@ export async function PATCH(request: Request, context: RouteContext) {
           mintTxHash: body.mintTxHash,
           swapTxHash: body.swapTxHash,
         });
-        // Create reserve ledger entry + register on-chain (fire-and-forget)
+        // Create reserve ledger entry (fire-and-forget)
         void (async () => {
           try {
             const invoice = await getInvoice(decoded);
@@ -112,9 +108,6 @@ export async function PATCH(request: Request, context: RouteContext) {
               leakageDetectedAt: null,
               releasedAt: null,
             });
-            if (isSettlementChainEnabled(cfg)) {
-              await registerInvoiceOnChain(cfg, decoded, invoice.face, advance);
-            }
           } catch {
             // Non-fatal — reserve ledger is advisory
           }

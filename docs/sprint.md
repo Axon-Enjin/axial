@@ -76,8 +76,8 @@ This is the working task board for Axial, derived from the **CTO/auditor review 
 | D1 | **L3 dropped** | PDAX sandbox access not granted. Final scope = **L1 + L2** (L2 = our mocked PDAX UI). |
 | D2 | **Custodial signing (Q7)** | Server holds funder/MSME/issuer secrets and signs all Soroban txns. No Freighter in v1. |
 | D3 | **Mainnet-only** (revised 2026-05-22) | Axial runs on **Stellar Mainnet only**. Reverses the earlier "conditional Mainnet / testnet is the demo path" stance — testnet is retired as an operating target and kept only as a developer sandbox. |
-| D4 | **Closed loop is not live** | Payer-confirm is a demo PATCH. Do not present the closed-loop settlement as working. |
-| D5 | **Post-submission re-scope (2026-05-22)** | Settlement (B-2) is the sole active workstream — the contract is deployed + initialized on Mainnet but the app does not yet call it; the S3–S6 wiring is the work. BIR EIS stays mock-only (live path PTT-gated, seam dormant). Real-KYB integration deferred; PDAX (B-9) stays dropped. |
+| D4 | **Closed loop partially live** | Payer portal, NoA issue/ack, `register_invoice`, and Freighter lockbox funding are wired (B-2 S3–S4). **On-chain `settle` (S5) not yet wired** — do not claim full closed-loop enforcement. |
+| D5 | **Post-submission re-scope (2026-05-22)** | Settlement (B-2) is the sole active workstream — S3–S4 delivered (`register_invoice`, Freighter lockbox funding); **S5–S6 remain** (`settle` + reconcile, hardening). BIR EIS stays mock-only (live path PTT-gated, seam dormant). Real-KYB integration deferred; PDAX (B-9) stays dropped. |
 
 ---
 
@@ -253,9 +253,9 @@ Closed-loop payer verification is fully implemented (CLS-01 through CLS-05).
 
 ### B-2 · On-chain lockbox / settlement contract + reconciliation worker · `P0` · 🟡 in progress
 **Status (2026-05-22):** the `settlement` contract is **deployed + initialized on Stellar
-Mainnet** (`CDMHMQNP…`) and its test suite passes (7/7) — but the **app does not yet call
-it**. The remaining work is wiring `register_invoice` / `settle` into the request flow.
-S1–S2 are done; S3–S6 below are the active workstream (D5).
+Mainnet** (`CDMHMQNP…`). **S3–S4 are delivered** — `register_invoice` fires after swap;
+payer Freighter lockbox funding is wired via `/api/lockbox/fund/build`. **S5–S6 remain:**
+on-chain `settle` + reconcile with contract-balance pre-check, then hardening.
 
 **Code already in place:** `soroban/contracts/settlement/` (contract + 7-test suite, all
 passing), `web/lib/settlement/` (reserve-ledger store), `web/lib/soroban/invoke-settlement.ts`,
@@ -267,11 +267,17 @@ on `LockboxRecord`; 7/7 tests pass, `test_snapshots/` generated.
 **Mainnet** (operating network) and **Testnet** (`settlement` → `CAZ2GTIO…`, 2026-05-22) —
 verified on-chain. The system operates Mainnet-only; the Testnet deployment satisfies the
 "deployed on both" submission requirement.
-**S3 · Fire `register_invoice` at the right point** — move it from `invoices/[id]` (settle)
-to immediately after `execute_advance` in `web/app/api/swap/execute/route.ts`.
-**S4 · Real lockbox funding** — add a payer Stellar key; `fundLockboxOnChain()` (USDC SAC
-transfer → settlement contract address); surface the address in the NoA + payer portal;
-add a "Pay invoice" action in `PayerPortalView`. Uses real Mainnet USDC — keep demo amounts small.
+**S3 · Fire `register_invoice` at the right point — ✅ done.** `register_invoice` now fires
+fire-and-forget immediately after `execute_advance` in `web/app/api/swap/execute/route.ts`;
+removed from the `invoices/[id]` settle action (reserve-ledger upsert only).
+  - **Delivered:** `registerInvoiceOnChain(cfg, invoiceId, face, advance)` runs fire-and-forget after a successful `execute_advance` in `web/app/api/swap/execute/route.ts`; the `invoices/[id]` settle action no longer touches the on-chain lockbox (reserve-ledger upsert only); `AlreadyRegistered` retries log a warn and return 200.
+**S4 · Real lockbox funding — ✅ done.** Payer Freighter BYOK: `POST /api/lockbox/fund/build`
+builds a USDC SAC transfer to the settlement contract; payer portal connects Freighter,
+signs, and submits via `/api/tx/submit`. NoA `lockboxAddress` now resolves to
+`settlementContractId` (not the demo GAXL string).
+  - **Delivered:** (4a) Freighter connect + Pay invoice CTA in `PayerPortalView`; (4b)
+`buildLockboxFundXdr` + `/api/lockbox/fund/build`; (4c) real lockbox address in NoA issue
+paths; (4d) paid substate with stellar.expert tx link + Mainnet caution badge.
 **S5 · Real settle + reconcile** — `settleOnChain` with a contract-balance pre-check;
 verify full + partial paths and `report_leakage` end-to-end on Mainnet (small amounts).
 **S6 · Hardening** — ✅ the misleading "keyed by invoice_id memo" comment in `lib.rs` is

@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
+import { deriveDemoLockbox } from "@/lib/msme/invoice-trust";
 import { getConfirmationByReceivable, issueNoa } from "@/lib/payers/store";
+import { resolveSorobanConfig } from "@/lib/soroban/server-config";
 
 type RouteContext = { params: Promise<{ receivableId: string }> };
 
@@ -25,9 +27,13 @@ export async function POST(_req: Request, context: RouteContext) {
       );
     }
 
+    const cfg = await resolveSorobanConfig();
+    const lockboxAddress =
+      cfg.settlementContractId ?? deriveDemoLockbox(decoded).address;
     const noa = await issueNoa({
       receivableId: decoded,
       payerId: confirmation.payerId,
+      lockboxAddress,
     });
 
     return NextResponse.json({ noa });

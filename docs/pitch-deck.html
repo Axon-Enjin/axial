@@ -183,6 +183,33 @@
       padding: 1.5rem;
     }
 
+    .qr-wrap {
+      display: inline-block;
+      margin-top: 2rem;
+      padding: 1rem;
+      background: rgba(26, 35, 64, 0.5);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      border: 1px solid rgba(45, 212, 191, 0.25);
+      border-radius: 16px;
+      box-shadow: 0 0 24px rgba(45, 212, 191, 0.12);
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+      text-decoration: none;
+    }
+
+    .qr-wrap:hover {
+      transform: scale(1.04);
+      box-shadow: 0 0 32px rgba(45, 212, 191, 0.2);
+    }
+
+    .qr-wrap img {
+      display: block;
+      width: 200px;
+      height: 200px;
+      image-rendering: -webkit-optimize-contrast;
+      image-rendering: crisp-edges;
+    }
+
     /* ─── Layouts ─── */
     .content-left {
       align-items: flex-start;
@@ -684,8 +711,22 @@
       </div>
     </div>
 
-    <!-- ═══════════ SLIDE 4: SOLUTION ═══════════ -->
-    <div class="slide content-left" data-slide="3">
+    <!-- ═══════════ SLIDE 4: SO WE BUILT AXIAL ═══════════ -->
+    <div class="slide content-center" data-slide="3">
+      <div class="stagger">
+        <span class="slide-label">So we built Axial</span>
+        <h2>From <span class="rose">$221B gap</span> to a<br><span class="teal">live Mainnet demo.</span></h2>
+        <a href="https://axial.axonenjin.com" target="_blank" rel="noopener" class="qr-wrap">
+          <img src="assets/axial-axonenjin-qr.png" alt="QR code — scan to open axial.axonenjin.com" width="200" height="200" />
+        </a>
+        <p style="font-size:0.8rem; color:var(--silver); margin-top:1rem;">
+          Scan to explore the live demo · <span style="color:var(--teal)">axial.axonenjin.com</span>
+        </p>
+      </div>
+    </div>
+
+    <!-- ═══════════ SLIDE 5: SOLUTION ═══════════ -->
+    <div class="slide content-left" data-slide="4">
       <div class="stagger full-width">
         <span class="slide-label">Our Solution</span>
         <h2>One pipeline.<br><span class="teal">Liquidity in. Compliance out.</span></h2>
@@ -721,8 +762,8 @@
       </div>
     </div>
 
-    <!-- ═══════════ SLIDE 5: HOW IT WORKS ═══════════ -->
-    <div class="slide content-left" data-slide="4">
+    <!-- ═══════════ SLIDE 6: HOW IT WORKS ═══════════ -->
+    <div class="slide content-left" data-slide="5">
       <div class="stagger full-width">
         <span class="slide-label">How It Works</span>
         <h2 style="font-size: clamp(1.6rem, 2.8vw, 2.2rem);">End-to-end in one atomic flow</h2>
@@ -771,8 +812,8 @@
       </div>
     </div>
 
-    <!-- ═══════════ SLIDE 6: WHY STELLAR ═══════════ -->
-    <div class="slide content-left" data-slide="5">
+    <!-- ═══════════ SLIDE 7: WHY STELLAR ═══════════ -->
+    <div class="slide content-left" data-slide="6">
       <div class="stagger full-width">
         <span class="slide-label">Why Stellar</span>
         <h2 style="font-size: clamp(1.6rem, 2.8vw, 2.2rem);">Built on purpose-fit infrastructure</h2>
@@ -817,8 +858,8 @@
       </div>
     </div>
 
-    <!-- ═══════════ SLIDE 7: BUSINESS MODEL ═══════════ -->
-    <div class="slide content-left" data-slide="6">
+    <!-- ═══════════ SLIDE 8: BUSINESS MODEL ═══════════ -->
+    <div class="slide content-left" data-slide="7">
       <div class="stagger full-width">
         <span class="slide-label">Business Model</span>
         <h2 style="font-size: clamp(1.6rem, 2.8vw, 2.2rem);">Two revenue engines</h2>
@@ -848,8 +889,8 @@
       </div>
     </div>
 
-    <!-- ═══════════ SLIDE 8: COMPETITIVE ADVANTAGE ═══════════ -->
-    <div class="slide content-left" data-slide="7">
+    <!-- ═══════════ SLIDE 9: COMPETITIVE ADVANTAGE ═══════════ -->
+    <div class="slide content-left" data-slide="8">
       <div class="stagger full-width">
         <span class="slide-label">Competitive Edge</span>
         <h2 style="font-size: clamp(1.6rem, 2.8vw, 2.2rem);">Not another accounting tool</h2>
@@ -902,12 +943,12 @@
       </div>
     </div>
 
-    <!-- ═══════════ SLIDE 9: TRACTION ═══════════ -->
-    <div class="slide content-left" data-slide="8">
+    <!-- ═══════════ SLIDE 10: TRACTION ═══════════ -->
+    <div class="slide content-left" data-slide="9">
       <div class="stagger full-width">
         <span class="slide-label">Traction</span>
         <h2 style="font-size: clamp(1.6rem, 2.8vw, 2.2rem);">Built and deployed in 7 days</h2>
-        <p class="subtitle">4 Soroban contracts deployed to Mainnet. Full pipeline live on the Testnet demo.</p>
+        <p class="subtitle">4 Soroban contracts deployed to Mainnet. Full pipeline live on Stellar Mainnet.</p>
 
         <div class="grid-3" style="margin-top: 2.5rem;">
           <div class="glass-sm" style="text-align: center;">
@@ -916,7 +957,7 @@
           </div>
           <div class="glass-sm" style="text-align: center;">
             <div class="stat-value emerald" style="font-size: 2.5rem;">E2E</div>
-            <div class="stat-label">Full pipeline on Stellar Testnet<br>Mint → Swap → Split → EIS → Memo</div>
+            <div class="stat-label">Full pipeline on Stellar Mainnet<br>Mint → Swap → Split → EIS → Memo</div>
           </div>
           <div class="glass-sm" style="text-align: center;">
             <div class="stat-value amber" style="font-size: 2.5rem;">Live</div>
@@ -934,6 +975,8 @@
               <li><span class="teal">✓</span> Stellar memo write-back of BIR reference</li>
               <li><span class="teal">✓</span> Invoice upload + OCR</li>
               <li><span class="teal">✓</span> Freighter self-custody wallet</li>
+              <li><span class="teal">✓</span> Payer portal + NoA issue/ack</li>
+              <li><span class="teal">✓</span> Lockbox funding via Freighter (USDC to settlement contract)</li>
               <li><span class="teal">✓</span> Multi-tenant auth & org management</li>
               <li><span class="teal">✓</span> Automated T+3 compliance worker</li>
             </ul>
@@ -941,7 +984,8 @@
           <div class="glass-sm">
             <h3 style="font-size: 0.85rem; margin-bottom: 0.5rem;">Post-Hackathon Priorities</h3>
             <ul style="font-size: 0.8rem; color: var(--silver); line-height: 1.7; list-style: none; padding: 0;">
-              <li><span class="amber">○</span> On-chain settlement lockbox (closed loop)</li>
+              <li><span class="teal">✓</span> Payer portal, NoA, <code style="font-size:0.75rem;">register_invoice</code>, Freighter lockbox funding</li>
+              <li><span class="amber">○</span> On-chain <code style="font-size:0.75rem;">settle</code> + reconcile (B-2 S5)</li>
               <li><span class="amber">○</span> BIR PTT certification</li>
               <li><span class="amber">○</span> PDAX Connect integration (PHP rail)</li>
               <li><span class="amber">○</span> Liquidity provider partnerships</li>
@@ -952,8 +996,8 @@
       </div>
     </div>
 
-    <!-- ═══════════ SLIDE 10: ROADMAP ═══════════ -->
-    <div class="slide content-left" data-slide="9">
+    <!-- ═══════════ SLIDE 11: ROADMAP ═══════════ -->
+    <div class="slide content-left" data-slide="10">
       <div class="stagger full-width">
         <span class="slide-label">Roadmap</span>
         <h2 style="font-size: clamp(1.6rem, 2.8vw, 2.2rem);">Four-phase path to market</h2>
@@ -962,7 +1006,7 @@
           <div>
             <div class="timeline-item">
               <div class="timeline-phase">Phase 1 — Wedge <span style="color: var(--emerald);">● Now</span></div>
-              <div class="timeline-desc">Production build on Stellar Testnet/Mainnet. Onboard software and creative
+              <div class="timeline-desc">Mainnet operating target. Onboard software and creative
                 agencies as pilot cohort. White-glove onboarding.</div>
             </div>
             <div class="timeline-item">
@@ -1015,8 +1059,8 @@
       </div>
     </div>
 
-    <!-- ═══════════ SLIDE 11: TEAM ═══════════ -->
-    <div class="slide content-center" data-slide="10">
+    <!-- ═══════════ SLIDE 12: TEAM ═══════════ -->
+    <div class="slide content-center" data-slide="11">
       <div class="stagger">
         <span class="slide-label">The Team</span>
         <h2 style="margin-bottom: 0.5rem;">Axon Enjin</h2>
@@ -1048,8 +1092,8 @@
       </div>
     </div>
 
-    <!-- ═══════════ SLIDE 12: CLOSING ═══════════ -->
-    <div class="slide content-center" data-slide="11">
+    <!-- ═══════════ SLIDE 13: CLOSING ═══════════ -->
+    <div class="slide content-center" data-slide="12">
       <div class="stagger">
         <span class="slide-label">Let's Build</span>
         <h1 style="font-size: clamp(2rem, 4vw, 3.5rem);">Instant Capital.<br><span class="teal">Invisible

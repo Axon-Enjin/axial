@@ -1,14 +1,18 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { LogoMark } from "@/components/ui/Logo";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { Icon } from "@/components/ui/Icon";
 import type { NoticeOfAssignment } from "@/lib/payers/types";
+import {
+  getFreighterPublicKey,
+  signXdrWithFreighter,
+} from "@/lib/soroban/freighter";
 
-type Step = "loading" | "confirm" | "noa" | "done" | "error";
+type Step = "loading" | "confirm" | "noa" | "done" | "paid" | "error";
 
 type ConfirmData = {
   confirmation: {
@@ -22,6 +26,13 @@ type ConfirmData = {
   noa?: NoticeOfAssignment;
 };
 
+type ChainStatus = {
+  network?: string;
+  networkPassphrase?: string;
+  lockboxFundingReady?: boolean;
+  explorerTxBase?: string;
+};
+
 type Props = {
   token?: string;
   invoiceId?: string;
@@ -29,7 +40,7 @@ type Props = {
 
 /**
  * Payer-facing portal — accessed via magic link from the MSME.
- * Flow: confirm invoice → auto-issued NoA → acknowledge NoA → done (fundable).
+ * Flow: confirm invoice → auto-issued NoA → acknowledge NoA → pay lockbox (Freighter).
  */
 export function PayerPortalView({ token, invoiceId }: Props) {
   const [step, setStep] = useState<Step>("loading");
@@ -37,6 +48,18 @@ export function PayerPortalView({ token, invoiceId }: Props) {
   const [noa, setNoa] = useState<NoticeOfAssignment | null>(null);
   const [busy, setBusy] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [chain, setChain] = useState<ChainStatus>({});
+  const [freighterPublic, setFreighterPublic] = useState<string | null>(null);
+  const [paying, setPaying] = useState(false);
+  const [payTxHash, setPayTxHash] = useState<string | null>(null);
+  const [payError, setPayError] = useState<string | null>(null);
+
+  useEffect(() => {
+    void fetch("/api/soroban/status")
+      .then((r) => r.json())
+      .then((d: ChainStatus) => setChain(d))
+      .catch(() => null);
+  }, []);
 
   // On mount: pre-validate token by fetching the confirmation record
   useEffect(() => {
@@ -50,12 +73,12 @@ export function PayerPortalView({ token, invoiceId }: Props) {
       .then((r) => r.json())
       .then((d: { confirmation?: ConfirmData["confirmation"] }) => {
         if (d.confirmation?.status === "confirmed") {
-          // Already confirmed — jump to NoA step
           setData({ confirmation: d.confirmation });
           void fetch(`/api/noa/${encodeURIComponent(invoiceId)}/ack`)
             .then((r) => r.json())
             .then((nd: { noa?: NoticeOfAssignment }) => {
               if (nd.noa?.ackStatus === "acknowledged") {
+                setNoa(nd.noa);
                 setStep("done");
               } else {
                 setNoa(nd.noa ?? null);
@@ -70,7 +93,7 @@ export function PayerPortalView({ token, invoiceId }: Props) {
         }
       })
       .catch(() => {
-        setStep("confirm"); // Assume not yet confirmed
+        setStep("confirm");
       });
   }, [token, invoiceId]);
 
@@ -131,13 +154,85 @@ export function PayerPortalView({ token, invoiceId }: Props) {
     }
   };
 
+  const handleConnectFreighter = async () => {
+    setPayError(null);
+    setPaying(true);
+    try {
+      const pub = await getFreighterPublicKey();
+      setFreighterPublic(pub);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Could not connect Freighter";
+      setPayError(msg);
+    } finally {
+      setPaying(false);
+    }
+  };
+
+  const handlePayInvoice = async () => {
+    if (!invoiceId || !freighterPublic || amount == null) return;
+    setPayError(null);
+    setPaying(true);
+    try {
+      const buildRes = await fetch("/api/lockbox/fund/build", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          invoiceId: rid,
+          amount,
+          payerPublic: freighterPublic,
+        }),
+      });
+      const build = (await buildRes.json()) as {
+        xdr?: string;
+        networkPassphrase?: string;
+        error?: string;
+      };
+      if (!buildRes.ok || !build.xdr) {
+        setPayError(build.error ?? "Could not build payment transaction.");
+        return;
+      }
+
+      const signedXdr = await signXdrWithFreighter(build.xdr, {
+        networkPassphrase: build.networkPassphrase ?? chain.networkPassphrase,
+        accountToSign: freighterPublic,
+      });
+
+      const submitRes = await fetch("/api/tx/submit", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ xdr: signedXdr, context: "lockbox_fund" }),
+      });
+      const submit = (await submitRes.json()) as { txHash?: string; error?: string };
+      if (!submitRes.ok || !submit.txHash) {
+        setPayError(submit.error ?? "Payment submission failed.");
+        return;
+      }
+
+      setPayTxHash(submit.txHash);
+      setStep("paid");
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Payment failed";
+      setPayError(msg);
+    } finally {
+      setPaying(false);
+    }
+  };
+
   const amount = data?.confirmation.confirmedAmount;
   const due = data?.confirmation.dueDate;
   const rid = data?.confirmation.receivableId ?? invoiceId ?? "—";
+  const isMainnet = chain.network === "mainnet";
+  const canPay = Boolean(chain.lockboxFundingReady && noa?.lockboxAddress);
+
+  const txExplorerUrl =
+    payTxHash && chain.explorerTxBase
+      ? `${chain.explorerTxBase}/${payTxHash}`
+      : payTxHash
+        ? `https://stellar.expert/explorer/public/tx/${payTxHash}`
+        : null;
 
   return (
     <main className="flex min-h-screen flex-col items-center justify-center bg-background px-4 py-12">
-      {/* Header */}
       <div className="mb-8 flex items-center gap-3">
         <LogoMark size={28} className="text-primary" />
         <span className="font-headline-md text-headline-md font-bold tracking-tight text-primary">
@@ -216,7 +311,7 @@ export function PayerPortalView({ token, invoiceId }: Props) {
             {noa && (
               <div className="mb-6 space-y-3 rounded-xl border border-outline-variant/15 bg-surface-container-high/40 p-4">
                 <Row label="NoA Reference" value={noa.noaDocumentRef} mono />
-                <Row label="Lockbox Address" value={`${noa.lockboxAddress.slice(0, 24)}…`} mono />
+                <CopyRow label="Lockbox Address" value={noa.lockboxAddress} />
                 <Row label="Invoice ID" value={rid} mono />
                 {amount != null && <Row label="Amount" value={`₱${amount.toLocaleString()}`} accent />}
                 {due && <Row label="Due Date" value={due} />}
@@ -238,8 +333,8 @@ export function PayerPortalView({ token, invoiceId }: Props) {
         )}
 
         {step === "done" && (
-          <Card className="text-center">
-            <div className="py-6">
+          <Card>
+            <div className="py-2 text-center">
               <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full border border-[#2DD4BF]/30 bg-[#2DD4BF]/10">
                 <Icon name="check_circle" size={28} className="text-[#2DD4BF]" />
               </div>
@@ -248,17 +343,105 @@ export function PayerPortalView({ token, invoiceId }: Props) {
               </h1>
               <p className="font-body-md text-body-md text-on-surface-variant">
                 Invoice confirmed and Notice of Assignment acknowledged.
-                <br />
-                Pay{" "}
-                <span className="font-mono text-sm text-on-surface">
-                  {noa?.lockboxAddress.slice(0, 20)}…
-                </span>{" "}
-                on the due date.
               </p>
               {noa && (
                 <p className="mt-3 font-label-sm text-label-sm text-outline">
                   Reference: {noa.noaDocumentRef}
                 </p>
+              )}
+            </div>
+
+            {noa && (
+              <div className="mb-6 space-y-3 rounded-xl border border-outline-variant/15 bg-surface-container-high/40 p-4">
+                <CopyRow label="Lockbox Address" value={noa.lockboxAddress} />
+                {amount != null && (
+                  <Row label="Amount due" value={`₱${amount.toLocaleString()}`} accent />
+                )}
+                {due && <Row label="Due Date" value={due} />}
+              </div>
+            )}
+
+            {canPay && (
+              <div className="space-y-3">
+                {isMainnet && (
+                  <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 px-4 py-3 text-center">
+                    <span className="font-label-sm text-label-sm text-amber-200/90">
+                      Mainnet — real USDC
+                    </span>
+                  </div>
+                )}
+
+                {payError && (
+                  <div className="rounded-xl border border-red-500/20 bg-red-500/5 px-4 py-3">
+                    <p className="font-label-sm text-label-sm text-red-300">{payError}</p>
+                    {payError.includes("Freighter extension not installed") && (
+                      <a
+                        href="https://www.freighter.app/"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="mt-2 inline-block font-label-sm text-label-sm text-[#2DD4BF] hover:underline"
+                      >
+                        Install Freighter →
+                      </a>
+                    )}
+                  </div>
+                )}
+
+                {!freighterPublic ? (
+                  <Button
+                    variant="teal"
+                    fullWidth
+                    onClick={() => void handleConnectFreighter()}
+                    disabled={paying}
+                  >
+                    {paying ? "Connecting…" : "Connect wallet to pay"}
+                  </Button>
+                ) : (
+                  <>
+                    <p className="text-center font-label-sm text-label-sm text-on-surface-variant">
+                      Wallet{" "}
+                      <span className="font-mono text-on-surface">
+                        {freighterPublic.slice(0, 8)}…{freighterPublic.slice(-6)}
+                      </span>
+                    </p>
+                    <Button
+                      variant="teal"
+                      fullWidth
+                      onClick={() => void handlePayInvoice()}
+                      disabled={paying || amount == null}
+                    >
+                      {paying
+                        ? "Processing…"
+                        : `Pay invoice now (${amount?.toLocaleString() ?? "—"} USDC units)`}
+                    </Button>
+                  </>
+                )}
+              </div>
+            )}
+          </Card>
+        )}
+
+        {step === "paid" && (
+          <Card className="text-center">
+            <div className="py-6">
+              <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full border border-[#2DD4BF]/30 bg-[#2DD4BF]/10">
+                <Icon name="payments" size={28} className="text-[#2DD4BF]" />
+              </div>
+              <h1 className="mb-2 font-headline-md text-headline-md tracking-tight text-on-surface">
+                Payment submitted
+              </h1>
+              <p className="font-body-md text-body-md text-on-surface-variant">
+                USDC transfer to the lockbox is on-chain.
+              </p>
+              {payTxHash && txExplorerUrl && (
+                <a
+                  href={txExplorerUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-4 inline-block font-mono text-sm text-[#2DD4BF] hover:underline"
+                >
+                  {payTxHash.slice(0, 16)}…
+                </a>
               )}
             </div>
           </Card>
@@ -312,13 +495,46 @@ function Row({
       <span className="font-label-sm text-label-sm text-on-surface-variant">{label}</span>
       <span
         className={[
-          "text-right",
+          "text-right break-all",
           mono ? "font-mono text-sm text-on-surface" : "font-body-md text-body-md",
           accent ? "font-semibold text-[#2DD4BF]" : "text-on-surface",
         ].join(" ")}
       >
         {value}
       </span>
+    </div>
+  );
+}
+
+function CopyRow({ label, value }: { label: string; value: string }) {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = useCallback(async () => {
+    try {
+      await navigator.clipboard.writeText(value);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 2000);
+    } catch {
+      setCopied(false);
+    }
+  }, [value]);
+
+  return (
+    <div className="flex items-start justify-between gap-3">
+      <span className="shrink-0 font-label-sm text-label-sm text-on-surface-variant">
+        {label}
+      </span>
+      <div className="flex min-w-0 items-start gap-2">
+        <span className="break-all text-right font-mono text-xs text-on-surface">{value}</span>
+        <button
+          type="button"
+          onClick={() => void handleCopy()}
+          className="shrink-0 rounded-md p-1 text-on-surface-variant hover:bg-surface-container-high/60 hover:text-on-surface"
+          aria-label={`Copy ${label}`}
+        >
+          <Icon name={copied ? "check" : "content_copy"} size={16} />
+        </button>
+      </div>
     </div>
   );
 }

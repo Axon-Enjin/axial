@@ -1,6 +1,5 @@
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
-import { deriveDemoLockbox } from "@/lib/msme/invoice-trust";
 import { isSupabaseConfigured } from "@/lib/supabase/client";
 import {
   supabaseCreateConfirmation,
@@ -250,18 +249,18 @@ export async function confirmInvoiceByToken(
 export async function issueNoa(data: {
   receivableId: string;
   payerId: string;
+  lockboxAddress: string;
 }): Promise<NoticeOfAssignment> {
   const existing = await getNoaByReceivable(data.receivableId);
   if (existing) return existing;
 
   const now = new Date().toISOString();
-  const { address } = deriveDemoLockbox(data.receivableId);
   const noa: NoticeOfAssignment = {
     id: newId(),
     receivableId: data.receivableId,
     payerId: data.payerId,
     noaDocumentRef: generateNoaDocumentRef(data.receivableId, data.payerId),
-    lockboxAddress: address,
+    lockboxAddress: data.lockboxAddress,
     ackStatus: "issued",
     ackMethod: null,
     acknowledgedAt: null,

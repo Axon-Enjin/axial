@@ -1,11 +1,13 @@
 import { NextResponse } from "next/server";
 import { getInvoice } from "@/lib/invoices/store";
+import { deriveDemoLockbox } from "@/lib/msme/invoice-trust";
 import {
   confirmInvoiceByToken,
   getConfirmationByReceivable,
   issueNoa,
   requestConfirmation,
 } from "@/lib/payers/store";
+import { resolveSorobanConfig } from "@/lib/soroban/server-config";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
@@ -52,7 +54,14 @@ export async function POST(request: Request, context: RouteContext) {
         );
       }
       // Auto-issue NoA when payer confirms
-      const noa = await issueNoa({ receivableId: decoded, payerId: confirmation.payerId });
+      const cfg = await resolveSorobanConfig();
+      const lockboxAddress =
+        cfg.settlementContractId ?? deriveDemoLockbox(decoded).address;
+      const noa = await issueNoa({
+        receivableId: decoded,
+        payerId: confirmation.payerId,
+        lockboxAddress,
+      });
       return NextResponse.json({ confirmation, noa });
     }
 

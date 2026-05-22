@@ -4,6 +4,10 @@ import { checkFundingEligibility } from "@/lib/payers/eligibility";
 import { isSwapChainEnabled } from "@/lib/soroban/config";
 import { resolveSorobanConfig } from "@/lib/soroban/server-config";
 import { executeAdvanceOnChain } from "@/lib/soroban/invoke-swap";
+import {
+  isSettlementChainEnabled,
+  registerInvoiceOnChain,
+} from "@/lib/soroban/invoke-settlement";
 import { quoteAdvance } from "@/lib/soroban/quote";
 import { assertSwapPreflight } from "@/lib/soroban/usdc-preflight";
 
@@ -97,6 +101,18 @@ export async function POST(request: Request) {
 
   try {
     const onChain = await executeAdvanceOnChain(cfg, invoiceId, faceAmount!, msmePublicOverride);
+
+    if (isSettlementChainEnabled(cfg)) {
+      void registerInvoiceOnChain(cfg, invoiceId, faceAmount!, quote.advance)
+        .then((r) => console.info("[swap/execute] register_invoice tx", r.txHash))
+        .catch((err) =>
+          console.warn(
+            "[swap/execute] register_invoice failed:",
+            err instanceof Error ? err.message : err,
+          ),
+        );
+    }
+
     triggerEisFromChain(
       "swap_executed",
       invoiceId,
