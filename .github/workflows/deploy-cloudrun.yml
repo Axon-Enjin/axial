@@ -28,6 +28,6 @@ jobs:
           cd web
           gcloud run deploy axial-web \
             --source . \
-            --region us-central1 \
+            --region asia-southeast1 \
             --project ${{ vars.GCP_PROJECT_ID }} \
             --allow-unauthenticated
