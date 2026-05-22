@@ -148,17 +148,19 @@ function PulseRow({
   status: string;
 }) {
   return (
-    <div className="flex items-start gap-3.5 rounded-xl border border-outline-variant/10 bg-surface-container-low p-3.5">
-      <div className="mt-1 flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[#2DD4BF]/30 bg-surface shadow-[0_0_15px_rgba(45,212,191,0.15)]">
-        <Icon name={icon} size={20} className="text-[#2DD4BF]" />
+    <div className="flex items-start gap-2.5 sm:gap-3.5 rounded-lg sm:rounded-xl border border-outline-variant/10 bg-surface-container-low p-3 sm:p-3.5">
+      <div className="mt-0.5 sm:mt-1 flex h-8 w-8 sm:h-10 sm:w-10 shrink-0 items-center justify-center rounded-full border border-[#2DD4BF]/30 bg-surface shadow-[0_0_15px_rgba(45,212,191,0.15)]">
+        <Icon name={icon} size={16} className="sm:hidden text-[#2DD4BF]" />
+        <Icon name={icon} size={20} className="hidden sm:block text-[#2DD4BF]" />
       </div>
-      <div>
-        <h4 className="font-body-md text-body-md font-medium text-on-surface">{title}</h4>
-        <p className="mt-1 font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant">
+      <div className="flex-1 min-w-0">
+        <h4 className="font-body-md text-[13px] sm:text-body-md font-medium text-on-surface">{title}</h4>
+        <p className="mt-1 font-label-sm text-[10px] sm:text-label-sm uppercase tracking-wider text-on-surface-variant">
           {subtitle}
         </p>
-        <p className="mt-2 flex items-center gap-1 font-label-sm text-label-sm text-[#2DD4BF]">
-          <Icon name="check_circle" size={14} />
+        <p className="mt-1.5 sm:mt-2 flex items-center gap-1 font-label-sm text-[10px] sm:text-label-sm text-[#2DD4BF]">
+          <Icon name="check_circle" size={12} className="sm:hidden" />
+          <Icon name="check_circle" size={14} className="hidden sm:block" />
           {status}
         </p>
       </div>
@@ -238,30 +240,31 @@ export function OverviewView() {
     : "Loading book from API…";
 
   return (
-    <main className="mx-auto max-w-container-max px-margin-mobile py-7 md:px-margin-desktop">
-      <div className="grid grid-cols-1 gap-gutter md:grid-cols-12">
+    <main className="mx-auto max-w-container-max px-4 py-5 sm:px-6 sm:py-6 md:px-margin-desktop md:py-7">
+      <div className="grid grid-cols-1 gap-4 sm:gap-5 md:gap-gutter md:grid-cols-12">
         <div className="md:col-span-8">
           <Card padding="lg">
             <div className="pointer-events-none absolute -top-24 -right-24 h-64 w-64 rounded-full bg-primary/10 blur-[80px]" />
-            <div className="relative flex items-start justify-between">
-              <div>
+            <div className="relative flex flex-col sm:flex-row items-start justify-between gap-4 sm:gap-0">
+              <div className="flex-1">
                 <div className="mb-1.5 flex items-center gap-2 text-on-surface-variant">
-                  <Icon name="account_balance" size={18} />
-                  <span className="font-label-sm text-label-sm uppercase tracking-wider">
+                  <Icon name="account_balance" size={16} className="sm:hidden" />
+                  <Icon name="account_balance" size={18} className="hidden sm:block" />
+                  <span className="font-label-sm text-[11px] sm:text-label-sm uppercase tracking-wider">
                     Available Liquidity
                   </span>
                 </div>
-                <div className="mt-4 flex items-baseline gap-1">
-                  <span className="font-headline-xl text-headline-xl tracking-tight text-on-surface">
+                <div className="mt-3 sm:mt-4 flex items-baseline gap-1">
+                  <span className="font-headline-xl text-[28px] sm:text-[36px] md:text-headline-xl tracking-tight text-on-surface">
                     ₱{faceDisplay}
                   </span>
-                  <span className="font-body-lg text-body-lg text-on-surface-variant">.00</span>
+                  <span className="font-body-lg text-[16px] sm:text-body-lg text-on-surface-variant">.00</span>
                 </div>
-                <p className="mt-2 font-body-md text-body-md text-on-surface-variant">
+                <p className="mt-2 font-body-md text-[13px] sm:text-body-md text-on-surface-variant">
                   {bookSub}
                 </p>
                 {summary?.treasury?.funderUsdc ? (
-                  <p className="mt-1 font-label-sm text-label-sm text-[#2DD4BF]">
+                  <p className="mt-1 font-label-sm text-[11px] sm:text-label-sm text-[#2DD4BF]">
                     Treasury USDC {summary.treasury.funderUsdc} · testnet
                   </p>
                 ) : null}
@@ -270,9 +273,9 @@ export function OverviewView() {
                 {networkLabel}
               </StatusBadge>
             </div>
-            <div className="relative mt-12 flex gap-3.5">
-              <Link href="/app/liquidity">
-                <Button variant="primary" size="lg" onClick={() => dispatch("unlock")}>
+            <div className="relative mt-8 sm:mt-12 flex flex-col sm:flex-row gap-3 sm:gap-3.5">
+              <Link href="/app/liquidity" className="flex-1 sm:flex-initial">
+                <Button variant="primary" size="lg" onClick={() => dispatch("unlock")} className="w-full sm:w-auto">
                   Unlock Capital
                 </Button>
               </Link>
@@ -281,6 +284,7 @@ export function OverviewView() {
                 size="lg"
                 icon="swap_horiz"
                 onClick={() => dispatch("transfer")}
+                className="w-full sm:w-auto"
               >
                 Transfer
               </Button>
@@ -288,7 +292,7 @@ export function OverviewView() {
           </Card>
         </div>
 
-        <div className="flex flex-col gap-gutter md:col-span-4">
+        <div className="flex flex-col gap-4 sm:gap-5 md:gap-gutter md:col-span-4">
           <TestnetTreasuryCard />
           <Card className="h-full">
             <CardHeader
@@ -320,19 +324,19 @@ export function OverviewView() {
         </div>
 
         <div className="md:col-span-7">
-          <Card className="flex min-h-[380px] flex-col">
+          <Card className="flex min-h-[320px] sm:min-h-[380px] flex-col">
             <CardHeader
               icon="monitoring"
               label="EIS activity"
               action={
-                <div className="flex gap-1.5">
+                <div className="flex gap-1 sm:gap-1.5">
                   {(["30D", "90D"] as const).map((r) => (
                     <button
                       key={r}
                       type="button"
                       onClick={() => setRange(r)}
                       className={[
-                        "rounded-md px-3 py-1.5 font-label-sm text-label-sm tracking-wide transition-colors",
+                        "rounded-md px-2 py-1 sm:px-3 sm:py-1.5 font-label-sm text-[11px] sm:text-label-sm tracking-wide transition-colors",
                         range === r
                           ? "border border-outline-variant/40 bg-surface-container-high text-on-surface"
                           : "border border-transparent text-on-surface-variant hover:text-on-surface",
@@ -344,7 +348,7 @@ export function OverviewView() {
                 </div>
               }
             />
-            <div className="relative flex flex-1 items-end justify-between gap-2 border-b border-outline-variant/20 px-2 pb-4">
+            <div className="relative flex flex-1 items-end justify-between gap-1 sm:gap-2 border-b border-outline-variant/20 px-1 sm:px-2 pb-4">
               <div className="pointer-events-none absolute inset-0 flex flex-col justify-between">
                 {[0, 1, 2, 3].map((i) => (
                   <div key={i} className="border-t border-outline-variant/10" />
@@ -374,9 +378,9 @@ export function OverviewView() {
                 </div>
               ))}
             </div>
-            <div className="mt-3 flex justify-between px-2 font-label-sm text-label-sm tracking-wide text-outline">
+            <div className="mt-3 flex justify-between px-1 sm:px-2 font-label-sm text-[9px] sm:text-label-sm tracking-wide text-outline">
               {labels.map((d) => (
-                <span key={d}>{d}</span>
+                <span key={d} className="text-center">{d}</span>
               ))}
             </div>
           </Card>
@@ -390,7 +394,7 @@ export function OverviewView() {
               action={
                 <Link
                   href="/app/compliance"
-                  className="bg-transparent font-label-sm text-label-sm text-primary hover:underline"
+                  className="bg-transparent font-label-sm text-[11px] sm:text-label-sm text-primary hover:underline"
                 >
                   View All
                 </Link>
@@ -398,7 +402,7 @@ export function OverviewView() {
             />
             <div className="flex flex-col">
               {recentActions.length === 0 ? (
-                <p className="py-6 text-center font-body-md text-body-md text-on-surface-variant">
+                <p className="py-6 text-center font-body-md text-[13px] sm:text-body-md text-on-surface-variant px-4">
                   No ledger events yet — tokenize a receivable or route payroll to populate
                   this feed.
                 </p>
@@ -407,27 +411,28 @@ export function OverviewView() {
                 <div
                   key={row.title}
                   className={[
-                    "flex items-center justify-between py-3.5",
+                    "flex items-center justify-between py-3 sm:py-3.5",
                     i < arr.length - 1 ? "border-b border-outline-variant/15" : "",
                   ].join(" ")}
                 >
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
                     <div
                       className={[
-                        "flex h-8 w-8 items-center justify-center rounded-md border border-outline-variant/20 bg-surface",
+                        "flex h-7 w-7 sm:h-8 sm:w-8 shrink-0 items-center justify-center rounded-md border border-outline-variant/20 bg-surface",
                         row.accent ? "text-[#2DD4BF]" : "text-on-surface-variant",
                       ].join(" ")}
                     >
-                      <Icon name={row.icon} size={16} />
+                      <Icon name={row.icon} size={14} className="sm:hidden" />
+                      <Icon name={row.icon} size={16} className="hidden sm:block" />
                     </div>
-                    <div>
-                      <div className="font-body-md text-body-md text-on-surface">{row.title}</div>
-                      <div className="mt-0.5 font-label-sm text-label-sm text-on-surface-variant">
+                    <div className="flex-1 min-w-0">
+                      <div className="font-body-md text-[13px] sm:text-body-md text-on-surface truncate">{row.title}</div>
+                      <div className="mt-0.5 font-label-sm text-[10px] sm:text-label-sm text-on-surface-variant truncate">
                         {row.sub}
                       </div>
                     </div>
                   </div>
-                  <span className="font-label-sm text-label-sm tracking-wide text-outline">
+                  <span className="font-label-sm text-[10px] sm:text-label-sm tracking-wide text-outline ml-2 shrink-0">
                     {row.time}
                   </span>
                 </div>

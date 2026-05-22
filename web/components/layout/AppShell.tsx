@@ -27,7 +27,7 @@ export function AppShell({
         user={user}
         onNewTransaction={() => dispatch("unlock")}
       />
-      <div className="flex min-h-screen min-w-0 flex-1 flex-col md:ml-64">
+      <div className="flex min-h-screen min-w-0 flex-1 flex-col pt-14 md:ml-64 md:pt-0">
         <TopBar
           title={meta.title}
           subtitle={meta.subtitle}

@@ -49,16 +49,23 @@ export function StatusBadge({
 }: StatusBadgeProps) {
   return (
     <span
-      className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 font-label-sm text-label-sm ${kindClass[kind]}`}
+      className={`inline-flex items-center gap-1 sm:gap-1.5 rounded-full border px-2 py-0.5 sm:px-3 sm:py-1 font-label-sm text-[10px] sm:text-label-sm ${kindClass[kind]}`}
     >
       {kind !== "settled" && !icon ? (
-        <span className={`h-1.5 w-1.5 rounded-full ${dotClass[kind]}`} />
+        <span className={`h-1 w-1 sm:h-1.5 sm:w-1.5 rounded-full ${dotClass[kind]}`} />
+      ) : null}
+      {icon ? (
+        <Icon
+          name={icon}
+          size={12}
+          className={`sm:hidden ${animated ? "animate-spin" : ""}`}
+        />
       ) : null}
       {icon ? (
         <Icon
           name={icon}
           size={14}
-          className={animated ? "animate-spin" : ""}
+          className={`hidden sm:block ${animated ? "animate-spin" : ""}`}
         />
       ) : null}
       {children}

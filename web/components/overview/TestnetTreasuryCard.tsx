@@ -60,7 +60,7 @@ export function TestnetTreasuryCard() {
     return (
       <Card>
         <CardHeader icon="account_balance_wallet" label="Testnet treasury" />
-        <p className="font-body-md text-body-md text-on-surface-variant">
+        <p className="font-body-md text-[13px] sm:text-body-md text-on-surface-variant">
           Reading Stellar balances…
         </p>
       </Card>
@@ -71,7 +71,7 @@ export function TestnetTreasuryCard() {
     return (
       <Card>
         <CardHeader icon="account_balance_wallet" label="Testnet treasury" />
-        <p className="font-body-md text-body-md text-on-surface-variant">
+        <p className="font-body-md text-[13px] sm:text-body-md text-on-surface-variant">
           Add wallet public keys in web/.env.local to show live balances.
         </p>
       </Card>
@@ -89,34 +89,34 @@ export function TestnetTreasuryCard() {
           <button
             type="button"
             onClick={() => void load(true)}
-            className="font-label-sm text-label-sm text-[#2DD4BF] hover:underline"
+            className="font-label-sm text-[11px] sm:text-label-sm text-[#2DD4BF] hover:underline"
           >
             Refresh
           </button>
         }
       />
-      <p className="mb-4 font-body-md text-body-md text-on-surface-variant">
+      <p className="mb-3 sm:mb-4 font-body-md text-[13px] sm:text-body-md text-on-surface-variant">
         {isTestnet
           ? "Free test XLM and USDC — fund via Friendbot and Circle faucet before swaps."
           : "Live balances for demo wallets configured in the environment."}
       </p>
 
-      <div className="flex flex-col gap-3">
+      <div className="flex flex-col gap-2.5 sm:gap-3">
         {data.wallets.map((w) => (
           <div
             key={w.role}
-            className="rounded-xl border border-outline-variant/15 bg-surface-container-low p-3.5"
+            className="rounded-lg sm:rounded-xl border border-outline-variant/15 bg-surface-container-low p-3 sm:p-3.5"
           >
             <div className="flex flex-wrap items-start justify-between gap-2">
-              <div>
-                <p className="font-body-md text-body-md font-medium text-on-surface">
+              <div className="flex-1 min-w-0">
+                <p className="font-body-md text-[13px] sm:text-body-md font-medium text-on-surface">
                   {w.label}
                 </p>
                 <a
                   href={w.explorerAccountUrl}
                   target="_blank"
                   rel="noreferrer"
-                  className="mt-0.5 font-mono text-xs text-on-surface-variant hover:text-[#2DD4BF]"
+                  className="mt-0.5 font-mono text-[11px] sm:text-xs text-on-surface-variant hover:text-[#2DD4BF] break-all"
                 >
                   {shortKey(w.publicKey)}
                 </a>
@@ -126,26 +126,26 @@ export function TestnetTreasuryCard() {
                   href={w.friendbotUrl}
                   target="_blank"
                   rel="noreferrer"
-                  className="font-label-sm text-label-sm text-[#2DD4BF] hover:underline"
+                  className="font-label-sm text-[11px] sm:text-label-sm text-[#2DD4BF] hover:underline shrink-0"
                 >
                   + XLM
                 </a>
               ) : null}
             </div>
-            <div className="mt-3 grid grid-cols-2 gap-3">
+            <div className="mt-2.5 sm:mt-3 grid grid-cols-2 gap-2.5 sm:gap-3">
               <div>
-                <p className="font-label-sm text-label-sm uppercase tracking-wider text-outline">
+                <p className="font-label-sm text-[10px] sm:text-label-sm uppercase tracking-wider text-outline">
                   XLM (fees)
                 </p>
-                <p className="mt-0.5 font-mono text-sm text-on-surface">{w.xlm}</p>
+                <p className="mt-0.5 font-mono text-[12px] sm:text-sm text-on-surface">{w.xlm}</p>
               </div>
               <div>
-                <p className="font-label-sm text-label-sm uppercase tracking-wider text-outline">
+                <p className="font-label-sm text-[10px] sm:text-label-sm uppercase tracking-wider text-outline">
                   USDC (swaps)
                 </p>
                 <p
                   className={[
-                    "mt-0.5 font-mono text-sm",
+                    "mt-0.5 font-mono text-[12px] sm:text-sm",
                     usdcLow(w.usdc) ? "text-amber-400/90" : "text-[#2DD4BF]",
                   ].join(" ")}
                 >
@@ -154,15 +154,17 @@ export function TestnetTreasuryCard() {
               </div>
             </div>
             {w.role === "funder" && usdcLow(w.usdc) ? (
-              <p className="mt-2 flex items-center gap-1 font-label-sm text-label-sm text-amber-400/90">
-                <Icon name="info" size={14} />
-                Low USDC — use Circle faucet before Tokenize &amp; Swap
+              <p className="mt-2 flex items-center gap-1 font-label-sm text-[10px] sm:text-label-sm text-amber-400/90">
+                <Icon name="info" size={12} className="sm:hidden shrink-0" />
+                <Icon name="info" size={14} className="hidden sm:block shrink-0" />
+                <span className="break-words">Low USDC — use Circle faucet before Tokenize &amp; Swap</span>
               </p>
             ) : null}
             {w.role === "msme" && usdcLow(w.usdc) ? (
-              <p className="mt-2 flex items-center gap-1 font-label-sm text-label-sm text-amber-400/90">
-                <Icon name="info" size={14} />
-                Fund after swap — payroll routes from this wallet
+              <p className="mt-2 flex items-center gap-1 font-label-sm text-[10px] sm:text-label-sm text-amber-400/90">
+                <Icon name="info" size={12} className="sm:hidden shrink-0" />
+                <Icon name="info" size={14} className="hidden sm:block shrink-0" />
+                <span className="break-words">Fund after swap — payroll routes from this wallet</span>
               </p>
             ) : null}
           </div>
@@ -170,13 +172,13 @@ export function TestnetTreasuryCard() {
       </div>
 
       {isTestnet && data.faucets ? (
-        <p className="mt-4 font-label-sm text-label-sm text-on-surface-variant">
+        <p className="mt-3 sm:mt-4 font-label-sm text-[11px] sm:text-label-sm text-on-surface-variant">
           USDC:{" "}
           <a
             href={data.faucets.usdc}
             target="_blank"
             rel="noreferrer"
-            className="text-[#2DD4BF] hover:underline"
+            className="text-[#2DD4BF] hover:underline break-all"
           >
             Circle testnet faucet
           </a>

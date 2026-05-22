@@ -4,6 +4,16 @@
 /* Material Symbols stylesheet is loaded via <link> in RootLayout — same axes as Stitch HTML exports. */
 
 @layer base {
+  /* Mobile viewport fix */
+  html {
+    -webkit-text-size-adjust: 100%;
+    -webkit-tap-highlight-color: transparent;
+  }
+  
+  body {
+    overflow-x: hidden;
+  }
+
   /* Explicit font-face family so glyphs render even before/without Google stylesheet merge quirks */
   .material-symbols-outlined {
     font-family: "Material Symbols Outlined", sans-serif;

@@ -17,7 +17,33 @@ export function TopBar({
   onWalletToggle,
 }: TopBarProps) {
   return (
-    <header className="sticky top-0 z-20 hidden items-center justify-between border-b border-outline-variant/10 bg-surface-container-lowest/80 px-margin-desktop py-6 backdrop-blur-md md:flex">
+    <>
+      {/* Mobile Top Bar */}
+      <header className="sticky top-14 z-10 flex items-center justify-between border-b border-outline-variant/10 bg-surface-container-lowest/80 px-4 py-3 backdrop-blur-md md:hidden">
+        <div className="flex-1 min-w-0">
+          <h2 className="font-headline-md text-[18px] tracking-tight text-on-surface truncate">
+            {title}
+          </h2>
+          {subtitle ? (
+            <p className="mt-0.5 font-body-md text-[12px] text-on-surface-variant truncate">
+              {subtitle}
+            </p>
+          ) : null}
+        </div>
+        <button
+          type="button"
+          onClick={onWalletToggle}
+          className={`flex items-center gap-1.5 rounded-lg border border-outline-variant/20 bg-surface-container px-2.5 py-1.5 font-label-sm text-[11px] transition-colors hover:bg-surface-variant/50 active:scale-95 ${walletConnected ? "text-[#2DD4BF]" : "text-on-surface-variant"}`}
+        >
+          <Icon name="account_balance_wallet" size={16} />
+          {walletConnected ? (
+            <span className="h-1.5 w-1.5 rounded-full bg-[#2DD4BF] shadow-[0_0_10px_rgba(45,212,191,0.6)]" />
+          ) : null}
+        </button>
+      </header>
+
+      {/* Desktop Top Bar */}
+      <header className="sticky top-0 z-20 hidden items-center justify-between border-b border-outline-variant/10 bg-surface-container-lowest/80 px-margin-desktop py-6 backdrop-blur-md md:flex">
       <div>
         <h2 className="font-headline-lg text-headline-lg tracking-tight text-on-surface">
           {title}
@@ -50,5 +76,6 @@ export function TopBar({
         <Avatar initials="AM" size={40} />
       </div>
     </header>
+    </>
   );
 }

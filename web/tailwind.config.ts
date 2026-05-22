@@ -60,7 +60,7 @@ const config: Config = {
         full: "0.75rem",
       },
       spacing: {
-        "margin-mobile": "20px",
+        "margin-mobile": "16px",
         "margin-desktop": "64px",
         "margin-tablet": "32px",
         gutter: "32px",
