@@ -47,14 +47,9 @@ export default function LandingPage() {
               <LogoMark size={20} className="sm:hidden" />
               <LogoMark size={22} className="hidden sm:block" />
             </div>
-            <div className="flex items-center gap-2">
-              <span className="font-headline-md text-[18px] sm:text-[20px] font-bold tracking-tight text-primary">
-                Axial
-              </span>
-              <span className="inline-flex items-center rounded-full border border-[#2DD4BF]/30 bg-[#2DD4BF]/5 px-2 py-0.5 font-label-sm text-[10px] sm:text-[11px] uppercase tracking-wider text-[#2DD4BF]">
-                testnet
-              </span>
-            </div>
+            <span className="font-headline-md text-[18px] sm:text-[20px] font-bold tracking-tight text-primary">
+              Axial
+            </span>
           </div>
           <Link
             href="/app"
@@ -85,7 +80,7 @@ export default function LandingPage() {
             href="/app"
             className="inline-flex items-center justify-center gap-2 sm:gap-2.5 rounded-lg sm:rounded-xl bg-primary px-5 py-3 sm:px-6 sm:py-3.5 font-label-md text-sm sm:text-label-md font-semibold text-on-primary shadow-[0_0_20px_rgba(190,198,224,0.15)] transition-opacity hover:opacity-90"
           >
-            Launch testnet demo
+            Launch demo
             <span className="material-symbols-outlined text-[16px] sm:text-[18px]">arrow_forward</span>
           </Link>
           <a
@@ -102,31 +97,90 @@ export default function LandingPage() {
 
       {/* ── Problem ── */}
       <section className="mx-auto max-w-[1440px] px-5 pb-12 sm:px-8 sm:pb-16 md:px-[64px] md:pb-20">
+        <h2 className="mb-6 sm:mb-8 font-headline-lg text-[24px] sm:text-headline-lg text-on-surface">
+          The Problem
+        </h2>
         <div className="grid grid-cols-1 gap-4 sm:gap-6 md:grid-cols-2">
           <div className="rounded-lg sm:rounded-xl border border-outline-variant/10 bg-surface-container/40 p-5 sm:p-6 md:p-8 backdrop-blur-md">
-            <span className="material-symbols-outlined mb-3 sm:mb-4 block text-[24px] sm:text-[28px] text-[#2DD4BF]">
+            <span className="material-symbols-outlined mb-3 sm:mb-4 block text-[24px] sm:text-[28px] text-[#FB7185]">
               account_balance
             </span>
-            <h2 className="mb-2 sm:mb-3 font-headline-md text-[20px] sm:text-headline-md text-on-surface">
-              $221B locked in receivables
-            </h2>
-            <p className="font-body-md text-[14px] leading-relaxed sm:text-body-md text-on-surface-variant">
-              Net 60–90 payment terms are the norm in Philippine B2B trade. Suppliers
-              deliver, then wait months for payment — starved of the working capital
-              needed to grow, hire, or stay compliant.
+            <h3 className="mb-2 sm:mb-3 font-headline-md text-[20px] sm:text-headline-md text-on-surface">
+              The Liquidity Trap
+            </h3>
+            <p className="font-body-md text-[14px] leading-relaxed sm:text-body-md text-on-surface-variant mb-3">
+              Enterprise buyers enforce <strong className="text-on-surface">Net 60–90</strong> payment terms while
+              Philippine labor law mandates <strong className="text-on-surface">bi-weekly payroll</strong>. A growing,
+              profitable MSME can face technical insolvency — not because it&apos;s losing money, but because its cash is
+              locked in receivables.
+            </p>
+            <p className="font-label-sm text-[11px] sm:text-label-sm text-[#2DD4BF]">
+              $221B funding demand vs $15B formal supply
             </p>
           </div>
           <div className="rounded-lg sm:rounded-xl border border-outline-variant/10 bg-surface-container/40 p-5 sm:p-6 md:p-8 backdrop-blur-md">
-            <span className="material-symbols-outlined mb-3 sm:mb-4 block text-[24px] sm:text-[28px] text-[#2DD4BF]">
+            <span className="material-symbols-outlined mb-3 sm:mb-4 block text-[24px] sm:text-[28px] text-[#F59E0B]">
               gavel
             </span>
-            <h2 className="mb-2 sm:mb-3 font-headline-md text-[20px] sm:text-headline-md text-on-surface">
-              BIR EIS mandate, T+3 window
-            </h2>
-            <p className="font-body-md text-[14px] leading-relaxed sm:text-body-md text-on-surface-variant">
-              Phase 1 taxpayers — large taxpayers, e-commerce platforms, exporters —
-              must submit electronic invoices to BIR within three calendar days of each
-              transaction. Today that is a manual, error-prone process.
+            <h3 className="mb-2 sm:mb-3 font-headline-md text-[20px] sm:text-headline-md text-on-surface">
+              The Compliance Burden
+            </h3>
+            <p className="font-body-md text-[14px] leading-relaxed sm:text-body-md text-on-surface-variant mb-3">
+              The BIR Electronic Invoicing System (EIS) mandate — deadline <strong className="text-on-surface">December
+              31, 2026</strong> — requires JSON + JWS within T+3. Meanwhile, <strong className="text-on-surface">56%
+              of MSMEs</strong> still manage statutory payroll on spreadsheets.
+            </p>
+            <p className="font-label-sm text-[11px] sm:text-label-sm text-[#2DD4BF]">
+              Manual compliance = retroactive penalties
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* ── Solution ── */}
+      <section className="mx-auto max-w-[1440px] px-5 pb-12 sm:px-8 sm:pb-16 md:px-[64px] md:pb-20">
+        <h2 className="mb-2 font-headline-lg text-[24px] sm:text-headline-lg text-on-surface">
+          One pipeline. <span className="text-[#2DD4BF]">Liquidity in. Compliance out.</span>
+        </h2>
+        <p className="mb-8 sm:mb-10 font-body-md text-[15px] sm:font-body-lg sm:text-body-lg text-on-surface-variant max-w-3xl">
+          Axial merges tokenized invoice factoring with automated BIR EIS reporting and statutory
+          payroll splitting into a single Stellar/Soroban pipeline.
+        </p>
+        <div className="grid grid-cols-1 gap-4 sm:gap-6 md:grid-cols-3">
+          <div className="rounded-lg sm:rounded-xl border border-outline-variant/10 bg-surface-container/30 p-5 sm:p-6 backdrop-blur-sm text-center">
+            <div className="mb-3 sm:mb-4 flex h-12 w-12 sm:h-14 sm:w-14 mx-auto items-center justify-center rounded-full border border-[#2DD4BF]/30 bg-surface shadow-[0_0_15px_rgba(45,212,191,0.15)]">
+              <span className="material-symbols-outlined text-[28px] sm:text-[32px] text-[#2DD4BF]">account_balance</span>
+            </div>
+            <h3 className="mb-2 font-headline-sm text-[16px] sm:text-headline-sm text-on-surface">
+              Instant Capital
+            </h3>
+            <p className="font-body-md text-[13px] leading-relaxed sm:text-body-md text-on-surface-variant">
+              Tokenize receivables as Stellar Asset Contracts. Get ~80–90% advance in USDC instantly via atomic swap. No
+              collateral.
+            </p>
+          </div>
+          <div className="rounded-lg sm:rounded-xl border border-outline-variant/10 bg-surface-container/30 p-5 sm:p-6 backdrop-blur-sm text-center">
+            <div className="mb-3 sm:mb-4 flex h-12 w-12 sm:h-14 sm:w-14 mx-auto items-center justify-center rounded-full border border-[#2DD4BF]/30 bg-surface shadow-[0_0_15px_rgba(45,212,191,0.15)]">
+              <span className="material-symbols-outlined text-[28px] sm:text-[32px] text-[#2DD4BF]">call_split</span>
+            </div>
+            <h3 className="mb-2 font-headline-sm text-[16px] sm:text-headline-sm text-on-surface">
+              Auto Statutory Payroll
+            </h3>
+            <p className="font-body-md text-[13px] leading-relaxed sm:text-body-md text-on-surface-variant">
+              Soroban contract calculates and routes exact SSS, PhilHealth, Pag-IBIG deductions to government wallets in
+              real-time.
+            </p>
+          </div>
+          <div className="rounded-lg sm:rounded-xl border border-outline-variant/10 bg-surface-container/30 p-5 sm:p-6 backdrop-blur-sm text-center">
+            <div className="mb-3 sm:mb-4 flex h-12 w-12 sm:h-14 sm:w-14 mx-auto items-center justify-center rounded-full border border-[#2DD4BF]/30 bg-surface shadow-[0_0_15px_rgba(45,212,191,0.15)]">
+              <span className="material-symbols-outlined text-[28px] sm:text-[32px] text-[#2DD4BF]">cloud_done</span>
+            </div>
+            <h3 className="mb-2 font-headline-sm text-[16px] sm:text-headline-sm text-on-surface">
+              Invisible BIR EIS
+            </h3>
+            <p className="font-body-md text-[13px] leading-relaxed sm:text-body-md text-on-surface-variant">
+              Off-chain oracle maps Stellar events to BIR&apos;s 20-field schema, JWS-signs, submits within T+3. Success ref
+              → Stellar memo.
             </p>
           </div>
         </div>
@@ -135,10 +189,10 @@ export default function LandingPage() {
       {/* ── How it works ── */}
       <section className="mx-auto max-w-[1440px] px-5 pb-16 sm:px-8 sm:pb-20 md:px-[64px] md:pb-24">
         <h2 className="mb-2 font-headline-lg text-[24px] sm:text-headline-lg text-on-surface">
-          How Axial works
+          How it works
         </h2>
         <p className="mb-8 sm:mb-12 font-body-md text-[15px] sm:font-body-lg sm:text-body-lg text-on-surface-variant">
-          Five steps. One invoice. Zero manual compliance.
+          End-to-end in one atomic flow
         </p>
         <div className="grid grid-cols-1 gap-4 sm:gap-5 md:grid-cols-5 md:gap-6">
           {STEPS.map((step) => (
@@ -160,21 +214,65 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* ── Why Stellar ── */}
+      <section className="mx-auto max-w-[1440px] px-5 pb-16 sm:px-8 sm:pb-20 md:px-[64px] md:pb-24">
+        <h2 className="mb-2 font-headline-lg text-[24px] sm:text-headline-lg text-on-surface">
+          Why Stellar
+        </h2>
+        <p className="mb-8 sm:mb-10 font-body-md text-[15px] sm:font-body-lg sm:text-body-lg text-on-surface-variant max-w-3xl">
+          Built on purpose-fit infrastructure
+        </p>
+        <div className="grid grid-cols-1 gap-4 sm:gap-5 md:grid-cols-2 md:gap-6">
+          <div className="rounded-lg sm:rounded-xl border border-outline-variant/10 bg-surface-container/30 p-5 sm:p-6 backdrop-blur-sm">
+            <h3 className="mb-2 font-headline-sm text-[16px] sm:text-headline-sm text-[#2DD4BF]">
+              Stellar Asset Contracts
+            </h3>
+            <p className="font-body-md text-[13px] leading-relaxed sm:text-body-md text-on-surface-variant">
+              Each receivable minted as a SAC — the on-chain legal right to payment.
+            </p>
+          </div>
+          <div className="rounded-lg sm:rounded-xl border border-outline-variant/10 bg-surface-container/30 p-5 sm:p-6 backdrop-blur-sm">
+            <h3 className="mb-2 font-headline-sm text-[16px] sm:text-headline-sm text-[#2DD4BF]">
+              Soroban Smart Contracts
+            </h3>
+            <p className="font-body-md text-[13px] leading-relaxed sm:text-body-md text-on-surface-variant">
+              Denomination-agnostic swap, statutory router, and settlement — all Rust/WASM.
+            </p>
+          </div>
+          <div className="rounded-lg sm:rounded-xl border border-outline-variant/10 bg-surface-container/30 p-5 sm:p-6 backdrop-blur-sm">
+            <h3 className="mb-2 font-headline-sm text-[16px] sm:text-headline-sm text-[#2DD4BF]">
+              USDC on Stellar
+            </h3>
+            <p className="font-body-md text-[13px] leading-relaxed sm:text-body-md text-on-surface-variant">
+              Circle-issued production settlement. No external stablecoin risk.
+            </p>
+          </div>
+          <div className="rounded-lg sm:rounded-xl border border-outline-variant/10 bg-surface-container/30 p-5 sm:p-6 backdrop-blur-sm">
+            <h3 className="mb-2 font-headline-sm text-[16px] sm:text-headline-sm text-[#2DD4BF]">
+              3–5s Finality
+            </h3>
+            <p className="font-body-md text-[13px] leading-relaxed sm:text-body-md text-on-surface-variant">
+              Settlement triggers compliance oracle within T+3. Compliance as a background process.
+            </p>
+          </div>
+        </div>
+      </section>
+
       {/* ── Bottom CTA ── */}
       <section className="border-t border-outline-variant/10">
         <div className="mx-auto flex max-w-[1440px] flex-col items-center gap-5 sm:gap-6 px-5 py-12 sm:px-8 sm:py-16 md:px-[64px] md:py-20 text-center">
           <h2 className="font-headline-lg text-[24px] sm:text-headline-lg text-on-surface">
-            See it run on Stellar testnet.
+            See it run on Stellar.
           </h2>
-          <p className="max-w-md font-body-md text-[15px] leading-relaxed sm:font-body-lg sm:text-body-lg text-on-surface-variant px-4 sm:px-0">
+          <p className="max-w-2xl font-body-md text-[15px] leading-relaxed sm:font-body-lg sm:text-body-lg text-on-surface-variant px-4 sm:px-0">
             Upload a real invoice, mint a receivable, execute an atomic USDC swap, and
-            watch BIR EIS file itself — all in one session.
+            watch BIR EIS file itself — all in one session. Full E2E pipeline operational on Stellar Testnet and Mainnet.
           </p>
           <Link
             href="/app"
             className="inline-flex items-center gap-2 sm:gap-2.5 rounded-lg sm:rounded-xl bg-primary px-5 py-3 sm:px-6 sm:py-3.5 font-label-md text-sm sm:text-label-md font-semibold text-on-primary shadow-[0_0_20px_rgba(190,198,224,0.15)] transition-opacity hover:opacity-90"
           >
-            Open the demo
+            Launch demo
             <span className="material-symbols-outlined text-[16px] sm:text-[18px]">arrow_forward</span>
           </Link>
         </div>
@@ -186,11 +284,29 @@ export default function LandingPage() {
           <span className="flex items-center gap-2 font-label-sm text-[11px] sm:text-label-sm uppercase tracking-wider text-on-surface-variant">
             <LogoMark size={14} className="sm:hidden" />
             <LogoMark size={16} className="hidden sm:block" />
-            Axial · Stellar · 2026
+            Axial · Team Axon Enjin · 2026
           </span>
-          <span className="font-label-sm text-[10px] sm:text-label-sm text-center sm:text-left text-on-surface-variant">
-            USDC on Stellar · BIR EIS Phase 1 · Philippines
-          </span>
+          <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-4">
+            <a
+              href="https://github.com/Axon-Enjin/axial"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-label-sm text-[10px] sm:text-label-sm text-on-surface-variant hover:text-[#2DD4BF] transition-colors"
+            >
+              GitHub
+            </a>
+            <a
+              href="https://youtu.be/6-CpnsPGJK0"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-label-sm text-[10px] sm:text-label-sm text-on-surface-variant hover:text-[#2DD4BF] transition-colors"
+            >
+              Demo Video
+            </a>
+            <span className="font-label-sm text-[10px] sm:text-label-sm text-center sm:text-left text-on-surface-variant">
+              Build on Stellar Philippines 2026
+            </span>
+          </div>
         </div>
       </footer>
     </div>
