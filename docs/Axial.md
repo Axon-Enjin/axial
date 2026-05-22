@@ -96,17 +96,21 @@ Snapshot of what ships in **`web/`** today vs locked product vision. Visual tab 
 |------|--------|-------|
 | Soroban L1 (mint, swap, payroll) | ✅ Testnet | Happy path wired from Liquidity + Compliance |
 | BIR EIS oracle (20 fields, JWS mock, memo) | ✅ | Supabase `eis_submissions`; API-triggered on chain events |
+| T+3 submission worker | ✅ | `eis/worker` cron — retries stale submissions inside the T+3 window, expires the rest |
+| Horizon event poll | ✅ | `eis/horizon-poll` cron — ingests chain events the live API path missed |
+| Reconciliation / leakage scan | ✅ | `reconciliation/scan` cron — daily leakage scan |
 | Factoring book | ✅ | `factoring_invoices` + `/api/invoices` pagination; OCR parse persists rows |
-| MSME trust (payer confirm, lockbox) | 🟡 Demo | PATCH + UI trust strip; no real payer portal or on-chain lockbox |
+| Payer portal + NoA | ✅ | `/app/payer-portal` (token auth), `/api/payers`, eligibility check, NoA issue/ack |
+| Auth / multi-tenancy | ✅ | Supabase SSR auth, org-scoped data, invites (`api/auth/*`, migration `006`) |
 | Overview / Liquidity metrics | ✅ | `GET /api/dashboard/summary` — book face PHP, treasury USDC, contract count |
 | Testnet treasury card | ✅ | `GET /api/wallets/balances` on Overview |
+| FX rate (Reflector) | ✅ | `lib/fx/reflector.ts` + `/api/fx/rate` — live oracle, hardcoded 56.5 PHP/USDC fallback |
+| Public landing page | ✅ | Marketing landing at `/`; `/app` is the authenticated Overview |
 | PDAX ramp (L2) | ✅ UI | Settings demo card; **L3 Connect API not pursued — sandbox access not granted (2026-05-22)** |
-| Wallet signing | ✅ Custodial | Server-side signing with funder/MSME/issuer secrets; no Freighter (Q7 locked custodial 2026-05-22) |
+| Wallet signing | ✅ Custodial | Server-side signing with funder/MSME/issuer secrets; optional Freighter client-sign path (Q7 locked custodial 2026-05-22) |
+| On-chain lockbox enforcement | 🟡 | `settlement` contract crate written but **not deployed**; collection reconciled off-chain |
 | Mainnet + Circle USDC | ⬜ | Still testnet; issuer/trustlines per hackathon plan |
-| Public landing page | ⬜ | No marketing/landing route; `/` opens straight into Overview |
-| T+3 submission worker | ⬜ | Immediate oracle submit only |
-| Leakage freeze / reconciliation worker | ⬜ | Documented in settlement-integrity review; not automated |
-| Closed-loop collection contract | ⬜ | `mark_collected` demo only |
+| Live BIR submission | ⬜ | Mock BIR by default; `BIR_EIS_LIVE` gates the real client (needs Permit to Transmit) |
 
 Audit-derived task board: [`docs/sprint.md`](sprint.md).
 
