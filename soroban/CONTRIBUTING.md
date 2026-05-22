@@ -1,5 +1,7 @@
 # Soroban — team setup (collaborators)
 
+This guide covers the **Testnet developer sandbox**. Axial's operating network is **Stellar Mainnet** — for Mainnet deploy and env sync, see [`README.md`](README.md) "Deploy (mainnet)".
+
 Everyone builds contracts in **WSL** with the Stellar CLI. Keys stay on each developer’s machine — **never commit seeds or `.env`**.
 
 ## Quick start (new collaborator)
@@ -71,7 +73,8 @@ Existing machine keys (`admin-key`, `my-key`, `treasury-key`) are fine — set `
   "contracts": {
     "receivable_token": "C…",
     "axial_swap": "C…",
-    "payroll_split": "C…"
+    "payroll_split": "C…",
+    "settlement": "C…"
   }
 }
 ```
@@ -98,9 +101,12 @@ Test XLM ≠ USDC. For swap demos use [Circle testnet faucet](https://faucet.cir
 
 ## Mainnet
 
+Axial runs on **Stellar Mainnet** — this is the operating network, not the Testnet sandbox above.
+
 - New identity: `stellar keys generate yourname-axial-main --network mainnet`
 - Fund with real XLM (no friendbot)
-- Deploy only after testnet E2E — see README.md
+- Deploy only after testnet E2E — see [`README.md`](README.md) "Deploy (mainnet)"
+- Canonical path: `./scripts/mainnet-setup.sh` (sync env + GCP + GitHub) or `./scripts/mainnet-setup.sh --deploy` for a fresh deploy
 
 ## Troubleshooting
 

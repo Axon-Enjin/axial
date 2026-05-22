@@ -2,17 +2,19 @@
 
 Smart contracts for the Axial hackathon build. **Build and deploy from WSL** (Stellar CLI + Rust live there; the repo is on the Windows drive).
 
+**Operating network:** Axial runs on **Stellar Mainnet** — this directory is the build/deploy workspace. Testnet remains a **developer sandbox** for local iteration only.
+
 ## Team setup (collaborators)
 
 **First time on the repo:** read [`CONTRIBUTING.md`](CONTRIBUTING.md), then:
 
 ```bash
 cd "$AXIAL_ROOT/soroban"
-make setup          # network + .env + fund your test identity
+make setup          # network + .env + fund your test identity (testnet sandbox)
 make check-testnet  # verify keys and testnet XLM
 ```
 
-Each developer uses **their own** `STELLAR_SOURCE` in `soroban/.env` (from `.env.example`). Share deployed contract IDs via `deployments/testnet.json` (gitignored) or team chat.
+Each developer uses **their own** `STELLAR_SOURCE` in `soroban/.env` (from `.env.example`). The sandbox uses `deployments/testnet.json` (gitignored); the operating network uses `deployments/mainnet.json` (also gitignored). Share IDs via team chat or your private deploy artifacts — never commit secrets.
 
 ## Prerequisites (WSL)
 
@@ -63,8 +65,8 @@ soroban/
 | USDC issuer (Mainnet) | `GA5ZSEJYB37JRC5AVCIA5MOP4RHTM335X2KGX3IHOJAPP5RE34K4KZVN` |
 | USDC SAC contract (Mainnet) | `CCW67TSZV3SSS2HXMBQ5JFGCKJNXKZM7UQUWUZPUTHXSTZLEO7SJMI75` |
 | User-facing denomination | PHP (UI only) |
-| Mainnet deploy | **All 4 contracts** (receivable, swap, payroll, settlement) — see `deployments/mainnet.json` |
-| Testnet deploy | **3 contracts** (receivable, swap, payroll) — predates the `settlement` crate; settlement Testnet deploy tracked in `docs/sprint.md` B-2 |
+| Mainnet deploy (operating network) | **All 4 contracts** (receivable, swap, payroll, settlement) — see `deployments/mainnet.json` |
+| Testnet sandbox | **All 4 contracts** (receivable, swap, payroll, settlement) — settlement Testnet deploy completed 2026-05-22; see `docs/sprint.md` B-2 |
 
 ## One-time CLI setup
 
@@ -122,7 +124,9 @@ target/wasm32v1-none/release/settlement.wasm
 
 **Fast path (recommended):** see [`TESTNET.md`](TESTNET.md) — `./scripts/testnet-demo-setup.sh` deploys all contracts, funds keys, and writes `deployments/testnet.json` + `web/.env.local`.
 
-## Deploy (testnet)
+## Deploy (testnet — developer sandbox)
+
+For local iteration only — the operating deploy target is Mainnet (see below).
 
 ```bash
 cd "$AXIAL_ROOT/soroban"
@@ -217,7 +221,7 @@ stellar contract invoke --id "$PAYROLL_ID" --source-account my-key --network tes
 
 ## Deploy (mainnet)
 
-**Only after testnet E2E works.** Mainnet uses **real XLM** (fees + reserves) and **real USDC** for swaps.
+This is the **operating** deploy target. **Only after testnet E2E works.** Mainnet uses **real XLM** (fees + reserves) and **real USDC** for swaps.
 
 ### Cost & funding (hackathon)
 
@@ -240,7 +244,7 @@ sed -i 's/\r$//' scripts/*.sh
 
 See [docs/mainnet-wsl.md](../docs/mainnet-wsl.md). PowerShell is **not** used for Stellar — only your existing GitHub/Cloud Run deploy workflow.
 
-**L1 demo minimum:** receivable + swap + payroll. Settlement is deployed on Mainnet; its Testnet deploy + app wiring is post-hackathon (see `docs/sprint.md` B-2).
+**L1 demo minimum:** receivable + swap + payroll. Settlement is deployed on both Mainnet and Testnet; the open workstream is the in-app wiring (`register_invoice` / `settle`) tracked in `docs/sprint.md` B-2 phases S3–S6.
 
 ### Wire into Cloud Run / web
 
@@ -287,11 +291,11 @@ See **`CONTRACTS.md`** for the full on-chain vs off-chain split.
 2. **`axial_swap`** — USDC advance to MSME at configurable bps (85% default); `execute_advance` + `quote` implemented.
 3. **`payroll_split`** — `quote` + `route_payroll` to agency addresses + employee pool (implemented).
 4. **Backend** — EIS oracle + mock BIR + memo (not a Soroban crate).
-5. Wire contract IDs into `web/` env — **never commit secret keys**.
+5. Wire contract IDs into `web/` env — **never commit secret keys**. The app reads `MAINNET_`-prefixed env vars (see `web/.env.example`).
 
-Deploy all four WASMs to testnet: `make deploy-all` (set `STELLAR_SOURCE` + `STELLAR_NETWORK=testnet` in `.env`; fund keys first).
+For the **testnet sandbox**: deploy all four WASMs with `make deploy-all` (set `STELLAR_SOURCE` + `STELLAR_NETWORK=testnet` in `.env`; fund keys first). Share IDs via `deployments/testnet.json` or run `make testnet-demo` for a full team bootstrap.
 
-Share IDs via `deployments/testnet.json` or run `make testnet-demo` for a full team bootstrap.
+For the **operating network**: use `./scripts/deploy-mainnet.sh` or `./scripts/mainnet-setup.sh --deploy` (see Mainnet section above).
 
 ## Troubleshooting
 
