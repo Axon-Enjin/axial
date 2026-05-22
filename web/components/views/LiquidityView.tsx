@@ -12,6 +12,7 @@ import { Card } from "@/components/ui/Card";
 import { Icon } from "@/components/ui/Icon";
 import { StatTile } from "@/components/ui/StatTile";
 import { StatusBadge } from "@/components/ui/StatusBadge";
+import { DEMO_INVOICE_PNGS } from "@/lib/invoices/demo-png-samples";
 import type { FactoringInvoiceClient } from "@/lib/invoices/types";
 import { isFundable, trustHint } from "@/lib/msme/invoice-trust";
 import {
@@ -168,34 +169,42 @@ function UploadZone({
         >
           {parsing ? "Reading invoice…" : "Browse Files"}
         </Button>
-        <p className="mt-3 sm:mt-4 font-label-sm text-[10px] sm:text-label-sm text-on-surface-variant px-2">
-          On Vercel, use{" "}
-          <button
-            type="button"
-            disabled={parsing || disabled}
-            onClick={onTrySample}
-            className="text-[#2DD4BF] hover:underline disabled:opacity-50"
-          >
-            sample invoice
-          </button>
-          {" · "}
-          <a
-            href="/samples/invoices/invoice-inv-2023-8901.pdf"
-            download="axial-demo-invoice.pdf"
-            className="text-[#2DD4BF] hover:underline"
-          >
-            demo PDF
-          </a>
-          {" · "}
-          <a
-            href="/samples/invoices/invoice-inv-2023-8918.png"
-            download="axial-demo-invoice-8918.png"
-            className="text-[#2DD4BF] hover:underline"
-          >
-            demo PNG
-          </a>
-          {" "}(INV-2023-8918 · OCR)
-        </p>
+        <div className="mt-3 sm:mt-4 space-y-2 px-2">
+          <p className="font-label-sm text-[10px] sm:text-label-sm text-on-surface-variant">
+            Quick import (no OCR):{" "}
+            <button
+              type="button"
+              disabled={parsing || disabled}
+              onClick={onTrySample}
+              className="text-[#2DD4BF] hover:underline disabled:opacity-50"
+            >
+              sample 8901
+            </button>
+            {" · "}
+            <a
+              href="/samples/invoices/invoice-inv-2023-8901.pdf"
+              download="axial-demo-invoice.pdf"
+              className="text-[#2DD4BF] hover:underline"
+            >
+              demo PDF
+            </a>
+          </p>
+          <p className="font-label-sm text-[10px] sm:text-label-sm text-on-surface-variant">
+            OCR demos — download PNG, then Browse Files:
+          </p>
+          <div className="flex flex-wrap gap-x-2 gap-y-1">
+            {DEMO_INVOICE_PNGS.map(({ file, label }) => (
+              <a
+                key={file}
+                href={`/samples/invoices/${file}`}
+                download={file.replace("invoice-", "axial-")}
+                className="font-label-sm text-[10px] sm:text-label-sm text-[#2DD4BF] hover:underline"
+              >
+                {label}
+              </a>
+            ))}
+          </div>
+        </div>
       </div>
     </Card>
   );

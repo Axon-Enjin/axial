@@ -5,6 +5,7 @@ import { isSwapChainEnabled } from "@/lib/soroban/config";
 import { resolveSorobanConfig } from "@/lib/soroban/server-config";
 import { executeAdvanceOnChain } from "@/lib/soroban/invoke-swap";
 import { quoteAdvance } from "@/lib/soroban/quote";
+import { assertSwapPreflight } from "@/lib/soroban/usdc-preflight";
 
 type Body = {
   invoiceId?: string;
@@ -81,6 +82,17 @@ export async function POST(request: Request) {
       message:
         "Demo swap recorded locally. Set AXIAL_SWAP_CONTRACT_ID and funder keys in .env.local for on-chain execution.",
     });
+  }
+
+  const msmeRecipient = msmePublicOverride ?? cfg.msmePublic;
+  if (msmeRecipient) {
+    const preflight = await assertSwapPreflight(cfg, msmeRecipient, faceAmount!);
+    if (!preflight.ok) {
+      return NextResponse.json(
+        { error: preflight.message, code: preflight.code },
+        { status: 409 },
+      );
+    }
   }
 
   try {
