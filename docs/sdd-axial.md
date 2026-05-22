@@ -2,13 +2,39 @@
 
 **Project:** Axial  
 **Date:** 2026-05-14  
-**Version:** 0.2  
+**Version:** 0.3  
 **Owner:** Axial Product Lead  
-**Status:** Draft  
+**Status:** Live — updated 2026-05-22 to reflect v1 build reality  
 **Foundation:** [Axial.md](../Axial.md)  
 **PRD:** [prd-axial.md](prd-axial.md)
 
 **Related:** [BRD](brd-axial.md) · [DSD](dsd-axial.md) · [GTM](gtm-axial.md)
+
+---
+
+> **⚠️ IMPLEMENTATION NOTE (2026-05-22)**
+>
+> This document was authored pre-build (2026-05-14) and described the intended
+> modular-monolith architecture. The actual v1 build diverges in several key areas.
+>
+> **Rule: trust the code over this document wherever they conflict.** Use `docs/flow.md`
+> for the built/mock/planned matrix and `CLAUDE.md` for the authoritative repo guide.
+>
+> The table below maps each major design decision to its v1 build reality.
+>
+> | Design intent | v1 build reality |
+> |---|---|
+> | Modular monolith with separate API gateway | **Next.js 15 API routes** under `web/app/api/` — no separate gateway, BFF pattern co-located |
+> | BullMQ / Temporal job queue | **In-process fire-and-forget oracle** (`lib/eis/oracle.ts`) + **Vercel Cron** for scheduled retry/horizon-poll/reconciliation (`web/vercel.json`) |
+> | Managed PostgreSQL | **Supabase** (project `ifzyntqwymmgimnxtguz`); file-fallback JSON store when Supabase not configured |
+> | Redis distributed cache + locks | **Not in v1** — rate limits and locks omitted; no Redis dependency |
+> | HashiCorp Vault / cloud KMS | **Env vars** (Vercel Environment Variables) for v1; production vault path preserved in design |
+> | OIDC auth, vendor TBD | **Supabase Auth** — magic link OTP + Google OAuth; org auto-created by DB trigger on user insert |
+> | `/v1/` prefixed REST API | **Next.js API routes** — no version prefix; route structure is `web/app/api/**` |
+> | Separate compliance oracle service | **In-process** — `lib/eis/` runs in the same Next.js serverless function; fire-and-forget via `void processLedgerEvent().catch()` |
+> | Mock → live BIR EIS toggle via code change | **Env-var switchable** — `BIR_EIS_LIVE=true` + `BIR_EIS_ENDPOINT` + `BIR_JWS_PRIVATE_KEY_B64`; no code change required |
+> | Freighter / wallet connect: TBD | **Freighter implemented (B-3)** — optional alongside custodial path; `window.freighter` extension API |
+> | Hosting: TBD | **Vercel** — region `sin1` (Singapore), `web/` as root directory; Cron via `vercel.json` |
 
 ---
 
@@ -34,6 +60,8 @@
 ---
 
 ## 2. High-Level Architecture
+
+### Intended design (pre-build)
 
 ```mermaid
 graph LR
@@ -78,29 +106,79 @@ graph LR
   API --> Cache
 ```
 
-**Layer responsibilities:**
+### v1 build reality (as of 2026-05-22)
+
+```mermaid
+graph LR
+  subgraph client [Browser]
+    Web[Next.js 15 RSC + Client Components]
+    Freighter[Freighter Extension — optional]
+  end
+
+  subgraph vercel [Vercel — region sin1]
+    Routes[API Routes  web/app/api]
+    Middleware[Next.js Middleware — auth session]
+    Cron[Vercel Cron — worker · horizon-poll · reconciliation]
+  end
+
+  subgraph inprocess [In-process — same serverless function]
+    Oracle[EIS Oracle  lib/eis/oracle.ts]
+    BirClient[BIR Client  lib/eis/bir-client.ts]
+    FxOracle[Reflector FX  lib/fx/reflector.ts]
+  end
+
+  subgraph chain [Stellar Testnet]
+    Soroban[3 Soroban Contracts]
+    RPC[Soroban RPC]
+    Horizon[Horizon API]
+  end
+
+  subgraph data [Data]
+    Supabase[(Supabase — Postgres + Auth + RLS)]
+    FileStore[File JSON fallback — no Supabase]
+    EnvVars[(Vercel Env Vars — secrets)]
+  end
+
+  Web --> Routes
+  Web --> Middleware
+  Freighter -.->|optional self-custody signing| Web
+  Routes --> Oracle
+  Routes --> FxOracle
+  Oracle --> BirClient
+  Routes --> Soroban
+  RPC --> Soroban
+  Cron --> Routes
+  Routes --> Supabase
+  Routes --> FileStore
+  Oracle --> Supabase
+  FxOracle --> RPC
+  Routes --> Horizon
+```
+
+**v1 layer responsibilities (actual):**
 
 | Layer | Technology | Responsibility |
 |---|---|---|
-| Client | Next.js 15, React 19, TypeScript, Tailwind CSS 4 | Four-tab UX per [DSD](dsd-axial.md); wallet connect TBD; no long-lived secrets in browser |
-| API Gateway / BFF | REST (OpenAPI) or tRPC — decision TBD | Session management, org tenancy, command validation, rate limiting |
-| Domain Services | Same runtime as API (monolith) | Invoice/receivable lifecycle, swap orchestration, payroll batch projections |
-| Job Workers | BullMQ or Temporal (TBD) | T+3 scheduling, retries, reconciliation sweeps, oracle polling |
-| Chain | Stellar / Soroban | SAC mint and transfer, atomic swaps, settlement hooks, memo write-backs |
-| Compliance — Oracle | Off-chain service | Ledger event subscription, field mapping to BIR EIS schema |
-| Compliance — EIS Client | Off-chain service | JWS signing, BIR API submission, acknowledgement parsing, retry with idempotency |
-| Compliance — Statutory | Module within services | Contribution bracket computation (SSS, PhilHealth, Pag-IBIG), payroll routing instructions |
-| Data — PostgreSQL | Managed PostgreSQL | Tenancy, projections, submission state, idempotency keys, audit log |
-| Data — Redis | Managed Redis | Distributed locks for workers, rate limits, short-lived session assists |
-| Data — Vault / KMS | HashiCorp Vault or cloud KMS | Signing keys, BIR credentials, wallet private material — never in env files or source control |
+| Client | Next.js 15 RSC + React 19 client components | Four-tab app UX; Freighter wallet connect (optional); no long-lived secrets in browser |
+| API + BFF | **Next.js Route Handlers** `web/app/api/` | Session via Supabase Auth middleware; org-scoped queries; command validation |
+| In-process oracle | **`lib/eis/`** (same serverless function) | Fire-and-forget EIS pipeline; map ledger events → BIR schema; JWS sign; submit; memo write-back |
+| BIR EIS client | **`lib/eis/bir-client.ts`** | Mock (HS256) today; live (RS256, real endpoint) via `BIR_EIS_LIVE=true` env var |
+| FX oracle | **`lib/fx/reflector.ts`** | Reflector on-chain PHP/USDC rate; 5-min in-process cache; fallback 56.5 |
+| Scheduled jobs | **Vercel Cron** (`vercel.json`) | Worker (6h), Horizon-poll (10min), reconciliation/scan (nightly 2am) |
+| Chain | **Stellar Testnet** / 3 Soroban contracts | SAC mint, atomic swap, payroll split, settlement |
+| Auth | **Supabase Auth** | Magic link OTP + Google OAuth; org auto-created on user insert via DB trigger |
+| Data | **Supabase** (Postgres + RLS) or **JSON file fallback** | Submissions, invoices, payers, reserve ledger, orgs, memberships; RLS enforces org isolation |
+| Secrets | **Vercel Environment Variables** | Stellar keys, Supabase service role, BIR credentials; vault migration path preserved in design |
 
 ---
 
 ## 3. Data Architecture
 
+> **v1 build reality:** Primary database is **Supabase** (hosted Postgres, project `ifzyntqwymmgimnxtguz`). Redis is **not present** in v1 — distributed locks and rate limits are omitted at pilot scale. File-based JSON fallback (`web/data/`) is used when `SUPABASE_URL` is not set (local dev). See `web/lib/eis/store.ts`, `web/lib/invoices/store.ts`, `web/lib/payers/store.ts`, `web/lib/settlement/store.ts` for the dual-backend pattern.
+
 **Primary database:** PostgreSQL — relational model fits the org/invoice/batch/submission structure; supports idempotency key constraints natively.
 
-**Cache:** Redis — distributed locks prevent duplicate job execution; rate limits protect BIR API quota; optional dashboard projection caching with TTL invalidated on chain finality.
+**Cache:** Redis — distributed locks prevent duplicate job execution; rate limits protect BIR API quota; optional dashboard projection caching with TTL invalidated on chain finality. *(Deferred to v2 — not in v1 build.)*
 
 **No vector store in v1** — no RAG requirement in PRD.
 
@@ -201,6 +279,8 @@ AuditLog
 
 ## 5. Compliance Architecture
 
+> **v1 build reality:** The compliance oracle is **in-process** — it runs inside the same Next.js serverless function that handles the on-chain API routes. There is no separate oracle service or external job queue. The oracle fires-and-forgets via `void processLedgerEvent().catch()` so it does not block the user-facing response. Scheduled retry, horizon polling, and reconciliation run as **Vercel Cron** jobs. The BIR EIS client is env-var switchable between mock and live (see `lib/eis/bir-client.ts`). JWS uses HS256 mock by default; switches to RS256 production key when `BIR_EIS_LIVE=true`. See `docs/rfc-axial-eis-oracle.md` for the detailed design.
+
 ### BIR EIS Oracle
 
 **Off-chain by design** — BIR uses HTTPS API; Stellar contracts cannot make HTTP calls. The oracle is a trusted service in the application tier.
@@ -266,7 +346,9 @@ Invoice number, invoice date, seller TIN, seller name, seller address, buyer TIN
 
 ## 7. Security and Authorization
 
-**Authentication:** OIDC with org-scoped invites (recommended for B2B MSME). Vendor TBD. HttpOnly cookie + short-lived access token + refresh token.
+> **v1 build reality:** Auth is **Supabase Auth** — magic link OTP + Google OAuth. Sessions managed via HttpOnly cookies set by `@supabase/ssr` middleware. Org auto-created by a PostgreSQL trigger on `auth.users` insert. RBAC is enforced at the API route level (service-role queries for admin, user session for user-scoped reads) and at the DB level via Row Level Security (`auth_org_ids()` helper function). Freighter wallet is optional self-custody alongside server-side custodial signing. See `web/middleware.ts` and `supabase/migrations/006_auth_multitenancy.sql`.
+
+**Authentication:** OIDC with org-scoped invites (recommended for B2B MSME). Vendor TBD. HttpOnly cookie + short-lived access token + refresh token. *(Implemented: Supabase Auth — see v1 build reality above.)*
 
 **Authorization:** Org-scoped RBAC for v1:
 - `owner` — full access including settings, wallet management, approval
@@ -287,15 +369,17 @@ Every database query filters by `org_id`. No cross-tenant data leakage.
 
 ## 8. Infrastructure, CI/CD, and Deployment
 
-**Hosting:** Cloud provider TBD — select for acceptable latency to Philippine operators and a viable BIR API connectivity path. Target region: Asia Pacific (Singapore or Manila proximity).
+> **v1 build reality:** Hosting is **Vercel** — region `sin1` (Singapore), root directory `web/`, Turbopack dev server. See `docs/vercel-deployment.md` for the full deploy guide. No Redis in v1. Secrets in Vercel Environment Variables (not a vault). Cron jobs configured in `web/vercel.json`. Local dev uses `npm run dev` from `web/` against Stellar Testnet. Soroban contracts built and deployed from WSL (`make deploy-all`).
+
+**Hosting:** Vercel — region `sin1`. Full deployment guide: [`docs/vercel-deployment.md`](vercel-deployment.md).
 
 **Environments:**
 
 | Environment | Description |
 |---|---|
-| `dev` | Local + Stellar Testnet; mock BIR EIS endpoint; no real money |
-| `staging` | Mirrors prod topology; Stellar Testnet or sterile mainnet; BIR sandbox if available |
-| `prod` | HA PostgreSQL with backups; managed Redis; secrets in vault; Stellar Mainnet; real BIR EIS API |
+| `dev` | Local `npm run dev` + Stellar Testnet; mock BIR EIS endpoint; no real money; file fallback if Supabase not configured |
+| `staging` / `preview` | Vercel Preview deployments per PR; Stellar Testnet; Supabase same project (dev branch TBD) |
+| `prod` | Vercel Production; Supabase production project; Stellar Mainnet (conditional, see S0-5); real BIR EIS if PTT granted |
 
 **CI/CD:** Lint → typecheck → tests on every PR; gated deploy to staging; migration strategy: expand/contract pattern (add column → backfill → make non-nullable → drop old). No destructive migrations without rollback plan.
 
@@ -323,11 +407,14 @@ Not applicable to core v1 flows. If future features add LLM assistance (e.g., an
 
 ## Self-Check
 
-- [x] Section 2 includes architecture diagram (Mermaid)
-- [x] Section 3 defines core entities with field-level detail
+- [x] Section 2 includes architecture diagrams — both intended design and v1 build reality
+- [x] Section 3 defines core entities with field-level detail; build-reality note added
 - [x] Section 4 covers Soroban contracts and EIS oracle flow end-to-end
 - [x] External integrations include reliability posture
-- [x] Section 7 covers auth, RBAC, and secrets
+- [x] Section 7 covers auth, RBAC, and secrets — build reality (Supabase Auth) documented
+- [x] Section 8 updated to reflect Vercel deployment
+- [x] Top-level implementation note table maps every design decision to v1 build reality
 - [ ] Exact BIR schema version and Soroban contract interfaces to be locked in RFCs
 - [ ] NFR numbers to be validated after pilot sizing
-- [ ] PTT certification timeline to be tracked as open decision
+- [ ] PTT certification timeline to be tracked as open decision (BIR_EIS_LIVE switchover path ready)
+- [ ] Redis + vault migration path: design preserved in §2 intended architecture; implement in v2

@@ -302,10 +302,25 @@ fallback to 56.5 when oracle is unreachable or PHP is unsupported on testnet.
 - `tsconfig.json`: bumped `target` from `ES2017` to `ES2020` (BigInt literals used across Soroban layer — was always required, now enforced)
 - **References:** `web/lib/fx/reflector.ts`, `web/app/api/fx/rate/`, `web/components/settings/PdaxRampCard.tsx`
 
-### B-6 · Auth + multi-tenancy · `P1` · 📋 committed
-The app is single-org with no real auth — `(app)/layout.tsx` is a visual shell only.
-Add login, org invites (OIDC preferred per Axial.md §11), and tenant scoping.
-- **References:** `../web/app/(app)/layout.tsx`, `../web/components/providers/AppProvider.tsx`, `Axial.md` §11 (Auth mechanism)
+### B-6 · Auth + multi-tenancy · `P1` · ✅ done
+Supabase Auth with org-scoped multi-tenancy. Magic link OTP + Google OAuth.
+Route protection via Next.js middleware. Transparent bypass in file-fallback mode.
+
+**Delivered:**
+- `supabase/migrations/006_auth_multitenancy.sql`: `orgs`, `org_memberships`, `org_invites` tables; `auth_org_ids()` RLS helper; `org_id` added to all data tables; PostgreSQL trigger auto-creates org + owner membership on `auth.users` insert
+- `web/middleware.ts`: Supabase SSR session refresh on every request; `/app/*` → `/login` redirect for unauthenticated users; transparent bypass when `NEXT_PUBLIC_SUPABASE_ANON_KEY` is not set (local dev / file-fallback mode)
+- `lib/supabase/browser.ts`: `createBrowserClient` using `NEXT_PUBLIC_` vars
+- `lib/supabase/server.ts`: `createServerClient` (cookie-based), `getAuthUser()` returns user + org + role server-side
+- `/auth/callback`: OAuth + magic link PKCE exchange handler
+- `/(auth)/login`: magic link OTP + Google OAuth; new users get org auto-created by DB trigger
+- `/(auth)/invite`: token-based invite acceptance (links existing account to invited org)
+- `POST /api/auth/invite` (accept) · `PUT` (send) · `GET` (lookup) · `DELETE` (revoke)
+- `GET /api/auth/members`, `GET /api/auth/invite/list`: org member + invite list APIs
+- `AppProvider`: `initialUser` prop, `currentUser: AppUser | null` in context
+- `AppShell` + `AppSidebar`: server-resolved user flows client-side; `UserMenu` component replaces hardcoded logout link — real Supabase `signOut()`, settings link, org identity display
+- `OrgCard` (Settings): members list, pending invites, invite-by-email form with shareable link; admin/owner gated; graceful no-auth fallback
+- `.env.example`: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `NEXT_PUBLIC_BASE_URL`
+- **References:** `web/middleware.ts`, `web/lib/supabase/`, `web/app/(auth)/`, `web/app/api/auth/`, `web/components/auth/`, `web/components/layout/UserMenu.tsx`, `web/components/settings/OrgCard.tsx`
 
 ### B-7 · Real BIR EIS integration (PTT certification path) · `P2` · 📋 committed
 Replace the mock BIR endpoint and mock JWS with the real BIR EIS API and a

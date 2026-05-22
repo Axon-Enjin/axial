@@ -1,5 +1,5 @@
-import { acknowledgeEisSubmission } from "./bir-mock";
-import { signEisPayloadMock } from "./jws";
+import { getBirEisClient } from "./bir-client";
+import { signEisPayload } from "./jws";
 import { writeBirMemoToStellar } from "./memo";
 import { mapLedgerEventToEisPayload } from "./schema";
 import {
@@ -29,7 +29,8 @@ export async function processLedgerEvent(
   const now = new Date().toISOString();
   const payloadId = existing?.payloadId ?? newPayloadId();
   const payload = mapLedgerEventToEisPayload(event);
-  const jwsCompact = signEisPayloadMock(payload);
+  // signEisPayload uses RS256 when BIR_EIS_LIVE=true+key present, HS256 mock otherwise
+  const jwsCompact = signEisPayload(payload);
 
   // T+3 deadline: BIR EIS must be received within 3 calendar days of the transaction
   const dueBy = existing?.dueBy ?? new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString();
@@ -56,12 +57,15 @@ export async function processLedgerEvent(
   sub.jwsCompact = jwsCompact;
   sub.updatedAt = now;
 
+  const birClient = getBirEisClient();
+
   try {
     sub.status = "submitted";
     sub.submittedAt = new Date().toISOString();
     sub = await upsertSubmission(sub);
 
-    const ack = acknowledgeEisSubmission(jwsCompact, payloadId);
+    // Submit to BIR EIS (mock or live depending on BIR_EIS_LIVE env var)
+    const ack = await birClient.submit(jwsCompact, payloadId);
     sub.status = "acknowledged";
     sub.birReferenceId = ack.birReferenceId;
     sub.updatedAt = new Date().toISOString();
