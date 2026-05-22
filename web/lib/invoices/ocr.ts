@@ -54,6 +54,7 @@ async function initWorker(): Promise<Worker> {
   const worker = await createWorker("eng", 1, {
     cachePath,
     langPath,
+    gzip: false, // Docker bakes uncompressed eng.traineddata (not .gz)
     logger: () => {},
   });
   await worker.setParameters({

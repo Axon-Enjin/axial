@@ -35,10 +35,6 @@ ENV NEXT_TELEMETRY_DISABLED=1
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 
-# Download and bake Tesseract OCR English trained data
-ADD https://github.com/tesseract-ocr/tessdata_fast/raw/main/eng.traineddata ./eng.traineddata
-RUN chown nextjs:nodejs ./eng.traineddata
-
 COPY --from=builder /app/public ./public
 
 # Set the correct permission for prerender cache
@@ -60,6 +56,10 @@ COPY --from=builder --chown=nextjs:nodejs /app/node_modules/node-fetch ./node_mo
 COPY --from=builder --chown=nextjs:nodejs /app/node_modules/regenerator-runtime ./node_modules/regenerator-runtime
 COPY --from=builder --chown=nextjs:nodejs /app/node_modules/wasm-feature-detect ./node_modules/wasm-feature-detect
 COPY --from=builder --chown=nextjs:nodejs /app/node_modules/zlibjs ./node_modules/zlibjs
+
+# After standalone copy — tesseract reads langPath/eng.traineddata (gzip: false in ocr.ts)
+ADD https://github.com/tesseract-ocr/tessdata_fast/raw/main/eng.traineddata ./eng.traineddata
+RUN chown nextjs:nodejs ./eng.traineddata
 
 USER nextjs
 
