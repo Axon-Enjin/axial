@@ -21,6 +21,8 @@
     }
 
     :root {
+      --deck-w: 1024px;
+      --deck-h: 576px;
       --obsidian: #0A0F1C;
       --deep-slate: #131B2E;
       --surface: #1A2340;
@@ -48,15 +50,25 @@
       overflow: hidden;
       height: 100vh;
       width: 100vw;
+      display: flex;
+      align-items: center;
+      justify-content: center;
       -webkit-font-smoothing: antialiased;
       -moz-osx-font-smoothing: grayscale;
     }
 
     /* ─── Slide Container ─── */
+    .deck-stage {
+      position: relative;
+      aspect-ratio: 16 / 9;
+      width: min(100vw, calc(100vh * 16 / 9));
+      height: min(100vh, calc(100vw * 9 / 16));
+    }
+
     .deck {
       position: relative;
-      width: 100vw;
-      height: 100vh;
+      width: 100%;
+      height: 100%;
     }
 
     .slide {
@@ -67,12 +79,32 @@
       justify-content: center;
       align-items: center;
       padding: 4rem 6rem;
+      overflow: hidden;
       opacity: 0;
       transform: translateY(30px);
       transition: opacity 0.6s cubic-bezier(0.22, 1, 0.36, 1),
         transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
       pointer-events: none;
       will-change: opacity, transform;
+    }
+
+    .slide-compact {
+      padding: 2rem 4rem;
+      justify-content: flex-start;
+    }
+
+    .slide-compact .subtitle {
+      margin-top: 0.75rem;
+    }
+
+    .slide-compact .grid-3,
+    .slide-compact .grid-2 {
+      margin-top: 1.25rem;
+      gap: 1rem;
+    }
+
+    .slide-compact .glass-sm {
+      padding: 1rem;
     }
 
     .slide.active {
@@ -88,7 +120,7 @@
 
     /* ─── Background Effects ─── */
     .bg-gradient {
-      position: fixed;
+      position: absolute;
       inset: 0;
       z-index: -1;
       background:
@@ -98,7 +130,7 @@
     }
 
     .noise {
-      position: fixed;
+      position: absolute;
       inset: 0;
       z-index: -1;
       opacity: 0.015;
@@ -441,7 +473,7 @@
       letter-spacing: 0.15em;
       text-transform: uppercase;
       color: var(--teal);
-      position: fixed;
+      position: absolute;
       top: 2rem;
       left: 3rem;
       z-index: 100;
@@ -535,7 +567,7 @@
     }
 
     .watermark {
-      position: fixed;
+      position: absolute;
       bottom: 2rem;
       right: 3rem;
       font-size: 0.6rem;
@@ -624,17 +656,61 @@
         grid-template-columns: 1fr;
       }
     }
+
+    @media print {
+      .nav,
+      .watermark,
+      .logo-mark {
+        display: none !important;
+      }
+
+      body {
+        overflow: visible;
+        width: var(--deck-w);
+        display: block;
+      }
+
+      .deck-stage {
+        width: var(--deck-w);
+        height: auto;
+        aspect-ratio: auto;
+      }
+
+      .deck {
+        width: var(--deck-w);
+        height: auto;
+      }
+
+      .slide {
+        position: relative;
+        opacity: 1;
+        transform: none;
+        width: var(--deck-w);
+        height: var(--deck-h);
+        page-break-after: always;
+        page-break-inside: avoid;
+        overflow: hidden;
+        pointer-events: auto;
+      }
+
+      .stagger>* {
+        opacity: 1;
+        transform: translateY(0);
+        transition-delay: 0s;
+      }
+    }
   </style>
 </head>
 
 <body>
 
-  <div class="bg-gradient"></div>
-  <div class="noise"></div>
-  <div class="logo-mark">Axial</div>
-  <div class="watermark">Confidential · May 2026</div>
+  <div class="deck-stage">
+    <div class="bg-gradient"></div>
+    <div class="noise"></div>
+    <div class="logo-mark">Axial</div>
+    <div class="watermark">Confidential · May 2026</div>
 
-  <div class="deck">
+    <div class="deck">
 
     <!-- ═══════════ SLIDE 1: TITLE ═══════════ -->
     <div class="slide content-center active" data-slide="0">
@@ -944,52 +1020,44 @@
     </div>
 
     <!-- ═══════════ SLIDE 10: TRACTION ═══════════ -->
-    <div class="slide content-left" data-slide="9">
+    <div class="slide slide-compact content-left" data-slide="9">
       <div class="stagger full-width">
         <span class="slide-label">Traction</span>
         <h2 style="font-size: clamp(1.6rem, 2.8vw, 2.2rem);">Built and deployed in 7 days</h2>
-        <p class="subtitle">4 Soroban contracts deployed to Mainnet. Full pipeline live on Stellar Mainnet.</p>
+        <p class="subtitle" style="max-width: none;">4 Soroban contracts on Mainnet · full pipeline live on Stellar</p>
 
-        <div class="grid-3" style="margin-top: 2.5rem;">
+        <div class="grid-3">
           <div class="glass-sm" style="text-align: center;">
-            <div class="stat-value teal" style="font-size: 2.5rem;">4</div>
-            <div class="stat-label">Soroban contracts deployed to Mainnet<br>(receivable_token, axial_swap, payroll_split, settlement)</div>
+            <div class="stat-value teal" style="font-size: 2.25rem;">4</div>
+            <div class="stat-label">Soroban contracts on Mainnet</div>
           </div>
           <div class="glass-sm" style="text-align: center;">
-            <div class="stat-value emerald" style="font-size: 2.5rem;">E2E</div>
-            <div class="stat-label">Full pipeline on Stellar Mainnet<br>Mint → Swap → Split → EIS → Memo</div>
+            <div class="stat-value emerald" style="font-size: 2.25rem;">E2E</div>
+            <div class="stat-label">Mint → Swap → Split → EIS → Memo</div>
           </div>
           <div class="glass-sm" style="text-align: center;">
-            <div class="stat-value amber" style="font-size: 2.5rem;">Live</div>
-            <div class="stat-label">Deployed on Google Cloud Run<br>Dark glassmorphic 4-tab UI</div>
+            <div class="stat-value amber" style="font-size: 2.25rem;">Live</div>
+            <div class="stat-label">Deployed on Google Cloud Run</div>
           </div>
         </div>
 
-        <div class="grid-2" style="margin-top: 1.5rem;">
+        <div class="grid-2">
           <div class="glass-sm">
             <h3 style="font-size: 0.85rem; margin-bottom: 0.5rem;">What's Real</h3>
-            <ul style="font-size: 0.8rem; color: var(--silver); line-height: 1.7; list-style: none; padding: 0;">
+            <ul style="font-size: 0.75rem; color: var(--silver); line-height: 1.45; list-style: none; padding: 0;">
               <li><span class="teal">✓</span> Real USDC atomic swaps on Stellar</li>
-              <li><span class="teal">✓</span> BIR EIS oracle — 20 fields, JWS-signed</li>
+              <li><span class="teal">✓</span> BIR EIS oracle — JWS-signed, T+3 automated</li>
               <li><span class="teal">✓</span> Statutory payroll split (SSS/PhilHealth/Pag-IBIG)</li>
-              <li><span class="teal">✓</span> Stellar memo write-back of BIR reference</li>
-              <li><span class="teal">✓</span> Invoice upload + OCR</li>
-              <li><span class="teal">✓</span> Freighter self-custody wallet</li>
               <li><span class="teal">✓</span> Payer portal + NoA issue/ack</li>
-              <li><span class="teal">✓</span> Lockbox funding via Freighter (USDC to settlement contract)</li>
               <li><span class="teal">✓</span> Multi-tenant auth & org management</li>
-              <li><span class="teal">✓</span> Automated T+3 compliance worker</li>
             </ul>
           </div>
           <div class="glass-sm">
             <h3 style="font-size: 0.85rem; margin-bottom: 0.5rem;">Post-Hackathon Priorities</h3>
-            <ul style="font-size: 0.8rem; color: var(--silver); line-height: 1.7; list-style: none; padding: 0;">
-              <li><span class="teal">✓</span> Payer portal, NoA, <code style="font-size:0.75rem;">register_invoice</code>, Freighter lockbox funding</li>
-              <li><span class="amber">○</span> On-chain <code style="font-size:0.75rem;">settle</code> + reconcile (B-2 S5)</li>
+            <ul style="font-size: 0.75rem; color: var(--silver); line-height: 1.45; list-style: none; padding: 0;">
+              <li><span class="amber">○</span> On-chain <code style="font-size:0.7rem;">settle</code> + reconcile (B-2 S5)</li>
               <li><span class="amber">○</span> BIR PTT certification</li>
               <li><span class="amber">○</span> PDAX Connect integration (PHP rail)</li>
-              <li><span class="amber">○</span> Liquidity provider partnerships</li>
-              <li><span class="amber">○</span> Legal review of NoA + statutory tables</li>
             </ul>
           </div>
         </div>
@@ -1126,6 +1194,7 @@
       </div>
     </div>
 
+    </div>
   </div>
 
   <!-- Navigation -->
