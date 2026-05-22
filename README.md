@@ -304,7 +304,7 @@ See [`docs/vercel-deployment.md`](docs/vercel-deployment.md) for Vercel-specific
 ## 🎥 Demo
 
 - 🎬 **Demo Video:** [YouTube](https://youtu.be/6-CpnsPGJK0)
-- 🔗 **Live App:** _Deployed on Vercel (https://axial-hackathon.vercel.app - Replace with actual URL)_
+- 🔗 **Live App:** [Axial](https://axial.axonenjin.com)
 - 🖼️ **Pitch Deck:** [Interactive HTML](docs/pitch-deck.html) | [PDF Export](docs/pitch-deck.pdf)
 
 ### Demo Walkthrough
