@@ -65,16 +65,19 @@ export async function middleware(request: NextRequest) {
     return supabaseResponse;
   }
 
+  // Safe base URL for external redirects (fixes 0.0.0.0 proxy redirect issues in containers)
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || url.origin;
+
   // Redirect unauthenticated users trying to access protected app routes
   if (isAppRoute && !user) {
-    const loginUrl = new URL("/login", url);
+    const loginUrl = new URL("/login", baseUrl);
     loginUrl.searchParams.set("next", url.pathname);
     return NextResponse.redirect(loginUrl);
   }
 
   // Redirect authenticated users away from auth pages
   if (isAuthRoute && user) {
-    return NextResponse.redirect(new URL("/app", url));
+    return NextResponse.redirect(new URL("/app", baseUrl));
   }
 
   return supabaseResponse;

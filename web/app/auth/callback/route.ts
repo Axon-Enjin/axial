@@ -19,9 +19,12 @@ export async function GET(request: NextRequest) {
   const error = url.searchParams.get("error");
   const errorDescription = url.searchParams.get("error_description");
 
+  // Safe base URL for external redirects (fixes 0.0.0.0 proxy redirect issues in containers)
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || url.origin;
+
   // Propagate auth errors back to login page
   if (error) {
-    const loginUrl = new URL("/login", url);
+    const loginUrl = new URL("/login", baseUrl);
     loginUrl.searchParams.set("error", errorDescription ?? error);
     return NextResponse.redirect(loginUrl);
   }
@@ -32,19 +35,19 @@ export async function GET(request: NextRequest) {
       await supabase.auth.exchangeCodeForSession(code);
 
     if (exchangeError) {
-      const loginUrl = new URL("/login", url);
+      const loginUrl = new URL("/login", baseUrl);
       loginUrl.searchParams.set("error", exchangeError.message);
       return NextResponse.redirect(loginUrl);
     }
 
     // If this was an invite acceptance, redirect to the invite page to finalize
     if (inviteToken) {
-      const inviteUrl = new URL("/invite", url);
+      const inviteUrl = new URL("/invite", baseUrl);
       inviteUrl.searchParams.set("token", inviteToken);
       return NextResponse.redirect(inviteUrl);
     }
   }
 
   // Successful auth — redirect to intended destination
-  return NextResponse.redirect(new URL(next, url));
+  return NextResponse.redirect(new URL(next, baseUrl));
 }
