@@ -14,6 +14,7 @@ export type TestnetDeployment = {
     axial_swap?: string | null;
     receivable_token?: string | null;
     payroll_split?: string | null;
+    settlement?: string | null;
     usdc_token?: string | null;
   };
 };

@@ -6,6 +6,11 @@ import { mintReceivableOnChain } from "@/lib/soroban/invoke-receivable";
 type Body = {
   invoiceId?: string;
   faceAmount?: number;
+  /**
+   * Optional Freighter wallet public key. When present, the receivable SAC
+   * token is minted directly to the user's self-custodied wallet.
+   */
+  msmePublic?: string;
 };
 
 export async function POST(request: Request) {
@@ -18,6 +23,7 @@ export async function POST(request: Request) {
 
   const invoiceId = body.invoiceId?.trim();
   const faceAmount = body.faceAmount;
+  const msmePublicOverride = body.msmePublic?.trim() || undefined;
 
   if (!invoiceId) {
     return NextResponse.json({ error: "invoiceId is required" }, { status: 400 });
@@ -42,7 +48,7 @@ export async function POST(request: Request) {
   }
 
   try {
-    const result = await mintReceivableOnChain(cfg, invoiceId, faceAmount!);
+    const result = await mintReceivableOnChain(cfg, invoiceId, faceAmount!, msmePublicOverride);
     triggerEisFromChain("receivable_minted", invoiceId, result.txHash, faceAmount!);
     return NextResponse.json({
       mode: "on-chain",

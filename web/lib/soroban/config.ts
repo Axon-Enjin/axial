@@ -114,6 +114,14 @@ export function isPayrollChainEnabled(cfg: SorobanConfig = getSorobanConfig()) {
   );
 }
 
+/**
+ * Whether the server can build an unsigned payroll XDR for Freighter signing.
+ * Requires only the contract ID — not the server-held MSME secret.
+ */
+export function isPayrollBuildEnabled(cfg: SorobanConfig = getSorobanConfig()) {
+  return Boolean(cfg.payrollContractId);
+}
+
 /** Public-only snapshot for UI (no secrets). */
 export function getPublicChainStatus(cfg: SorobanConfig = getSorobanConfig()) {
   return {
@@ -122,13 +130,17 @@ export function getPublicChainStatus(cfg: SorobanConfig = getSorobanConfig()) {
     onChainReady: isSwapChainEnabled(cfg),
     receivableReady: isReceivableChainEnabled(cfg),
     payrollReady: isPayrollChainEnabled(cfg),
+    payrollBuildReady: isPayrollBuildEnabled(cfg),
     swapContractId: cfg.swapContractId,
     receivableContractId: cfg.receivableContractId,
     payrollContractId: cfg.payrollContractId,
+    settlementContractId: cfg.settlementContractId,
     usdcTokenId: cfg.usdcTokenId,
     funderPublic: cfg.funderPublic,
     msmePublic: cfg.msmePublic,
     issuerPublic: cfg.issuerPublic,
+    rpcUrl: cfg.rpcUrl,
+    networkPassphrase: cfg.networkPassphrase,
     explorerContractBase:
       cfg.network === "mainnet"
         ? "https://stellar.expert/explorer/public/contract"

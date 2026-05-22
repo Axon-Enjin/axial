@@ -151,7 +151,7 @@ type ChainStatus = {
 };
 
 export function ComplianceView() {
-  const { dispatch, lastSwapAdvancePhp } = useApp();
+  const { dispatch, lastSwapAdvancePhp, freighterPublicKey, freighterNetwork } = useApp();
   const [chain, setChain] = useState<ChainStatus | null>(null);
   const [quote, setQuote] = useState<PayrollQuote | null>(null);
   const [routing, setRouting] = useState(false);
@@ -215,7 +215,74 @@ export function ComplianceView() {
   const routePayroll = useCallback(async () => {
     setRouting(true);
     const payrollId = `PAY-${Date.now()}`;
+
     try {
+      // ── Freighter self-custody path ────────────────────────────────────────
+      if (freighterPublicKey) {
+        // Step 1: build unsigned XDR on server
+        const buildRes = await fetch("/api/payroll/build", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ payrollId, grossAmount: gross, signerPublic: freighterPublicKey }),
+        });
+        const buildData = (await buildRes.json()) as {
+          xdr?: string;
+          networkPassphrase?: string;
+          quote?: { sss: number; philhealth: number; pagibig: number; net: number };
+          error?: string;
+        };
+        if (!buildRes.ok || !buildData.xdr) {
+          dispatch("payroll-routed", buildData.error ?? `Payroll build failed (${buildRes.status})`);
+          return;
+        }
+
+        // Step 2: sign with Freighter in-browser
+        let signedXdr: string;
+        try {
+          const { signXdrWithFreighter } = await import("@/lib/soroban/freighter");
+          signedXdr = await signXdrWithFreighter(buildData.xdr, {
+            networkPassphrase:
+              buildData.networkPassphrase ??
+              freighterNetwork?.networkPassphrase ??
+              "Test SDF Network ; September 2015",
+            accountToSign: freighterPublicKey,
+          });
+        } catch (signErr) {
+          dispatch(
+            "payroll-routed",
+            signErr instanceof Error ? signErr.message : "Freighter signing cancelled",
+          );
+          return;
+        }
+
+        // Step 3: submit signed XDR
+        const submitRes = await fetch("/api/tx/submit", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ xdr: signedXdr, context: "payroll" }),
+        });
+        const submitData = (await submitRes.json()) as { txHash?: string; error?: string };
+        if (!submitRes.ok) {
+          dispatch("payroll-routed", submitData.error ?? `Payroll submit failed (${submitRes.status})`);
+          return;
+        }
+
+        if (buildData.quote) {
+          setQuote({ gross, ...buildData.quote });
+        }
+        setRouted(true);
+        const hash = submitData.txHash ?? "";
+        if (hash) {
+          setTxHash(hash);
+          dispatch("payroll-routed", `tx:${payrollId}|${hash}`);
+        } else {
+          dispatch("payroll-routed", payrollId);
+        }
+        window.setTimeout(loadEis, 4000);
+        return;
+      }
+
+      // ── Custodial path (server-signed) ─────────────────────────────────────
       const res = await fetch("/api/payroll/route", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -257,7 +324,7 @@ export function ComplianceView() {
     } finally {
       setRouting(false);
     }
-  }, [dispatch, gross, loadEis]);
+  }, [dispatch, gross, loadEis, freighterPublicKey, freighterNetwork]);
 
   const sssAmt = quote?.sss ?? 0;
   const philAmt = quote?.philhealth ?? 0;
@@ -278,10 +345,17 @@ export function ComplianceView() {
         >
           <span className="material-symbols-outlined text-[16px]">account_balance</span>
           <span>
-            {chain.payrollReady
-              ? `Stellar ${chain.network} — statutory payroll routing on-chain`
-              : `Stellar ${chain.network} — demo split (deploy payroll_split + STELLAR_MSME_SECRET)`}
+            {freighterPublicKey
+              ? `Stellar ${chain.network} — payroll signed by your Freighter wallet (self-custody)`
+              : chain.payrollReady
+                ? `Stellar ${chain.network} — statutory payroll routing on-chain`
+                : `Stellar ${chain.network} — demo split (deploy payroll_split + STELLAR_MSME_SECRET)`}
           </span>
+          {freighterPublicKey ? (
+            <span className="ml-auto font-mono text-xs opacity-80">
+              {freighterPublicKey.slice(0, 6)}…{freighterPublicKey.slice(-4)}
+            </span>
+          ) : null}
           {chain.payrollContractId ? (
             <a
               href={`https://stellar.expert/explorer/testnet/contract/${chain.payrollContractId}`}

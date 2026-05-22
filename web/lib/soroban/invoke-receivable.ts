@@ -33,6 +33,13 @@ export async function mintReceivableOnChain(
   cfg: SorobanConfig,
   invoiceId: string,
   faceAmount: number,
+  /**
+   * Optional Freighter wallet public key to use as the receivable token recipient.
+   * When provided, the SAC token is minted directly to the user's self-custodied
+   * wallet instead of the server-managed MSME account.
+   * Falls back to cfg.msmePublic if not set.
+   */
+  msmePublicOverride?: string,
 ): Promise<MintReceivableResult> {
   if (
     !cfg.receivableContractId ||
@@ -42,6 +49,8 @@ export async function mintReceivableOnChain(
   ) {
     throw new Error("Soroban receivable env is not configured");
   }
+
+  const msmePublic = msmePublicOverride ?? cfg.msmePublic;
 
   const server = new rpc.Server(cfg.rpcUrl);
   const issuer = Keypair.fromSecret(cfg.issuerSecret);
@@ -60,7 +69,7 @@ export async function mintReceivableOnChain(
       contract.call(
         "mint",
         new Address(cfg.issuerPublic).toScVal(),
-        new Address(cfg.msmePublic).toScVal(),
+        new Address(msmePublic).toScVal(),
         nativeToScVal(invoiceId, { type: "string" }),
         nativeToScVal(BigInt(Math.trunc(faceAmount)), { type: "i128" }),
       ),

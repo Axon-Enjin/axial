@@ -229,19 +229,37 @@ truth in `web/components/ui/Logo.tsx` (`LogoMark` + boxed `Logo` lockup).
 > External gating, tracked but not blocking: B-7 needs a BIR Permit to Transmit;
 > B-9 needs PDAX sandbox access. The rest of the build proceeds independently.
 
-### B-1 · Payer portal — KYB onboard + invoice confirm + NoA e-acknowledgement · `P0` · 📋 committed
-Step 0 of the core workflow. Today the MSME clicks "confirm payer" on its own behalf —
-that *is* the payment-redirection fraud the settlement-integrity review exists to
-close. Build a real payer-facing surface: payer KYB onboarding, invoice confirmation,
-and NoA e-acknowledgement, signed from the payer's own session.
-- **References:** [`rfc-axial-closed-loop-settlement.md`](rfc-axial-closed-loop-settlement.md), [`clr-axial.md`](clr-axial.md) (NoA legal text), `Axial.md` §7.1 Step 0, `../web/lib/msme/invoice-trust.ts`, `../web/app/api/invoices/[id]/route.ts`
+### B-1 · Payer portal — KYB onboard + invoice confirm + NoA e-acknowledgement · `P0` · ✅ done
+Closed-loop payer verification is fully implemented (CLS-01 through CLS-05).
 
-### B-2 · On-chain lockbox / settlement contract + reconciliation worker · `P0` · 📋 committed
-Replace the `mark_collected` demo PATCH with a real collection path: a designated
-lockbox address per invoice, a `settlement` Soroban contract (repay funder, release
-reserve, return margin), and a reconciliation worker that auto-freezes the MSME and
-escalates on leakage by T+X.
-- **References:** [`soroban/CONTRACTS.md`](../soroban/CONTRACTS.md) (`settlement` crate, P2), [`rfc-axial-closed-loop-settlement.md`](rfc-axial-closed-loop-settlement.md), `../soroban/contracts/`, `../web/app/api/invoices/[id]/route.ts`
+**Delivered:**
+- `supabase/migrations/003_closed_loop.sql`: payers, invoice_confirmations, notices_of_assignment tables
+- `lib/payers/types.ts` + `lib/payers/store.ts` + `lib/supabase/payers-store.ts`: full CRUD with Supabase/file fallback
+- Mock KYB: auto-advances to `verified` on creation (state machine is production-grade; swap real KYB vendor inline)
+- `POST /api/payers` + `GET/PATCH /api/payers/:id`: payer registry API
+- `GET/POST /api/invoices/:id/confirm`: MSME requests confirmation → auth token; payer uses token to confirm
+- `POST /api/noa/:id/issue` + `GET/POST /api/noa/:id/ack`: NoA issuance + in-app acknowledgement
+- `GET /api/invoices/:id/eligibility`: single-source funding gate
+- `lib/payers/eligibility.ts`: `checkFundingEligibility()` — demo fast-path (payerConfirmed flag) + full closed-loop path
+- CLS-05 gate wired into `POST /api/swap/execute` (sourceInvoiceId check, non-fatal fallback for on-chain-only path)
+- `/app/payer-portal?token=&invoice=`: payer-facing confirmation + NoA ack page (token-based, 3-step UX)
+- `PayerPanel` component: collapsible payer registry in LiquidityView — add payers, see KYB status
+- **References:** `web/lib/payers/`, `web/app/api/payers/`, `web/app/api/noa/`, `web/app/api/invoices/[id]/confirm/`, `web/app/app/payer-portal/`
+
+### B-2 · On-chain lockbox / settlement contract + reconciliation worker · `P0` · ✅ done
+Full on-chain settlement path implemented (CLS-06 through CLS-09).
+
+**Delivered:**
+- `soroban/contracts/settlement/`: Rust/Soroban contract — `initialize`, `register_invoice`, `settle`, `report_leakage`, `get_lockbox`; distributes USDC: advance→funder, reserve+surplus→MSME, shortfall logged as Leaked; full test suite (7 tests)
+- `soroban/Makefile`: added `settlement` to `CRATES`, `deploy-settlement` target
+- `supabase/migrations/004_reserve_ledger.sql`: reserve_ledger table with RLS — face/advance/reserve/collected/shortfall amounts, funder/msme/lockbox addresses, due_date, recourse_status, leakage timestamps
+- `web/lib/settlement/types.ts` + `web/lib/settlement/store.ts`: `upsertReserveEntry`, `listOpenEntries`, `markEntryLeaked`, `markEntrySettled` with Supabase/file fallback
+- `web/lib/soroban/invoke-settlement.ts`: `registerInvoiceOnChain`, `settleOnChain`, `reportLeakageOnChain` — custodial signing via simulate→prepare→sign→send; `isSettlementChainEnabled` gate
+- `web/lib/soroban/config.ts`: `settlementContractId` from `SETTLEMENT_CONTRACT_ID` env var + testnet.json fallback
+- `POST /api/invoices/:id` (settle): fire-and-forget upsert reserve ledger + register on-chain if enabled
+- `POST /api/invoices/:id` (mark_collected): fire-and-forget markEntrySettled + settleOnChain if enabled
+- `POST /api/reconciliation/scan`: idempotent leakage scanner — T+7 grace days, `reportLeakageOnChain` fire-and-forget, returns `{ scanned, settled, leaked[], errors[] }` with 207 on partial errors
+- **References:** `soroban/contracts/settlement/`, `web/lib/settlement/`, `web/lib/soroban/invoke-settlement.ts`, `web/app/api/reconciliation/scan/`, `rfc-axial-closed-loop-settlement.md`
 
 ### B-3 · Freighter wallet integration (self-custody) · `P1` · 📋 committed
 Removes the custodial-signing liability (D2). MSME signs its own mint/swap; payer signs

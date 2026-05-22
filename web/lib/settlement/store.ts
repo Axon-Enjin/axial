@@ -143,7 +143,6 @@ export async function markEntryLeaked(
     ...entry,
     recourseStatus: "triggered" as RecourseStatus,
     leakageDetectedAt: now,
-    updatedAt: now,
   });
 }
 
@@ -163,7 +162,6 @@ export async function markEntrySettled(
     settlementTxHash: data.settlementTxHash ?? null,
     recourseStatus: shortfall > 0 ? "triggered" : "none",
     releasedAt: shortfall === 0 ? now : null,
-    updatedAt: now,
   });
 }
 

@@ -186,7 +186,8 @@ type ChainStatus = {
 };
 
 export function LiquidityView() {
-  const { dispatch, setLastSwapAdvancePhp, setProgressToast, dismissToast } = useApp();
+  const { dispatch, setLastSwapAdvancePhp, setProgressToast, dismissToast, freighterPublicKey } =
+    useApp();
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -439,12 +440,14 @@ export function LiquidityView() {
       setSwapStep("mint");
       setPipelineStage("minting");
       const chainInvoiceId = `${id}-${Date.now()}`;
+      // If Freighter is connected, route assets to the user's self-custodied wallet
+      const msmePublic = freighterPublicKey ?? undefined;
 
       try {
         const mintRes = await fetch("/api/receivable/mint", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ invoiceId: chainInvoiceId, faceAmount: face }),
+          body: JSON.stringify({ invoiceId: chainInvoiceId, faceAmount: face, msmePublic }),
         });
         const mintData = (await mintRes.json()) as {
           mode?: string;
@@ -463,7 +466,7 @@ export function LiquidityView() {
         const res = await fetch("/api/swap/execute", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ invoiceId: chainInvoiceId, faceAmount: face, sourceInvoiceId: id }),
+          body: JSON.stringify({ invoiceId: chainInvoiceId, faceAmount: face, sourceInvoiceId: id, msmePublic }),
         });
         const data = (await res.json()) as {
           mode?: string;

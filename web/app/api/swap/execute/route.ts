@@ -10,6 +10,12 @@ type Body = {
   faceAmount?: number;
   /** Stored invoice ID (without timestamp suffix) for eligibility check. */
   sourceInvoiceId?: string;
+  /**
+   * Optional Freighter wallet public key. When present, the USDC advance
+   * is routed to the user's self-custodied wallet (Freighter address)
+   * instead of the server-managed MSME account.
+   */
+  msmePublic?: string;
 };
 
 export async function POST(request: Request) {
@@ -27,6 +33,8 @@ export async function POST(request: Request) {
   const sourceInvoiceId =
     body.sourceInvoiceId?.trim() ??
     (invoiceId ? invoiceId.replace(/-\d{10,}$/, "") : undefined);
+  // Freighter self-custody: override the MSME recipient with the user's own wallet
+  const msmePublicOverride = body.msmePublic?.trim() || undefined;
 
   if (!invoiceId) {
     return NextResponse.json({ error: "invoiceId is required" }, { status: 400 });
@@ -75,7 +83,7 @@ export async function POST(request: Request) {
   }
 
   try {
-    const onChain = await executeAdvanceOnChain(cfg, invoiceId, faceAmount!);
+    const onChain = await executeAdvanceOnChain(cfg, invoiceId, faceAmount!, msmePublicOverride);
     triggerEisFromChain(
       "swap_executed",
       invoiceId,

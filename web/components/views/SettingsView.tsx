@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { PdaxRampCard } from "@/components/settings/PdaxRampCard";
+import { WalletCard } from "@/components/settings/WalletCard";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { Icon } from "@/components/ui/Icon";
@@ -137,7 +138,6 @@ export function SettingsView() {
     factoring: true,
     statutory: false,
   });
-  const [lenderLimit, setLenderLimit] = useState("250000");
   const [auditLogs, setAuditLogs] = useState<AuditRow[]>([]);
   const [auditLoading, setAuditLoading] = useState(true);
 
@@ -209,46 +209,7 @@ export function SettingsView() {
         </div>
 
         <div className="md:col-span-4">
-          <Card className="h-full">
-            <div className="mb-5 flex items-center gap-2.5">
-              <Icon name="account_balance_wallet" size={22} />
-              <h3 className="font-headline-md text-headline-md text-on-surface">
-                Stellar Wallet & Liquidity
-              </h3>
-            </div>
-
-            <div className="mb-4 rounded-lg border border-outline-variant/30 bg-surface-container-low p-3.5">
-              <div className="mb-1.5 font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant">
-                Primary Treasury Public Key
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="font-mono text-sm font-medium text-on-surface">GC02…X9L4M</span>
-                <Icon name="content_copy" size={16} className="text-on-surface-variant" />
-              </div>
-            </div>
-
-            <div className="flex flex-col gap-3.5">
-              <div className="flex flex-col gap-1.5">
-                <label className="font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant">
-                  Default Liquidity Pool
-                </label>
-                <div className="flex cursor-pointer items-center justify-between rounded-lg border border-outline-variant/60 bg-surface-container px-3 py-2.5 font-body-md text-body-md text-on-surface">
-                  Axial Prime Treasury (USDC)
-                  <Icon name="keyboard_arrow_down" size={18} className="text-on-surface-variant" />
-                </div>
-              </div>
-
-              <Field
-                label="Lender Preference Limit"
-                value={lenderLimit}
-                onChange={setLenderLimit}
-                mono
-                after={
-                  <span className="font-label-md text-label-md text-on-surface-variant">USDC</span>
-                }
-              />
-            </div>
-          </Card>
+          <WalletCard />
         </div>
       </div>
 
