@@ -283,6 +283,32 @@ export function OverviewView() {
                     Transfer
                   </Button>
                 </div>
+                <div className="mt-6 sm:mt-8 grid grid-cols-3 gap-3 sm:gap-4">
+                  <div className="rounded-lg border border-outline-variant/10 bg-surface-container-low p-3 sm:p-3.5">
+                    <p className="font-label-sm text-[10px] sm:text-label-sm uppercase tracking-wider text-outline">
+                      Funded
+                    </p>
+                    <p className="mt-1 font-headline-sm text-[18px] sm:text-headline-sm text-on-surface">
+                      {summary?.book?.settledCount ?? 0}
+                    </p>
+                  </div>
+                  <div className="rounded-lg border border-outline-variant/10 bg-surface-container-low p-3 sm:p-3.5">
+                    <p className="font-label-sm text-[10px] sm:text-label-sm uppercase tracking-wider text-outline">
+                      Fundable
+                    </p>
+                    <p className="mt-1 font-headline-sm text-[18px] sm:text-headline-sm text-on-surface">
+                      {summary?.book?.fundableCount ?? 0}
+                    </p>
+                  </div>
+                  <div className="rounded-lg border border-outline-variant/10 bg-surface-container-low p-3 sm:p-3.5">
+                    <p className="font-label-sm text-[10px] sm:text-label-sm uppercase tracking-wider text-outline">
+                      Total
+                    </p>
+                    <p className="mt-1 font-headline-sm text-[18px] sm:text-headline-sm text-on-surface">
+                      {summary?.book?.totalInvoices ?? 0}
+                    </p>
+                  </div>
+                </div>
               </div>
               <StatusBadge kind={chain?.onChainReady ? "active" : "scanning"}>
                 {networkLabel}
