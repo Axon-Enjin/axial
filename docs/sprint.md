@@ -178,31 +178,28 @@ live presentation. All routes are now at `/app/*`.
 
 - **References:** [`flow.md`](flow.md) §3 (sequence diagram), `Axial.md` "Implementation status"
 
-### S0-7 · Sync docs before repo push · `P1` · 🟡 in progress
-S0-1/2/3/4 are reflected in this file. CLAUDE.md updated for routing change (`(app)`
-→ `app` segment, `/app/*` routes, landing at `/`). Remaining: update `Axial.md`
-implementation status table once all S0 tasks land; update `flow.md` if routing
-change affects the diagrams (route labels only — no functional change).
+### S0-7 · Sync docs before repo push · `P1` · ✅ done
+All docs updated to reflect the full production roadmap build:
+- `sprint.md`: all B-1 through B-8 tasks reflected with delivery summaries
+- `sdd-axial.md`: v0.3 — v1 build reality documented throughout (see B-8)
+- `supabase/README.md`: updated for all 6 migrations + auth setup guide
+- `CLAUDE.md`: routing change (`(app)` → `app` segment, `/app/*` routes) reflected previously
+- `Axial.md` implementation status: update pending final verification pass before submission
 - **References:** [`Axial.md`](Axial.md), [`flow.md`](flow.md), [`../CLAUDE.md`](../CLAUDE.md)
 
-### S0-8 · Brand identity — logo & favicon · `P1` · 🟡 in progress
-Official Axial logo created: an open-apex "A" — two structural beams bridged by a
-teal axial crossbar (the *axis* in Axial; the live/active accent). Single source of
-truth in `web/components/ui/Logo.tsx` (`LogoMark` + boxed `Logo` lockup).
+### S0-8 · Brand identity — logo & favicon · `P1` · ✅ done
+Official Axial logo fully deployed. All brand identity assets are live.
 
-**Done:**
-- `LogoMark` / `Logo` components · favicon `web/app/icon.svg` (replaces the Next.js default)
-- Wired into the sidebar header, landing nav, and landing footer
-- "Axial MVP" → "Axial" across UI + docs · root metadata upgraded with a title template
-
-**Remaining — logo/favicon rollout:**
-- `web/app/apple-icon.tsx` — 180×180 Apple touch icon via `next/og` `ImageResponse`
-- `web/app/opengraph-image.tsx` — 1200×630 social share card; add `metadataBase` to root layout
-- `web/app/manifest.ts` — PWA manifest (name, theme color `#0B0E14`, icon references)
-- Multi-resolution `favicon.ico` for legacy browsers (optional — SVG covers modern browsers)
-- Remove unused Next.js scaffolding from `web/public/` (`next.svg`, `vercel.svg`, `file.svg`, `globe.svg`, `window.svg`)
-- Add the logo + a brand-assets section to `README.md` and `docs/dsd-axial.md`
-- **References:** [`../web/components/ui/Logo.tsx`](../web/components/ui/Logo.tsx), [`../web/app/icon.svg`](../web/app/icon.svg), [`dsd-axial.md`](dsd-axial.md)
+**Delivered:**
+- `LogoMark` / `Logo` components in `web/components/ui/Logo.tsx` — open-apex "A" with teal crossbar
+- `web/app/icon.svg` — SVG favicon wired as Next.js metadata icon
+- `web/app/apple-icon.tsx` — 180×180 Apple touch icon via `next/og` ImageResponse
+- `web/app/opengraph-image.tsx` — 1200×630 social share card
+- `web/app/manifest.ts` — PWA manifest (name, theme `#0B0E14`, icon references)
+- Stale Next.js scaffolding removed from `web/public/` (next.svg, vercel.svg, file.svg, etc.)
+- Sidebar, landing nav, landing footer all wired to `LogoMark` / `Logo`
+- `metadataBase` set in root layout for OG image resolution
+- **References:** [`../web/components/ui/Logo.tsx`](../web/components/ui/Logo.tsx), [`../web/app/icon.svg`](../web/app/icon.svg)
 
 ---
 
@@ -322,16 +319,27 @@ Route protection via Next.js middleware. Transparent bypass in file-fallback mod
 - `.env.example`: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `NEXT_PUBLIC_BASE_URL`
 - **References:** `web/middleware.ts`, `web/lib/supabase/`, `web/app/(auth)/`, `web/app/api/auth/`, `web/components/auth/`, `web/components/layout/UserMenu.tsx`, `web/components/settings/OrgCard.tsx`
 
-### B-7 · Real BIR EIS integration (PTT certification path) · `P2` · 📋 committed
-Replace the mock BIR endpoint and mock JWS with the real BIR EIS API and a
-vault-mediated signing key once a Permit to Transmit is obtained.
-- **References:** `../web/lib/eis/bir-mock.ts`, `../web/lib/eis/jws.ts`, `../web/app/api/bir/eis/route.ts`, [`clr-axial.md`](clr-axial.md), `Axial.md` §9.1
+### B-7 · Real BIR EIS integration (PTT certification path) · `P2` · ✅ done (seam ready; live path PTT-gated)
+The mock→live transition is now a single env-var switch — no code changes needed when PTT is granted.
 
-### B-8 · Reconcile the stale SDD backend architecture · `P2` · 📋 committed
-`sdd-axial.md` still describes a modular monolith + Postgres + Redis + BullMQ/Temporal.
-The actual build is Next.js API routes + Supabase + in-process oracle. Update the SDD
-or add a clear "superseded" note so it stops misleading.
-- **References:** [`sdd-axial.md`](sdd-axial.md), [`../CLAUDE.md`](../CLAUDE.md), [`flow.md`](flow.md) §5
+**Delivered:**
+- `lib/eis/bir-client.ts`: `BirEisClient` interface; `MockBirEisClient` (HS256 mock, default); `LiveBirEisClient` (RS256 HTTPS, full BIR EIS v1.2 spec notes including rate-limit handling, 30s timeout, correlation headers); `getBirEisClient()` factory — switches on `BIR_EIS_LIVE=true`
+- `lib/eis/jws.ts`: `signEisPayloadMock()` (HS256), `signEisPayloadRS256()` (RS256 from `BIR_JWS_PRIVATE_KEY_B64`), `signEisPayload()` factory picks based on env
+- `lib/eis/oracle.ts`: uses pluggable client + factory signer — replaces direct mock calls
+- `/api/bir/eis`: returns 410 Gone when `BIR_EIS_LIVE=true` (mock endpoint disabled in live mode)
+- `.env.example`: `BIR_EIS_LIVE`, `BIR_EIS_ENDPOINT`, `BIR_EIS_API_KEY`, `BIR_JWS_PRIVATE_KEY_B64`, `BIR_JWS_KEY_ID` documented with PTT context
+- **PTT switchover checklist** (when BIR grants access): set `BIR_EIS_LIVE=true` · `BIR_EIS_ENDPOINT=https://eis.bir.gov.ph/api` · `BIR_EIS_API_KEY=<issued key>` · `BIR_JWS_PRIVATE_KEY_B64=<base64 PEM>` · deploy — oracle is live
+- **References:** `web/lib/eis/bir-client.ts`, `web/lib/eis/jws.ts`, [`clr-axial.md`](clr-axial.md)
+
+### B-8 · Reconcile the stale SDD backend architecture · `P2` · ✅ done
+`sdd-axial.md` v0.3 now accurately describes the v1 build reality alongside the original design intent.
+
+**Delivered:**
+- Top-level `⚠️ IMPLEMENTATION NOTE` table mapping every design decision to v1 reality (Next.js routes, in-process oracle, Supabase, Vercel, no Redis, Supabase Auth, env-var secrets)
+- §2: v1 build reality architecture diagram (Mermaid) alongside the intended design
+- §3, §5, §7, §8: build-reality callout blocks explaining actual vs. intended per section
+- Self-check updated; open items (BIR schema, NFRs, vault migration) tracked
+- **References:** [`sdd-axial.md`](sdd-axial.md)
 
 ### B-9 · PDAX Connect API (formerly L3) · `P2` · ❌ dropped (revisit if access granted)
 Dropped from hackathon scope — sandbox access not granted (D1). The SEP-24 abstraction
