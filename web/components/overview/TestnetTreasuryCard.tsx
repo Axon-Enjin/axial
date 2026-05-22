@@ -35,6 +35,7 @@ function usdcLow(usdc: string | null): boolean {
 export function TestnetTreasuryCard() {
   const [data, setData] = useState<BalancesResponse | null>(null);
   const [loading, setLoading] = useState(true);
+  const [showAll, setShowAll] = useState(false);
 
   const load = useCallback(async (silent = false) => {
     if (!silent) setLoading(true);
@@ -79,6 +80,9 @@ export function TestnetTreasuryCard() {
   }
 
   const isTestnet = data.network !== "mainnet";
+  const wallets = data.wallets;
+  const displayedWallets = showAll ? wallets : wallets.slice(0, 2);
+  const hasMore = wallets.length > 2;
 
   return (
     <Card>
@@ -95,17 +99,17 @@ export function TestnetTreasuryCard() {
           </button>
         }
       />
-      <p className="mb-3 sm:mb-4 font-body-md text-[13px] sm:text-body-md text-on-surface-variant">
+      <p className="mb-3 font-body-md text-[13px] sm:text-body-md text-on-surface-variant">
         {isTestnet
           ? "Free test XLM and USDC — fund via Friendbot and Circle faucet before swaps."
           : "Live balances for demo wallets configured in the environment."}
       </p>
 
-      <div className="flex flex-col gap-2.5 sm:gap-3">
-        {data.wallets.map((w) => (
+      <div className="flex flex-col gap-2 sm:gap-2.5">
+        {displayedWallets.map((w) => (
           <div
             key={w.role}
-            className="rounded-lg sm:rounded-xl border border-outline-variant/15 bg-surface-container-low p-3 sm:p-3.5"
+            className="rounded-lg sm:rounded-xl border border-outline-variant/15 bg-surface-container-low p-2.5 sm:p-3"
           >
             <div className="flex flex-wrap items-start justify-between gap-2">
               <div className="flex-1 min-w-0">
@@ -132,7 +136,7 @@ export function TestnetTreasuryCard() {
                 </a>
               ) : null}
             </div>
-            <div className="mt-2.5 sm:mt-3 grid grid-cols-2 gap-2.5 sm:gap-3">
+            <div className="mt-2 sm:mt-2.5 grid grid-cols-2 gap-2 sm:gap-2.5">
               <div>
                 <p className="font-label-sm text-[10px] sm:text-label-sm uppercase tracking-wider text-outline">
                   XLM (fees)
@@ -169,8 +173,19 @@ export function TestnetTreasuryCard() {
         ))}
       </div>
 
+      {hasMore && !showAll ? (
+        <button
+          type="button"
+          onClick={() => setShowAll(true)}
+          className="mt-3 w-full flex items-center justify-center gap-1.5 rounded-lg border border-outline-variant/20 bg-surface-container/50 py-2 font-label-sm text-[11px] sm:text-label-sm text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors"
+        >
+          <Icon name="expand_more" size={16} />
+          Show {wallets.length - 2} more wallet{wallets.length - 2 > 1 ? 's' : ''}
+        </button>
+      ) : null}
+
       {isTestnet && data.faucets ? (
-        <p className="mt-3 sm:mt-4 font-label-sm text-[11px] sm:text-label-sm text-on-surface-variant">
+        <p className="mt-3 font-label-sm text-[11px] sm:text-label-sm text-on-surface-variant">
           USDC:{" "}
           <a
             href={data.faucets.usdc}

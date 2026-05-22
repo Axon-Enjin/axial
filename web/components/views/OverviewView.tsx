@@ -241,10 +241,10 @@ export function OverviewView() {
     <main className="mx-auto max-w-container-max px-4 py-5 sm:px-6 sm:py-6 md:px-margin-desktop md:py-7">
       <div className="grid grid-cols-1 gap-4 sm:gap-5 md:gap-gutter md:grid-cols-12">
         <div className="md:col-span-8">
-          <Card padding="lg" className="flex flex-col h-full">
+          <Card padding="lg" className="h-full">
             <div className="pointer-events-none absolute -top-24 -right-24 h-64 w-64 rounded-full bg-primary/10 blur-[80px]" />
-            <div className="relative flex flex-col sm:flex-row items-start justify-between gap-4 sm:gap-0 flex-1">
-              <div className="flex-1 flex flex-col justify-between min-h-full">
+            <div className="relative flex flex-col sm:flex-row items-start justify-between gap-4 sm:gap-0">
+              <div className="flex-1 flex flex-col justify-between">
                 <div>
                   <div className="mb-1.5 flex items-center gap-2 text-on-surface-variant">
                     <Icon name="account_balance" size={18} />
@@ -267,7 +267,7 @@ export function OverviewView() {
                     </p>
                   ) : null}
                 </div>
-                <div className="mt-8 sm:mt-12 flex flex-col sm:flex-row gap-3 sm:gap-3.5">
+                <div className="mt-6 sm:mt-8 flex flex-col sm:flex-row gap-3 sm:gap-3.5">
                   <Link href="/app/liquidity" className="flex-1 sm:flex-initial">
                     <Button variant="primary" size="lg" onClick={() => dispatch("unlock")} className="w-full sm:w-auto">
                       Unlock Capital

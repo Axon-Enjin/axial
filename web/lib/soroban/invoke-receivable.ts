@@ -101,7 +101,7 @@ export async function mintReceivableOnChain(
     .addOperation(
       contract.call(
         "mint",
-        new Address(issuerPublic).toScVal(),
+        new Address(cfg.issuerPublic).toScVal(),
         new Address(msmePublic).toScVal(),
         nativeToScVal(invoiceId, { type: "string" }),
         nativeToScVal(BigInt(Math.trunc(faceAmount)), { type: "i128" }),
