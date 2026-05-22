@@ -56,7 +56,7 @@ axial/
 
 The "backend" is **Next.js Route Handlers under `web/app/api/`** — there is no separate server. The SDD's modular-monolith / BullMQ-Temporal plan was not adopted; ignore it as a build target.
 
-`docs/flow.md` (built/mock/planned matrix) and the **"Implementation status" table in `docs/Axial.md`** are useful maps but **lag the code** — when they conflict with what's in `web/`, trust the code. As of this writing the following are built and wired: the 4 Soroban contracts (3 deployed to testnet — see below), USDC atomic swap, payroll split, BIR EIS oracle, the T+3 retry worker + Horizon poll + reconciliation cron jobs, Supabase auth with org-scoped multi-tenancy, the payer portal, NoA issue/ack, and Reflector FX with a hardcoded fallback. **Still not built:** mainnet deploy, on-chain settlement enforcement (the `settlement` contract crate exists but is not deployed — `SETTLEMENT_CONTRACT_ID` is unset), live BIR submission (mock by default — `BIR_EIS_LIVE` gates it), and real PDAX Connect calls.
+`docs/flow.md` (built/mock/planned matrix) and the **"Implementation status" table in `docs/Axial.md`** are useful maps but **lag the code** — when they conflict with what's in `web/`, trust the code. As of this writing the following are built and wired: the 4 Soroban contracts (deployment matrix below — Testnet runs 3, Mainnet has all 4), USDC atomic swap, payroll split, BIR EIS oracle, the T+3 retry worker + Horizon poll + reconciliation cron jobs, Supabase auth with org-scoped multi-tenancy, the payer portal, NoA issue/ack, and Reflector FX with a hardcoded fallback. **Built but not wired:** the `settlement` contract is deployed on Mainnet but **not Testnet**, and the app does not call it — `SETTLEMENT_CONTRACT_ID` is unset and `testnet.json` has no settlement entry, so the on-chain closed loop is not exercised. **Still not built:** live BIR submission (mock by default — `BIR_EIS_LIVE` gates it) and real PDAX Connect calls.
 
 **Stack:** Next.js 15.5 · React 19 · TypeScript 5 (strict) · Tailwind CSS 4 · `@stellar/stellar-sdk` · `@supabase/supabase-js` + `@supabase/ssr` (auth) · `tesseract.js` + `pdf-parse` + `sharp` (invoice OCR) · `stellar-hd-wallet` (key derivation). Path alias `@/*` → `web/*`.
 
@@ -96,10 +96,10 @@ Four Rust crates (`soroban-sdk` 25), each with `src/lib.rs` + `src/test.rs`:
 
 | Crate | Responsibility | Deployed |
 |-------|----------------|----------|
-| `receivable_token` | `initialize`, `mint`, `is_minted`, `get_receivable` — one mint per invoice (SAC-style receivable) | testnet |
-| `axial_swap` | `initialize`, `quote`, `execute_advance` — USDC advance vs receivable at configurable `advance_bps` (85% default) | testnet |
-| `payroll_split` | `initialize`, `quote`, `route_payroll`, `get_payroll` — USDC split to SSS/PhilHealth/Pag-IBIG + net to employees | testnet |
-| `settlement` | Per-invoice lockbox: `settle` distributes collected USDC (advance → funder, remainder → MSME), records shortfalls as leakage | **not deployed** — code only |
+| `receivable_token` | `initialize`, `mint`, `is_minted`, `get_receivable` — one mint per invoice (SAC-style receivable) | Testnet + Mainnet |
+| `axial_swap` | `initialize`, `quote`, `execute_advance` — USDC advance vs receivable at configurable `advance_bps` (85% default) | Testnet + Mainnet |
+| `payroll_split` | `initialize`, `quote`, `route_payroll`, `get_payroll` — USDC split to SSS/PhilHealth/Pag-IBIG + net to employees | Testnet + Mainnet |
+| `settlement` | Per-invoice lockbox: `settle` distributes collected USDC (advance → funder, remainder → MSME), records shortfalls as leakage | **Mainnet only** — not on Testnet, not wired into the app |
 
 Web talks to chain via `lib/soroban/`: `config.ts` resolves contract IDs and signing keys from env or `soroban/deployments/testnet.json`; `invoke-*.ts` builds and submits transactions; `isSwapChainEnabled` / `isReceivableChainEnabled` / `isPayrollChainEnabled` gate whether a route runs on-chain or returns a mocked result. Default signing is **custodial/server-side** (server holds funder/MSME/issuer secrets). `freighter.ts` + `build-tx.ts` + `tx/submit` provide an optional client-signed path (Freighter browser extension). Deployed contract IDs and signing-key publics are not committed — `testnet.json` is gitignored; copy `testnet.example.json`.
 

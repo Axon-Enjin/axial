@@ -48,8 +48,8 @@ A CTO/auditor review on Day 5 of the hackathon checked the `web/` and `soroban/`
 |---|---|---|
 | PDAX Connect (L3) | ❌ Dropped | PDAX sandbox access was **not granted**. Final hackathon scope is **L1 + L2** (L2 = our own mocked PDAX UI). No real PDAX API calls. The SEP-24 abstraction stands so PDAX can be wired post-hackathon without contract changes. |
 | Wallet management (Q7) | ✅ Locked | **Custodial backend signing** for the hackathon demo — the Next.js server holds the funder/MSME/issuer secrets and signs all Soroban transactions. No Freighter/Albedo in v1. Freighter (MSME + payer self-custody) is post-hackathon roadmap. |
-| Mainnet deploy | 🟡 Conditional | Attempt the 3-contract Mainnet deploy on Day 6 only if testnet is stable; keep testnet as the live demo path. A polished testnet demo ships over a broken Mainnet one. Measure real XLM deploy/rent cost before funding the Mainnet wallet (see §13.9). |
-| Closed-loop settlement build gap | ⚠️ Acknowledged | The settlement-integrity model above is only partially built — payer-confirm is a demo PATCH, with no NoA artifact, no on-chain lockbox, and no reconciliation worker. Acceptable for an L1 demo; it is the #1 post-hackathon priority. Do **not** present the closed loop as live. |
+| Mainnet deploy | ✅ Done | All **4 contracts** deployed to Mainnet (`deployments/mainnet.json`, 2026-05-22). Testnet remains the live demo path and runs **3** — the testnet deploy (2026-05-20) predates the `settlement` crate. |
+| Closed-loop settlement build gap | ⚠️ Acknowledged | The closed loop is built in code — payer portal, NoA issue/ack, reconciliation cron, and the `settlement` contract (deployed on Mainnet). But it is **not exercised**: settlement is not on Testnet and not wired into the app, so the on-chain lockbox does not run in the demo. #1 post-hackathon priority. Do **not** present the closed loop as live. |
 | Hardcoded demo data | ⚠️ Acknowledged | FX rate (`56.5`), Settings credentials/audit log, and seller/buyer TINs are hardcoded demo values. Acceptable for the hackathon; tracked for replacement in [`docs/sprint.md`](sprint.md). |
 
 ### Locked architecture in one paragraph
@@ -108,8 +108,8 @@ Snapshot of what ships in **`web/`** today vs locked product vision. Visual tab 
 | Public landing page | ✅ | Marketing landing at `/`; `/app` is the authenticated Overview |
 | PDAX ramp (L2) | ✅ UI | Settings demo card; **L3 Connect API not pursued — sandbox access not granted (2026-05-22)** |
 | Wallet signing | ✅ Custodial | Server-side signing with funder/MSME/issuer secrets; optional Freighter client-sign path (Q7 locked custodial 2026-05-22) |
-| On-chain lockbox enforcement | 🟡 | `settlement` contract crate written but **not deployed**; collection reconciled off-chain |
-| Mainnet + Circle USDC | ⬜ | Still testnet; issuer/trustlines per hackathon plan |
+| On-chain lockbox enforcement | 🟡 | `settlement` deployed on **Mainnet only** — not on Testnet, not wired into the app; collection reconciled off-chain |
+| Mainnet deploy | ✅ | All 4 contracts deployed to Mainnet; the live demo still runs on Testnet (3 contracts) |
 | Live BIR submission | ⬜ | Mock BIR by default; `BIR_EIS_LIVE` gates the real client (needs Permit to Transmit) |
 
 Audit-derived task board: [`docs/sprint.md`](sprint.md).
@@ -132,7 +132,7 @@ Decisions Carlos doesn't have a strong opinion on. Resolve early so they don't b
 | Q5 | **How to handle FX risk during swap-to-payroll window?** | Lock rate at swap time (Reflector reading written to contract storage)? Float and reconcile? Hackathon answer can be "out of scope, addressed in production roadmap" | Day 3 |
 | Q6 | **Mock BIR EIS endpoint design** — separate service or in-process route? | Affects demo realism. Separate service feels more real; in-process is faster to build | Day 3 |
 | Q7 | **Wallet management for the demo accounts** — Freighter, Albedo, or custodial backend signing? | Freighter is the standard Stellar browser wallet; custodial is easier for a clean demo UX. Decision affects what judges see on stage | ✅ **Resolved: custodial** (Build audit 2026-05-22) |
-| Q8 | **Hosting target** — Vercel, Railway, Render, fly.io? | Affects API latency to Stellar RPC and (eventually) BIR. Asia-Pacific region preferred | Day 5 |
+| Q8 | **Hosting target** — Vercel, Railway, Render, fly.io? | Affects API latency to Stellar RPC and (eventually) BIR. Asia-Pacific region preferred | ✅ **Resolved: Google Cloud Run** (`asia-southeast1`) |
 | Q9 | **Idempotency key strategy** for EIS submissions | `{org_id}:{stellar_tx_hash}:{invoice_id}` is suggested in SDD; team should sanity-check before implementing | Day 3 |
 | Q10 | **How explicit is "demo mode" in the UI?** | Demo-mode banner? Watermark? "Testnet" badge? Affects whether judges think it's real | Day 6 |
 | Q11 | **Lockbox implementation for the demo** — dedicated Soroban collection contract vs per-invoice Stellar address vs anchor virtual account? | Drives the closed-loop demo; contract is most on-chain-native, address is simplest | Day 2 |

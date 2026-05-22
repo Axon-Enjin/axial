@@ -86,7 +86,7 @@ flowchart LR
 
   subgraph phaseE [E — Collection]
     E1["🟡 Payer pays lockbox — demo mark collected"]
-    E2["🟡 Settlement contract — written, not deployed"]
+    E2["🟡 Settlement contract — Mainnet only, not on Testnet"]
     E3["⬜ Funder repaid + reserve release"]
     E4["✅ Reconciliation cron — leakage scan"]
   end
@@ -186,7 +186,7 @@ flowchart TD
   EIS --> UI2["✅ Compliance + Overview update"]
 ```
 
-**Not built:** real payer KYB onboarding, on-chain lockbox enforcement (`settlement` contract not deployed), mainnet.
+**Not built:** real payer KYB onboarding; on-chain lockbox enforcement — `settlement` is deployed on Mainnet only, not on Testnet and not wired into the app.
 
 ---
 
@@ -287,9 +287,9 @@ stateDiagram-v2
 | Auth / multi-tenant | Prod | ✅ | Supabase SSR auth, org-scoped, invites |
 | Overview health dashboard | Must | ✅ | Live EIS + summary API + treasury |
 | Liquidity stat tiles | Should | ✅ | Summary API |
-| Closed-loop lockbox settlement | Must | 🟡 | `settlement` contract written, not deployed; off-chain reconcile |
+| Closed-loop lockbox settlement | Must | 🟡 | `settlement` deployed on Mainnet only; not on Testnet / not wired into the app |
 | PDAX PHP ramp UI | L2 | ✅ | Settings `PdaxRampCard` |
-| Mainnet deploy | L1 | ⬜ | Testnet only |
+| Mainnet deploy | L1 | ✅ | All 4 contracts on Mainnet; the live demo runs on Testnet (3) |
 | Live BIR submission | — | ⬜ | Mock by default; `BIR_EIS_LIVE` gates real client |
 | Funder portal | Could | ❌ | v1 skip |
 
@@ -303,7 +303,7 @@ flowchart LR
     L1a["✅ 3 Soroban contracts testnet"]
     L1b["✅ Swap + mint + payroll UI"]
     L1c["✅ EIS oracle + Compliance UI"]
-    L1d["⬜ Mainnet + Circle USDC"]
+    L1d["✅ Mainnet — 4 contracts deployed"]
     L1e["🟡 Fiat placeholder — treasury card"]
   end
 

@@ -63,7 +63,8 @@ soroban/
 | USDC issuer (Mainnet) | `GA5ZSEJYB37JRC5AVCIA5MOP4RHTM335X2KGX3IHOJAPP5RE34K4KZVN` |
 | USDC SAC contract (Mainnet) | `CCW67TSZV3SSS2HXMBQ5JFGCKJNXKZM7UQUWUZPUTHXSTZLEO7SJMI75` |
 | User-facing denomination | PHP (UI only) |
-| Hackathon L1 on Mainnet | **3 contracts** (receivable + swap + payroll); settlement optional |
+| Mainnet deploy | **All 4 contracts** (receivable, swap, payroll, settlement) — see `deployments/mainnet.json` |
+| Testnet deploy | **3 contracts** (receivable, swap, payroll) — predates the `settlement` crate; settlement Testnet deploy tracked in `docs/sprint.md` B-2 |
 
 ## One-time CLI setup
 
@@ -239,7 +240,7 @@ sed -i 's/\r$//' scripts/*.sh
 
 See [docs/mainnet-wsl.md](../docs/mainnet-wsl.md). PowerShell is **not** used for Stellar — only your existing GitHub/Cloud Run deploy workflow.
 
-**L1 demo minimum:** receivable + swap + payroll (settlement optional).
+**L1 demo minimum:** receivable + swap + payroll. Settlement is deployed on Mainnet; its Testnet deploy + app wiring is post-hackathon (see `docs/sprint.md` B-2).
 
 ### Wire into Cloud Run / web
 
