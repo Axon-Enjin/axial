@@ -175,7 +175,14 @@ function UploadZone({
           >
             demo PDF
           </a>
-          {" "}(text-based, fast parse)
+          {" · "}
+          <a
+            href="/samples/invoices/invoice-inv-2023-8912.png"
+            download="axial-demo-invoice-ocr.png"
+            className="text-[#2DD4BF] hover:underline"
+          >
+            demo PNG (OCR)
+          </a>
         </p>
       </div>
     </Card>
