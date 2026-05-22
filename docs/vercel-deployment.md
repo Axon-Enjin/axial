@@ -1,6 +1,8 @@
 # Deploy Axial Web to Vercel
 
-Use this checklist when deploying the hackathon demo. All env vars are set in the **Vercel project** (not committed).
+> **Note:** the **primary deploy path is Google Cloud Run**, not Vercel — pushes to `main` build `web/Dockerfile` and deploy via `.github/workflows/deploy-cloudrun.yml` (`asia-southeast1`, service `axial-web`), with env from GitHub Actions repo vars/secrets. This document covers the **alternate Vercel path**. The env vars below apply to both.
+
+Use this checklist when deploying the hackathon demo to Vercel. All env vars are set in the **Vercel project** (not committed).
 
 ## 1. Vercel project settings
 
@@ -88,12 +90,16 @@ If you already run locally with `web/.env.local` from `write-web-env.sh`:
 
 ## 4. Supabase (one-time)
 
-Migrations must already be applied on project `ifzyntqwymmgimnxtguz`:
+All migrations in `supabase/migrations/` must already be applied on project `ifzyntqwymmgimnxtguz`:
 
-- `eis_submissions`
-- `factoring_invoices`
+- `001_eis_submissions.sql`
+- `002_factoring_invoices.sql`
+- `003_closed_loop.sql`
+- `004_reserve_ledger.sql`
+- `005_eis_t3_fields.sql`
+- `006_auth_multitenancy.sql` — required for Supabase auth / org multi-tenancy
 
-If tables are missing, run migrations via Supabase SQL editor or MCP (see repo `supabase/migrations/`).
+If tables are missing, run migrations via Supabase SQL editor or MCP.
 
 After deploy, seed once (with `AXIAL_ALLOW_SEED=true` or from local):
 
@@ -108,9 +114,10 @@ curl -X POST "https://YOUR_APP.vercel.app/api/eis/seed"
 
 | Check | URL / action |
 |-------|----------------|
+| Auth | Open `/app` unauthenticated → redirects to `/login` (skipped if Supabase env unset) |
 | Chain status | `GET /api/soroban/status` → `onChainReady: true` |
 | Dashboard | `GET /api/dashboard/summary` → 200, `invoiceStore: "supabase"` |
-| Liquidity | Open `/liquidity` — invoice rows load |
+| Liquidity | Open `/app/liquidity` — invoice rows load |
 | Swap | Confirm payer → Tokenize & Swap (funder needs testnet USDC) |
 | Compliance | `GET /api/eis/submissions` → rows after swap |
 

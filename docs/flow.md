@@ -27,7 +27,7 @@ flowchart TB
 
   LQ --> LQ1["✅ Upload PDF/XML — OCR parse + persist"]
   LQ --> LQ2["✅ Invoice table — Supabase/file + pagination"]
-  LQ --> LQ3["🟡 Payer confirm + lockbox — demo buttons"]
+  LQ --> LQ3["✅ Payer portal — confirm + eligibility"]
   LQ --> LQ4["✅ Tokenize & Swap — testnet"]
   LQ --> LQ5["✅ Swap quote API — 85% advance"]
   LQ --> LQ6["✅ Pipeline progress — toast + sidebar"]
@@ -43,7 +43,6 @@ flowchart TB
   ST --> ST2["🟡 Auto-route toggle — no backend"]
   ST --> ST3["✅ PDAX ramp — L2 demo card + toast"]
 
-  style LQ3 fill:#3d3520
   style OV5 fill:#3d3520
   style CP5 fill:#3d3520
 ```
@@ -62,8 +61,8 @@ flowchart LR
     A1["✅ Upload invoice PDF/XML"]
     A2["✅ OCR + validate metadata — parse API"]
     A3["⬜ Payer KYB onboard"]
-    A4["🟡 Payer confirms invoice — demo PATCH"]
-    A5["🟡 Notice of Assignment e-ack — demo flag"]
+    A4["✅ Payer confirms invoice — portal"]
+    A5["✅ Notice of Assignment — issue + e-ack API"]
   end
 
   subgraph phaseB [B — Liquidity — HACKATHON CORE]
@@ -85,11 +84,11 @@ flowchart LR
     D5["✅ Supabase audit log"]
   end
 
-  subgraph phaseE [E — Collection — post-hackathon]
+  subgraph phaseE [E — Collection]
     E1["🟡 Payer pays lockbox — demo mark collected"]
-    E2["⬜ Settlement contract"]
+    E2["🟡 Settlement contract — written, not deployed"]
     E3["⬜ Funder repaid + reserve release"]
-    E4["⬜ Reconciliation worker"]
+    E4["✅ Reconciliation cron — leakage scan"]
   end
 
   subgraph phaseF [F — Fiat edge — L2 only]
@@ -178,19 +177,16 @@ sequenceDiagram
 flowchart TD
   U["MSME uploads PDF/XML"] --> P["✅ Parse: invoice #, buyer, amount, due"]
   P --> R["✅ Row in Liquidity table — Supabase or file fallback"]
-  R --> PC["🟡 Confirm payer — PATCH demo"]
-  PC --> NOA["🟡 NoA acknowledged — trust strip demo"]
+  R --> PC["✅ Confirm payer — portal"]
+  PC --> NOA["✅ NoA issued + acknowledged — API"]
   NOA --> OK["✅ Fundable — Tokenize & Swap enabled"]
   OK --> M["✅ Mint on Soroban"]
   M --> S["✅ Swap USDC"]
   S --> EIS["✅ EIS oracle auto-run"]
   EIS --> UI2["✅ Compliance + Overview update"]
-
-  style PC fill:#3d3520
-  style NOA fill:#3d3520
 ```
 
-**Not built:** real payer portal, KYB, on-chain lockbox enforcement, leakage freeze worker.
+**Not built:** real payer KYB onboarding, on-chain lockbox enforcement (`settlement` contract not deployed), mainnet.
 
 ---
 
@@ -273,8 +269,9 @@ stateDiagram-v2
 
 | Feature | PRD priority | Hackathon L1 | Status |
 |---------|--------------|--------------|--------|
-| Payer KYB + confirm invoice | Must | 🟡 | Demo PATCH only |
-| NoA e-acknowledgement | Must | 🟡 | Client trust strip + flags |
+| Payer portal + confirm invoice | Must | ✅ | `/app/payer-portal` token auth + `/api/payers` + eligibility |
+| NoA e-acknowledgement | Must | ✅ | `/api/noa/[receivableId]` issue + ack |
+| Payer KYB onboarding | Must | ⬜ | No real KYB flow |
 | Invoice upload + OCR | Implied UI | ✅ | Parse API + persist |
 | Factoring book + pagination | Should | ✅ | Supabase `factoring_invoices` |
 | SAC mint / receivable token | Must | ✅ | Testnet |
@@ -282,15 +279,18 @@ stateDiagram-v2
 | Payroll statutory split | Must | ✅ | Testnet |
 | BIR EIS oracle 20 fields | Must | ✅ | Mock BIR + real pipeline |
 | JWS + memo write-back | Must | ✅ | Mock JWS |
+| T+3 worker / due_by | SDD | ✅ | `eis/worker` cron — retry within window, expire after |
+| Horizon event poll | SDD | ✅ | `eis/horizon-poll` cron every 10 min |
+| Reconciliation / leakage scan | SDD | ✅ | `reconciliation/scan` cron, daily |
+| FX rate (Reflector) | L2 | ✅ | `lib/fx/reflector.ts` + `/api/fx/rate`, hardcoded fallback |
 | Supabase / audit log | Should | ✅ | `eis_submissions` + invoices |
+| Auth / multi-tenant | Prod | ✅ | Supabase SSR auth, org-scoped, invites |
 | Overview health dashboard | Must | ✅ | Live EIS + summary API + treasury |
 | Liquidity stat tiles | Should | ✅ | Summary API |
-| Closed-loop lockbox settlement | Must | 🟡 | Demo collect; no on-chain enforcement |
+| Closed-loop lockbox settlement | Must | 🟡 | `settlement` contract written, not deployed; off-chain reconcile |
 | PDAX PHP ramp UI | L2 | ✅ | Settings `PdaxRampCard` |
 | Mainnet deploy | L1 | ⬜ | Testnet only |
-| T+3 worker / due_by | SDD | ⬜ | Immediate submit only |
-| Horizon event subscription | SDD | ⬜ | API hooks only |
-| Auth / multi-tenant | Prod | ⬜ | Single demo org |
+| Live BIR submission | — | ⬜ | Mock by default; `BIR_EIS_LIVE` gates real client |
 | Funder portal | Could | ❌ | v1 skip |
 
 ---
@@ -327,18 +327,18 @@ flowchart LR
 ```mermaid
 flowchart TB
   MSME["MSME Founder"]
-  PAYER["B2B Payer — 🟡 demo confirm only"]
+  PAYER["B2B Payer — ✅ portal confirm + NoA"]
   FUNDER["Funder / Treasury — ✅ demo wallet USDC"]
   BIRG["BIR — mock endpoint"]
   STELLAR["Stellar / Soroban"]
 
   MSME -->|"✅ upload + parse"| AXIAL["Axial UI"]
-  MSME -->|"🟡 confirm payer"| AXIAL
   MSME -->|"✅ tokenize & swap"| AXIAL
   MSME -->|"✅ route payroll"| AXIAL
   MSME -->|"✅ view compliance"| AXIAL
 
-  PAYER -.->|"⬜ real portal + pay lockbox"| AXIAL
+  PAYER -->|"✅ portal confirm + NoA ack"| AXIAL
+  PAYER -.->|"⬜ pay lockbox"| AXIAL
 
   AXIAL -->|"✅ contracts"| STELLAR
   AXIAL -->|"✅ EIS submit"| BIRG
@@ -369,10 +369,20 @@ flowchart TB
 | GET | `/api/eis/submissions` | Compliance + Overview |
 | POST | `/api/eis/seed` | Dev demo rows |
 | POST | `/api/eis/process` | Manual oracle replay |
+| GET | `/api/eis/worker` | Cron — T+3 retry / expiry (every 6h) |
+| GET | `/api/eis/horizon-poll` | Cron — chain event ingest (every 10 min) |
+| GET | `/api/reconciliation/scan` | Cron — leakage scan (daily) |
 | POST | `/api/bir/eis` | Mock BIR accept |
+| GET | `/api/fx/rate` | PHP/USDC rate — Reflector oracle + fallback |
+| GET/POST | `/api/payers` · `/api/payers/[id]` | Payer records |
+| POST | `/api/noa/[receivableId]/issue` · `/ack` | Notice of Assignment |
+| POST | `/api/auth/invite` · `/api/auth/members` | Org invites + membership |
+| POST | `/api/tx/submit` | Submit a client-signed (Freighter) transaction |
+
+Cron endpoints are protected by `CRON_SECRET`; schedules are in `web/vercel.json`.
 
 ---
 
-*Update this doc when Mainnet, real payer portal, or T+3 worker land.*
+*Update this doc when Mainnet or live BIR submission lands.*
 
 *Audit-derived task board: [`sprint.md`](sprint.md) · scope decisions: "Build audit & final scope lock (2026-05-22)" in [`Axial.md`](Axial.md).*

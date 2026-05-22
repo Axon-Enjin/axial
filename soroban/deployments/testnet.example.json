@@ -8,6 +8,7 @@
   "contracts": {
     "receivable_token": null,
     "axial_swap": null,
-    "payroll_split": null
+    "payroll_split": null,
+    "settlement": null
   }
 }
