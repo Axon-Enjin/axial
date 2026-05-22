@@ -261,11 +261,20 @@ Full on-chain settlement path implemented (CLS-06 through CLS-09).
 - `POST /api/reconciliation/scan`: idempotent leakage scanner — T+7 grace days, `reportLeakageOnChain` fire-and-forget, returns `{ scanned, settled, leaked[], errors[] }` with 207 on partial errors
 - **References:** `soroban/contracts/settlement/`, `web/lib/settlement/`, `web/lib/soroban/invoke-settlement.ts`, `web/app/api/reconciliation/scan/`, `rfc-axial-closed-loop-settlement.md`
 
-### B-3 · Freighter wallet integration (self-custody) · `P1` · 📋 committed
-Removes the custodial-signing liability (D2). MSME signs its own mint/swap; payer signs
-from the payer portal. Build-unsigned-tx-on-server → sign-in-browser → submit, with
-testnet/mainnet network switching and a real "connected wallets" Settings surface.
-- **References:** `../web/lib/soroban/invoke-receivable.ts`, `invoke-swap.ts`, `invoke-payroll.ts`, `config.ts`, `../web/components/views/SettingsView.tsx`, `Axial.md` Q7
+### B-3 · Freighter wallet integration (self-custody) · `P1` · ✅ done
+Self-custody signing implemented alongside the existing custodial path. No breaking changes.
+
+**Delivered:**
+- `lib/soroban/freighter.ts`: window.freighter abstraction — `freighterAvailable`, `checkFreighterConnected`, `getFreighterPublicKey`, `getFreighterNetworkDetails`, `signXdrWithFreighter`, `fundTestnetAccount`; no npm dependency
+- `lib/soroban/build-tx.ts`: server-side `buildPayrollXdr` — simulate + prepare → unsigned XDR for Freighter to sign
+- `POST /api/payroll/build`: build unsigned payroll XDR (requires `signerPublic` = Freighter pubkey); invoker-auth means Freighter tx sig satisfies Soroban `require_auth()`
+- `POST /api/tx/submit`: submit any Freighter-signed XDR to Stellar RPC
+- `AppProvider`: Freighter state (`freighterPublicKey`, `freighterNetwork`, `freighterInstalled`, `freighterConnecting`), `connectFreighter()`, `disconnectFreighter()`, auto-restores existing session on mount
+- `WalletCard` (Settings): real Freighter connect/disconnect; address display + copy; testnet faucet helper; Self-custody vs Custodial mode indicator
+- `LiquidityView`: passes `freighterPublicKey` as `msmePublic` to mint + swap → USDC advance and SAC token route to user's own wallet
+- `ComplianceView`: 3-step Freighter payroll path (build → sign → submit); chain banner shows wallet identity when connected
+- `invoke-swap.ts`, `invoke-receivable.ts`: optional `msmePublicOverride` param
+- **References:** `web/lib/soroban/freighter.ts`, `web/lib/soroban/build-tx.ts`, `web/app/api/payroll/build/`, `web/app/api/tx/submit/`, `web/components/settings/WalletCard.tsx`
 
 ### B-4 · T+3 submission worker + Horizon event subscription · `P1` · 📋 committed
 The oracle currently submits immediately and is triggered by API hooks. Add a real T+3

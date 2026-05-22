@@ -70,6 +70,37 @@ export async function upsertSubmission(sub: EisSubmission): Promise<EisSubmissio
   return sub;
 }
 
+/**
+ * Returns submissions in `queued` or `failed` status that have not yet
+ * passed their T+3 deadline (or have no deadline set — legacy rows).
+ * Used by the T+3 worker to identify what needs retrying.
+ */
+export async function findSubmissionsForRetry(limit = 100): Promise<EisSubmission[]> {
+  const all = await listSubmissions(500);
+  const now = new Date().toISOString();
+  return all
+    .filter(
+      (s) =>
+        (s.status === "queued" || s.status === "failed") &&
+        (s.dueBy == null || s.dueBy > now),
+    )
+    .slice(0, limit);
+}
+
+/**
+ * Returns submissions in `queued` or `failed` status that are past their T+3 deadline.
+ */
+export async function findExpiredSubmissions(): Promise<EisSubmission[]> {
+  const all = await listSubmissions(500);
+  const now = new Date().toISOString();
+  return all.filter(
+    (s) =>
+      (s.status === "queued" || s.status === "failed") &&
+      s.dueBy != null &&
+      s.dueBy <= now,
+  );
+}
+
 export function buildIdempotencyKey(
   orgId: string,
   stellarTxHash: string,

@@ -31,6 +31,9 @@ export async function processLedgerEvent(
   const payload = mapLedgerEventToEisPayload(event);
   const jwsCompact = signEisPayloadMock(payload);
 
+  // T+3 deadline: BIR EIS must be received within 3 calendar days of the transaction
+  const dueBy = existing?.dueBy ?? new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString();
+
   let sub: EisSubmission = existing ?? {
     id: crypto.randomUUID(),
     payloadId,
@@ -46,6 +49,7 @@ export async function processLedgerEvent(
     payload,
     createdAt: now,
     updatedAt: now,
+    dueBy,
   };
 
   sub.payload = payload;
@@ -54,6 +58,7 @@ export async function processLedgerEvent(
 
   try {
     sub.status = "submitted";
+    sub.submittedAt = new Date().toISOString();
     sub = await upsertSubmission(sub);
 
     const ack = acknowledgeEisSubmission(jwsCompact, payloadId);
