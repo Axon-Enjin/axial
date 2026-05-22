@@ -3,8 +3,10 @@
 # Run from the soroban/ directory: .\scripts\deploy-mainnet.ps1
 #
 # Prerequisites:
-#   1. stellar keys ls  →  your signing identity (SOURCE_KEY below)
-#   2. That identity is funded with ≥10 XLM on mainnet
+#   1. Import your deployer secret key (one-time):
+#        stellar keys add axial-deployer --secret-key
+#        (enter the secret key for GB6TMTI6DB6BETQEPMKXOAYAMYKGNHR4AJVZHKEQ5LCVFINGEDQDKCFI)
+#   2. Fund GB6TMTI6DB6BETQEPMKXOAYAMYKGNHR4AJVZHKEQ5LCVFINGEDQDKCFI with >= 10 XLM on mainnet
 #   3. cargo build --target wasm32v1-none --release already ran (or run `stellar contract build`)
 #
 # Statutory addresses (sss / philhealth / pagibig) default to the admin key
@@ -15,7 +17,7 @@ $ErrorActionPreference = "Stop"
 
 # ── Configuration ─────────────────────────────────────────────────────────────
 
-$SOURCE_KEY    = "my-key"       # stellar identity name (stellar keys ls)
+$SOURCE_KEY    = "axial-deployer"  # stellar identity name — run 'stellar keys ls' to verify
 $NETWORK       = "mainnet"
 $PASSPHRASE    = "Public Global Stellar Network ; September 2015"
 $RPC_URL       = "https://mainnet.sorobanrpc.com"   # or https://rpc.stellar.org

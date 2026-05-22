@@ -90,26 +90,43 @@ Write-Host ""
 
 # ── 4. Deployer identity & balance ───────────────────────────────────────────
 
+$DEPLOYER_PK = "GB6TMTI6DB6BETQEPMKXOAYAMYKGNHR4AJVZHKEQ5LCVFINGEDQDKCFI"
+
 Write-Host "[ 4 / 5 ]  Deployer Identity & Mainnet Balance" -ForegroundColor Cyan
-$pk = (& stellar keys public-key my-key 2>&1 | Out-String).Trim()
-if ($pk -match "^G[A-Z2-7]{55}$") {
-    Write-Host "  Identity   : my-key"
-    Write-Host "  Public key : $pk"
-    Write-Host "  Explorer   : https://stellar.expert/explorer/public/account/$pk"
-    Write-Host ""
-    try {
-        $acct = Invoke-RestMethod "https://horizon.stellar.org/accounts/$pk" -TimeoutSec 10
-        $xlmBal = ($acct.balances | Where-Object { $_.asset_type -eq "native" }).balance
-        $color = if ([double]$xlmBal -ge 10) { "Green" } else { "Red" }
-        Write-Host "  XLM balance  : $xlmBal XLM" -ForegroundColor $color
-        Write-Host "  Sub-entries  : $($acct.subentry_count)"
-    } catch {
-        Write-Host "  Account status : NOT ACTIVATED on mainnet" -ForegroundColor Yellow
-        Write-Host "  Action needed  : Send >= 10 XLM to $pk to activate"
-    }
+Write-Host "  Public key : $DEPLOYER_PK"
+Write-Host "  Explorer   : https://stellar.expert/explorer/public/account/$DEPLOYER_PK"
+Write-Host ""
+
+# Find which stellar CLI identity holds this key
+$identityName = $null
+$knownIds = (& stellar keys ls 2>&1 | Out-String).Trim() -split "`n" | ForEach-Object { $_.Trim() } | Where-Object { $_ -ne "" }
+foreach ($id in $knownIds) {
+    $candidate = (& stellar keys public-key $id 2>&1 | Out-String).Trim()
+    if ($candidate -eq $DEPLOYER_PK) { $identityName = $id; break }
+}
+if ($identityName) {
+    Write-Host "  Stellar CLI identity : $identityName" -ForegroundColor Green
 } else {
-    Write-Host "  ERROR: could not read 'my-key' from Stellar CLI." -ForegroundColor Red
-    Write-Host "  Run: stellar keys generate --network mainnet my-key"
+    Write-Host "  Stellar CLI identity : NOT IMPORTED" -ForegroundColor Yellow
+    Write-Host "  To import: stellar keys add axial-deployer --secret-key"
+}
+Write-Host ""
+
+try {
+    $resp = Invoke-WebRequest "https://horizon.stellar.org/accounts/$DEPLOYER_PK" -UseBasicParsing -TimeoutSec 10
+    $acct = [System.Text.Encoding]::UTF8.GetString($resp.Content) | ConvertFrom-Json
+    $xlmBal = ($acct.balances | Where-Object { $_.asset_type -eq "native" }).balance
+    $xlmNum = [double]$xlmBal
+    $color = if ($xlmNum -ge 10) { "Green" } elseif ($xlmNum -ge 1) { "Yellow" } else { "Red" }
+    Write-Host "  XLM balance  : $xlmBal XLM" -ForegroundColor $color
+    Write-Host "  Sub-entries  : $($acct.subentry_count)"
+    if ($xlmNum -lt 10) {
+        $needed = [math]::Round(10 - $xlmNum, 2)
+        Write-Host "  Needs $needed more XLM to reach recommended 10 XLM" -ForegroundColor Yellow
+    }
+} catch {
+    Write-Host "  Account status : NOT ACTIVATED on mainnet" -ForegroundColor Yellow
+    Write-Host "  Action needed  : Send >= 10 XLM to $DEPLOYER_PK to activate"
 }
 Write-Host ""
 
@@ -145,7 +162,7 @@ if ($totalBytes -gt 0) {
 }
 Write-Host "  WASM upload resource fees scale with WASM size; within typical single-digit XLM range."
 Write-Host ""
-Write-Host "  Fund deployer: $pk"
+Write-Host "  Fund deployer: $DEPLOYER_PK"
 Write-Host ""
 
 Write-Host $SEP -ForegroundColor Yellow
