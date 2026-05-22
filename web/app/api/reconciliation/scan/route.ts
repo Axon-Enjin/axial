@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { listInvoices, markCollectedInvoice } from "@/lib/invoices/store";
 import { getReserveEntry, listOpenEntries, markEntryLeaked } from "@/lib/settlement/store";
-import { getSorobanConfig } from "@/lib/soroban/config";
+import { resolveSorobanConfig } from "@/lib/soroban/server-config";
 import { isSettlementChainEnabled, reportLeakageOnChain } from "@/lib/soroban/invoke-settlement";
 import type { ReconciliationResult } from "@/lib/settlement/types";
 
@@ -31,7 +31,7 @@ export async function POST() {
     errors: [],
   };
 
-  const cfg = getSorobanConfig();
+  const cfg = await resolveSorobanConfig();
   const now = new Date();
 
   try {

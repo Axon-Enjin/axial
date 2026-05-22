@@ -50,7 +50,13 @@ export async function POST(request: Request) {
 
   try {
     const result = await mintReceivableOnChain(cfg, invoiceId, faceAmount!, msmePublicOverride);
-    triggerEisFromChain("receivable_minted", invoiceId, result.txHash, faceAmount!);
+    triggerEisFromChain(
+      "receivable_minted",
+      invoiceId,
+      result.txHash,
+      faceAmount!,
+      cfg.network,
+    );
     return NextResponse.json({
       mode: "on-chain",
       invoiceId,

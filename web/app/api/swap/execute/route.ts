@@ -90,6 +90,7 @@ export async function POST(request: Request) {
       invoiceId,
       onChain.txHash,
       faceAmount!,
+      cfg.network,
       quote.advance,
     );
     return NextResponse.json({

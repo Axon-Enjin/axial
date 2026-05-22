@@ -17,6 +17,8 @@ export type ChainLedgerEvent = {
   stellarTxHash: string;
   amount: number;
   advanceAmount?: number;
+  /** Stellar network for memo write-back and RPC (defaults to testnet when omitted). */
+  network?: "testnet" | "mainnet";
 };
 
 /** BIR EIS 20-field schema (hackathon subset — demo values for seller/buyer). */

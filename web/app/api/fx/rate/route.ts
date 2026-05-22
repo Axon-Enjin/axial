@@ -14,11 +14,11 @@
  *   Force-invalidates the in-process cache for testing.
  */
 import { NextResponse } from "next/server";
-import { getSorobanConfig } from "@/lib/soroban/config";
+import { resolveSorobanConfig } from "@/lib/soroban/server-config";
 import { getPhpPerUsdc, invalidateRateCache } from "@/lib/fx/reflector";
 
 export async function GET() {
-  const cfg = getSorobanConfig();
+  const cfg = await resolveSorobanConfig();
   try {
     const rate = await getPhpPerUsdc({
       rpcUrl: cfg.rpcUrl,

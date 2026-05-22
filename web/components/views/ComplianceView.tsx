@@ -337,7 +337,7 @@ export function ComplianceView() {
           ) : null}
           {chain.payrollContractId ? (
             <a
-              href={`https://stellar.expert/explorer/testnet/contract/${chain.payrollContractId}`}
+              href={`${chain.explorerContractBase}/${chain.payrollContractId}`}
               target="_blank"
               rel="noreferrer"
               className="font-mono text-[10px] sm:text-xs underline opacity-80 hover:opacity-100 shrink-0"

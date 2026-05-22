@@ -7,7 +7,7 @@ import {
 } from "@/lib/invoices/store";
 import { deriveDemoLockbox, parseNetDays } from "@/lib/msme/invoice-trust";
 import { markEntrySettled, upsertReserveEntry } from "@/lib/settlement/store";
-import { getSorobanConfig } from "@/lib/soroban/config";
+import { resolveSorobanConfig } from "@/lib/soroban/server-config";
 import {
   isSettlementChainEnabled,
   registerInvoiceOnChain,
@@ -63,7 +63,7 @@ export async function PATCH(request: Request, context: RouteContext) {
       case "mark_collected": {
         inv = await markCollectedInvoice(decoded);
         // Update reserve ledger + trigger on-chain settlement (fire-and-forget)
-        const cfg = getSorobanConfig();
+        const cfg = await resolveSorobanConfig();
         const collected = body.collectedAmount ?? inv.face;
         void markEntrySettled(decoded, { collectedAmount: collected }).catch(() => null);
         if (isSettlementChainEnabled(cfg)) {
@@ -89,7 +89,7 @@ export async function PATCH(request: Request, context: RouteContext) {
           try {
             const invoice = await getInvoice(decoded);
             if (!invoice) return;
-            const cfg = getSorobanConfig();
+            const cfg = await resolveSorobanConfig();
             const { advance, reserve } = quoteAdvance(invoice.face);
             const { address: lockboxAddress } = deriveDemoLockbox(decoded);
             const netDays = parseNetDays(invoice.terms);

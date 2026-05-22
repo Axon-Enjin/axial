@@ -1,11 +1,12 @@
 import { NextResponse } from "next/server";
 import { fetchDemoWalletBalances } from "@/lib/soroban/balances";
+import { resolveSorobanConfig } from "@/lib/soroban/server-config";
 
 export const dynamic = "force-dynamic";
 
 export async function GET() {
   try {
-    const data = await fetchDemoWalletBalances();
+    const data = await fetchDemoWalletBalances(await resolveSorobanConfig());
     return NextResponse.json({
       ...data,
       faucets:

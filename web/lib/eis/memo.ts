@@ -6,7 +6,8 @@ import {
   TransactionBuilder,
   rpc,
 } from "@stellar/stellar-sdk";
-import { getSorobanConfig } from "@/lib/soroban/config";
+import { getSorobanConfig, type SorobanConfig } from "@/lib/soroban/config";
+import type { StellarNetworkId } from "@/lib/soroban/network";
 
 /** Stellar text memo max 28 bytes — compact BIR ref for demo. */
 export function formatMemoText(birReferenceId: string): string {
@@ -21,12 +22,15 @@ export function formatMemoText(birReferenceId: string): string {
 export async function writeBirMemoToStellar(
   birReferenceId: string,
   sourceTxHash: string,
+  network: StellarNetworkId = "testnet",
 ): Promise<{ memoTxHash: string; memoText: string }> {
-  const cfg = getSorobanConfig();
-  const secret = process.env.STELLAR_ISSUER_SECRET ?? process.env.STELLAR_ORACLE_SECRET;
+  const cfg: SorobanConfig = getSorobanConfig(network);
+  const secret = cfg.issuerSecret;
   const publicKey = cfg.issuerPublic;
   if (!secret || !publicKey) {
-    throw new Error("STELLAR_ISSUER_SECRET required for memo write-back");
+    throw new Error(
+      `${network === "mainnet" ? "MAINNET_" : ""}STELLAR_ISSUER_SECRET required for memo write-back`,
+    );
   }
 
   const signer = Keypair.fromSecret(secret);

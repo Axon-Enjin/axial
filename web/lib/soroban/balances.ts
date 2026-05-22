@@ -5,7 +5,7 @@ import {
   scValToNative,
   TransactionBuilder,
 } from "@stellar/stellar-sdk";
-import { getSorobanConfig, type SorobanConfig } from "./config";
+import type { SorobanConfig } from "./config";
 import { formatUsdcStroops } from "./quote";
 
 export type DemoWalletRole = "funder" | "msme" | "issuer";
@@ -29,6 +29,7 @@ const STALE_CACHE_MS = 60_000;
 
 let balanceCache: {
   at: number;
+  network: string;
   data: { network: string; wallets: DemoWalletBalance[] };
 } | null = null;
 
@@ -127,11 +128,12 @@ async function fetchSacUsdcBalance(
   }
 }
 
-async function fetchDemoWalletBalancesUncached(): Promise<{
+async function fetchDemoWalletBalancesUncached(
+  cfg: SorobanConfig,
+): Promise<{
   network: string;
   wallets: DemoWalletBalance[];
 }> {
-  const cfg = getSorobanConfig();
   const explorerBase = explorerAccountBase(cfg.network);
   const isTestnet = cfg.network !== "mainnet";
 
@@ -170,20 +172,30 @@ async function fetchDemoWalletBalancesUncached(): Promise<{
   return { network: cfg.network, wallets };
 }
 
-export async function fetchDemoWalletBalances(): Promise<{
+export async function fetchDemoWalletBalances(
+  cfg: SorobanConfig,
+): Promise<{
   network: string;
   wallets: DemoWalletBalance[];
 }> {
-  if (balanceCache && Date.now() - balanceCache.at < CACHE_TTL_MS) {
+  if (
+    balanceCache &&
+    balanceCache.network === cfg.network &&
+    Date.now() - balanceCache.at < CACHE_TTL_MS
+  ) {
     return balanceCache.data;
   }
 
   try {
-    const data = await fetchDemoWalletBalancesUncached();
-    balanceCache = { at: Date.now(), data };
+    const data = await fetchDemoWalletBalancesUncached(cfg);
+    balanceCache = { at: Date.now(), network: cfg.network, data };
     return data;
   } catch (err) {
-    if (balanceCache && Date.now() - balanceCache.at < STALE_CACHE_MS) {
+    if (
+      balanceCache &&
+      balanceCache.network === cfg.network &&
+      Date.now() - balanceCache.at < STALE_CACHE_MS
+    ) {
       return balanceCache.data;
     }
     throw err;

@@ -17,6 +17,7 @@
 import { NextResponse } from "next/server";
 import { getSorobanConfig } from "@/lib/soroban/config";
 import { pollHorizonEvents } from "@/lib/eis/horizon-poll";
+import type { StellarNetworkId } from "@/lib/soroban/network";
 
 function isAuthorized(request: Request): boolean {
   const secret = process.env.CRON_SECRET;
@@ -25,44 +26,78 @@ function isAuthorized(request: Request): boolean {
   return auth === `Bearer ${secret}`;
 }
 
-export async function POST(request: Request) {
-  if (!isAuthorized(request)) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
-  const cfg = getSorobanConfig();
-
-  // Collect all configured contract IDs
-  const contractIds = [
+function contractIdsForNetwork(network: StellarNetworkId): string[] {
+  const cfg = getSorobanConfig(network);
+  return [
     cfg.swapContractId,
     cfg.receivableContractId,
     cfg.payrollContractId,
     cfg.settlementContractId,
   ].filter((id): id is string => Boolean(id));
+}
 
-  if (contractIds.length === 0) {
+export async function POST(request: Request) {
+  if (!isAuthorized(request)) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const networks: StellarNetworkId[] = ["testnet", "mainnet"];
+  const polled: StellarNetworkId[] = [];
+  let eventsScanned = 0;
+  let newEnqueued = 0;
+  let alreadyProcessed = 0;
+  const errors: string[] = [];
+  const contractsPolled: string[] = [];
+  let latestLedger = 0;
+
+  for (const network of networks) {
+    const ids = contractIdsForNetwork(network);
+    if (ids.length === 0) continue;
+
+    polled.push(network);
+    try {
+      const cfg = getSorobanConfig(network);
+      const result = await pollHorizonEvents(cfg.rpcUrl, ids, network);
+      contractsPolled.push(...result.contractsPolled);
+      eventsScanned += result.eventsScanned;
+      newEnqueued += result.newEnqueued;
+      alreadyProcessed += result.alreadyProcessed;
+      errors.push(...result.errors.map((e) => `[${network}] ${e}`));
+      latestLedger = Math.max(latestLedger, result.latestLedger);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Poll failed";
+      errors.push(`[${network}] ${message}`);
+      console.error(`[eis/horizon-poll/${network}]`, message);
+    }
+  }
+
+  if (polled.length === 0) {
     return NextResponse.json({
       ok: true,
-      message: "No contracts configured — set contract IDs in environment or testnet.json.",
+      message:
+        "No contracts configured — set contract IDs in environment or deployments JSON.",
+      networksPolled: [],
       contractsPolled: [],
       eventsScanned: 0,
       newEnqueued: 0,
     });
   }
 
-  try {
-    const result = await pollHorizonEvents(cfg.rpcUrl, contractIds);
-    const status = result.errors.length > 0 ? 207 : 200;
-    return NextResponse.json({
+  const status = errors.length > 0 ? 207 : 200;
+  return NextResponse.json(
+    {
       ok: true,
-      ...result,
-      message: `Scanned ${result.eventsScanned} events across ${result.contractsPolled.length} contracts. Enqueued ${result.newEnqueued} new.`,
-    }, { status });
-  } catch (err) {
-    const message = err instanceof Error ? err.message : "Poll failed";
-    console.error("[eis/horizon-poll]", message);
-    return NextResponse.json({ error: message }, { status: 502 });
-  }
+      networksPolled: polled,
+      contractsPolled,
+      eventsScanned,
+      newEnqueued,
+      alreadyProcessed,
+      errors,
+      latestLedger,
+      message: `Scanned ${eventsScanned} events on ${polled.join(", ")}. Enqueued ${newEnqueued} new.`,
+    },
+    { status },
+  );
 }
 
 export async function GET(request: Request) {

@@ -72,7 +72,11 @@ export async function processLedgerEvent(
     sub = await upsertSubmission(sub);
 
     try {
-      const memo = await writeBirMemoToStellar(ack.birReferenceId, event.stellarTxHash);
+      const memo = await writeBirMemoToStellar(
+        ack.birReferenceId,
+        event.stellarTxHash,
+        event.network ?? "testnet",
+      );
       sub.memoTxHash = memo.memoTxHash;
       sub.memoText = memo.memoText;
       sub.status = "memo_written";

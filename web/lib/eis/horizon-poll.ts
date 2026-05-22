@@ -20,6 +20,7 @@ import { rpc, scValToNative } from "@stellar/stellar-sdk";
 import type { xdr } from "@stellar/stellar-sdk";
 import { enqueueEisProcessing } from "./oracle";
 import { buildIdempotencyKey, findByIdempotencyKey } from "./store";
+import type { StellarNetworkId } from "@/lib/soroban/network";
 import type { ChainLedgerEvent, LedgerEventKind } from "./types";
 
 const LOOKBACK_LEDGERS = 1000;
@@ -69,6 +70,7 @@ function extractAmount(data: unknown): number {
 export async function pollHorizonEvents(
   rpcUrl: string,
   contractIds: string[],
+  network: StellarNetworkId,
 ): Promise<PollResult> {
   const result: PollResult = {
     contractsPolled: contractIds.filter(Boolean),
@@ -160,6 +162,7 @@ export async function pollHorizonEvents(
             referenceId,
             stellarTxHash: txHash,
             amount,
+            network,
           };
 
           enqueueEisProcessing(chainEvent);

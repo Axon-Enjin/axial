@@ -9,7 +9,7 @@
  */
 import { NextResponse } from "next/server";
 import { rpc, TransactionBuilder } from "@stellar/stellar-sdk";
-import { getSorobanConfig } from "@/lib/soroban/config";
+import { resolveSorobanConfig } from "@/lib/soroban/server-config";
 
 type Body = {
   /** Base64 signed transaction envelope XDR (from Freighter signTransaction). */
@@ -31,7 +31,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "xdr (signed transaction envelope) is required" }, { status: 400 });
   }
 
-  const cfg = getSorobanConfig();
+  const cfg = await resolveSorobanConfig();
   const server = new rpc.Server(cfg.rpcUrl);
 
   let tx;

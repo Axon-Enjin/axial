@@ -3,7 +3,10 @@ import { fetchDemoWalletBalances } from "@/lib/soroban/balances";
 import { getInvoiceStoreBackend, listInvoices } from "@/lib/invoices/store";
 import { getEisStoreBackend } from "@/lib/eis/store";
 import { listSubmissions } from "@/lib/eis/store";
-import { resolvePublicChainStatus } from "@/lib/soroban/server-config";
+import {
+  resolvePublicChainStatus,
+  resolveSorobanConfig,
+} from "@/lib/soroban/server-config";
 
 export const dynamic = "force-dynamic";
 
@@ -27,7 +30,7 @@ export async function GET() {
       funderXlm: null,
     };
     try {
-      const balances = await fetchDemoWalletBalances();
+      const balances = await fetchDemoWalletBalances(await resolveSorobanConfig());
       const funder = balances.wallets.find((w) => w.role === "funder");
       const msme = balances.wallets.find((w) => w.role === "msme");
       treasury = {

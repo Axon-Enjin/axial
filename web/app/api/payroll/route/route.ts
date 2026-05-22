@@ -47,7 +47,13 @@ export async function POST(request: Request) {
 
   try {
     const result = await routePayrollOnChain(cfg, payrollId, grossAmount!);
-    triggerEisFromChain("payroll_routed", payrollId, result.txHash, grossAmount!);
+    triggerEisFromChain(
+      "payroll_routed",
+      payrollId,
+      result.txHash,
+      grossAmount!,
+      cfg.network,
+    );
     return NextResponse.json({
       mode: "on-chain",
       payrollId,
