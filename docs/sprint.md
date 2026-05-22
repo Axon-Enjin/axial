@@ -78,6 +78,7 @@ This is the working task board for Axial, derived from the **CTO/auditor review 
 | D2 | **Custodial signing (Q7)** | Server holds funder/MSME/issuer secrets and signs all Soroban txns. No Freighter in v1. |
 | D3 | **Mainnet is conditional** | Deploy to Mainnet on Day 6 only if testnet is stable; testnet stays the live demo path. |
 | D4 | **Closed loop is not live** | Payer-confirm is a demo PATCH. Do not present the closed-loop settlement as working. |
+| D5 | **Post-submission re-scope (2026-05-22)** | Settlement (B-2) is the sole active workstream — it was marked ✅ but is deployed on **Mainnet only**, not on Testnet, and not wired into the app. BIR EIS stays mock-only (live path PTT-gated, seam dormant). Real-KYB integration and mainnet Reflector verification deferred; PDAX (B-9) stays dropped. |
 
 ---
 
@@ -128,9 +129,15 @@ rent buffer + one test swap margin).
 - Mainnet wallet: `GB6TMTI6DB6BETQEPMKXOAYAMYKGNHR4AJVZHKEQ5LCVFINGEDQDKCFI` (see S0-5)
 - **References:** Horizon testnet · stellar.expert testnet · contract IDs in `deployments/testnet.json`
 
-### S0-5 · (Conditional) Deploy 3 contracts to Mainnet · `P2` · 🔴 todo
-Per D3 — attempt **Day 6 only** if testnet demo is stable. Keep testnet as the live
-demo path; Mainnet contract IDs on stellar.expert are the proof artifact.
+### S0-5 · (Conditional) Deploy contracts to Mainnet · `P2` · ✅ done
+**Delivered (2026-05-22):** **all 4 contracts** deployed to Mainnet — `receivable_token`,
+`axial_swap`, `payroll_split`, `settlement` — see `deployments/mainnet.json`. The Testnet
+deploy (2026-05-20) predates the `settlement` crate, so Testnet runs only 3; settlement's
+Testnet deploy + app wiring is tracked under B-2. (The Mainnet `settlement` contract is
+deployed but may not be `initialize`d — confirm under B-2.)
+
+Per D3 — Testnet remained the live demo path; Mainnet contract IDs on stellar.expert
+are the proof artifact.
 
 **Mainnet deploy runbook (run from WSL):**
 
@@ -145,7 +152,7 @@ make build
 # 3 — Deploy all three to mainnet
 #     SOURCE = your mainnet identity name (the one holding the mainnet XLM)
 make deploy-all NETWORK=mainnet SOURCE=<your-mainnet-identity>
-#     Paste the three contract IDs output into soroban/deployments/mainnet.json
+#     Paste the contract IDs output into soroban/deployments/mainnet.json
 
 # 4 — Establish USDC trustline (mainnet issuer in Axial.md §13 locked decisions)
 #     Run one tiny test payment to confirm USDC flows
@@ -243,19 +250,40 @@ Closed-loop payer verification is fully implemented (CLS-01 through CLS-05).
 - `PayerPanel` component: collapsible payer registry in LiquidityView — add payers, see KYB status
 - **References:** `web/lib/payers/`, `web/app/api/payers/`, `web/app/api/noa/`, `web/app/api/invoices/[id]/confirm/`, `web/app/app/payer-portal/`
 
-### B-2 · On-chain lockbox / settlement contract + reconciliation worker · `P0` · ✅ done
-Full on-chain settlement path implemented (CLS-06 through CLS-09).
+### B-2 · On-chain lockbox / settlement contract + reconciliation worker · `P0` · 🟡 in progress
+**Status correction (2026-05-22):** previously marked ✅ done — that was wrong. The
+contract code, web invoke layer, and route wiring all exist, and the contract is
+deployed on **Mainnet** (`CDMHMQNP…`) — but **not on Testnet**, and not wired into the
+app (`SETTLEMENT_CONTRACT_ID` unset, `testnet.json` has no settlement entry), so the
+on-chain closed loop is not exercised. The contract tests have also never been run
+(no `test_snapshots/`), and the lockbox-funding leg does not exist (`settle` distributes
+USDC the contract never receives). This is the **highest-priority active workstream**
+(D5). Phases S1–S6 below.
 
-**Delivered:**
-- `soroban/contracts/settlement/`: Rust/Soroban contract — `initialize`, `register_invoice`, `settle`, `report_leakage`, `get_lockbox`; distributes USDC: advance→funder, reserve+surplus→MSME, shortfall logged as Leaked; full test suite (7 tests)
-- `soroban/Makefile`: added `settlement` to `CRATES`, `deploy-settlement` target
-- `supabase/migrations/004_reserve_ledger.sql`: reserve_ledger table with RLS — face/advance/reserve/collected/shortfall amounts, funder/msme/lockbox addresses, due_date, recourse_status, leakage timestamps
-- `web/lib/settlement/types.ts` + `web/lib/settlement/store.ts`: `upsertReserveEntry`, `listOpenEntries`, `markEntryLeaked`, `markEntrySettled` with Supabase/file fallback
-- `web/lib/soroban/invoke-settlement.ts`: `registerInvoiceOnChain`, `settleOnChain`, `reportLeakageOnChain` — custodial signing via simulate→prepare→sign→send; `isSettlementChainEnabled` gate
-- `web/lib/soroban/config.ts`: `settlementContractId` from `SETTLEMENT_CONTRACT_ID` env var + testnet.json fallback
-- `POST /api/invoices/:id` (settle): fire-and-forget upsert reserve ledger + register on-chain if enabled
-- `POST /api/invoices/:id` (mark_collected): fire-and-forget markEntrySettled + settleOnChain if enabled
-- `POST /api/reconciliation/scan`: idempotent leakage scanner — T+7 grace days, `reportLeakageOnChain` fire-and-forget, returns `{ scanned, settled, leaked[], errors[] }` with 207 on partial errors
+**Code already in place:** `soroban/contracts/settlement/` (contract + 7-test suite),
+`web/lib/settlement/` (reserve-ledger store), `web/lib/soroban/invoke-settlement.ts`,
+`config.ts` `settlementContractId`, route calls in `invoices/[id]` + `reconciliation/scan`.
+
+**S1 · Verify build + tests** — `cargo test -p settlement` (WSL); fix any soroban-sdk 25
+mismatches; commit `test_snapshots/` (settlement is the only crate missing them).
+**S2 · Deploy + initialize on testnet** — `make deploy-settlement`; call `initialize(admin, usdc)`;
+write the ID to `deployments/testnet.json` (`settlement` key) + `SETTLEMENT_CONTRACT_ID`.
+(Mainnet deploy is already done — this phase closes the Testnet gap and confirms the
+Mainnet contract is initialized.)
+**S3 · Fire `register_invoice` at the right point** — move it from `invoices/[id]` (settle)
+to immediately after `execute_advance` in `web/app/api/swap/execute/route.ts`.
+**S4 · Real lockbox funding** — add a payer Stellar key; `fundLockboxOnChain()` (USDC SAC
+transfer → settlement contract address); surface the address in the NoA + payer portal;
+add a "Pay invoice" action in `PayerPortalView`.
+**S5 · Real settle + reconcile** — `settleOnChain` with a contract-balance pre-check;
+verify full + partial paths and `report_leakage` end-to-end on testnet.
+**S6 · Hardening** — decide the per-invoice attribution / trust model; fix the misleading
+"keyed by invoice_id memo" comment in `lib.rs` (Soroban token transfers carry no memo);
+record the decision in `rfc-axial-closed-loop-settlement.md`.
+
+Once S1–S6 land on testnet, settlement also needs a **Mainnet deploy** (see S0-5 caveat).
+
+- **Owner split:** S1–S2 run in WSL (Rust + Stellar CLI); S3–S6 are web/contract code.
 - **References:** `soroban/contracts/settlement/`, `web/lib/settlement/`, `web/lib/soroban/invoke-settlement.ts`, `web/app/api/reconciliation/scan/`, `rfc-axial-closed-loop-settlement.md`
 
 ### B-3 · Freighter wallet integration (self-custody) · `P1` · ✅ done
@@ -284,7 +312,7 @@ Event-driven, deadline-enforced BIR EIS compliance pipeline.
 - `EisSubmission.dueBy` + `EisSubmission.submittedAt` fields; oracle sets `dueBy = createdAt+3days` on every new submission
 - `store.ts`: `findSubmissionsForRetry()`, `findExpiredSubmissions()`
 - `supabase/migrations/005_eis_t3_fields.sql`: `due_by`, `submitted_at` columns + retry index
-- `vercel.json`: Vercel Cron — worker every 6h, horizon-poll every 10min, reconciliation/scan nightly
+- `vercel.json`: cron schedule — worker every 6h, horizon-poll every 10min, reconciliation/scan nightly (runs on the Vercel path; Cloud Run needs Cloud Scheduler)
 - `.env.example`: `CRON_SECRET`, `SETTLEMENT_CONTRACT_ID`
 - **References:** `web/lib/eis/worker.ts`, `web/lib/eis/horizon-poll.ts`, `web/app/api/eis/worker/`, `web/app/api/eis/horizon-poll/`
 

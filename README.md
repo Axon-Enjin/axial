@@ -85,13 +85,13 @@ We merged tokenized invoice factoring with automated EIS reporting and statutory
 | --- | --- |
 | **Smart Contracts** | Rust, Soroban SDK, WASM (4 crates: `receivable_token`, `axial_swap`, `payroll_split`, `settlement`) |
 | **Frontend** | Next.js 15 (App Router), React 19, TypeScript 5, Tailwind CSS 4 |
-| **Backend** | Next.js API Routes, Vercel Cron, BIR EIS Oracle |
+| **Backend** | Next.js API Routes, scheduled cron workers, BIR EIS Oracle |
 | **Database & Auth** | Supabase (PostgreSQL, Row Level Security, Auth / Multi-tenancy) |
 | **Blockchain** | Stellar (Soroban smart contracts, Horizon API, Stellar SDK) |
 | **Settlement** | USDC on Stellar (Circle-issued) |
 | **Wallets** | Freighter Integration (Self-custody) |
 | **Design** | Dark glassmorphic, Geist typography, Material Symbols |
-| **Hosting** | Vercel |
+| **Hosting** | Google Cloud Run (`asia-southeast1`), GitHub Actions CI — Vercel config retained as alternate |
 
 ---
 
@@ -157,10 +157,10 @@ graph TD
 
 | Contract | Responsibility | Status |
 | --- | --- | --- |
-| `receivable_token` | SAC mint — `initialize`, `mint`, `is_minted`, `get_receivable`. One mint per confirmed invoice. | ✅ Deployed |
-| `axial_swap` | USDC atomic swap — advance vs receivable token. Denomination-agnostic asset param, configurable advance bps, reserve + discount. | ✅ Deployed |
-| `payroll_split` | Statutory payroll router — `initialize`, `quote`, `route_payroll`, `get_payroll`. USDC split to SSS / PhilHealth / Pag-IBIG + net to employees. | ✅ Deployed |
-| `settlement` | Lockbox & Reconciliation — Receives payer funds, repays treasury, and routes remaining reserve to MSME. | ✅ Deployed |
+| `receivable_token` | SAC mint — `initialize`, `mint`, `is_minted`, `get_receivable`. One mint per confirmed invoice. | ✅ Testnet + Mainnet |
+| `axial_swap` | USDC atomic swap — advance vs receivable token. Denomination-agnostic asset param, configurable advance bps, reserve + discount. | ✅ Testnet + Mainnet |
+| `payroll_split` | Statutory payroll router — `initialize`, `quote`, `route_payroll`, `get_payroll`. USDC split to SSS / PhilHealth / Pag-IBIG + net to employees. | ✅ Testnet + Mainnet |
+| `settlement` | Lockbox & Reconciliation — `initialize`, `register_invoice`, `settle`, `report_leakage`, `get_lockbox`. Receives payer funds, repays funder, routes reserve to MSME. | 🟡 Mainnet only — not on Testnet, not yet wired into the app |
 
 **Happy-path call order:**
 
@@ -169,7 +169,7 @@ Payer Portal (off-chain) → receivable_token::mint
   → axial_swap::execute_advance
   → payroll_split::route_payroll
   → oracle submits EIS + memo (off-chain)
-  → settlement::process_payment (on maturity)
+  → settlement::register_invoice (after advance) → settlement::settle (on payer payment)
 ```
 
 ### Directory Structure
@@ -200,9 +200,9 @@ axial/
 │
 ├── web/                      Next.js frontend
 │   ├── app/
-│   │   ├── (app)/            Page routes (Overview, Liquidity, Compliance, Settings)
-│   │   ├── (portal)/         External Payer Portal routes
-│   │   └── api/              API routes (invoices, payroll, wallets, EIS, swap, etc.)
+│   │   ├── app/              Authenticated app — Overview, Liquidity, Compliance, Settings, Payer Portal
+│   │   ├── (auth)/           Login & invite routes
+│   │   └── api/              API routes (invoices, payroll, wallets, EIS, swap, noa, payers, etc.)
 │   ├── components/           UI components (sidebar, overview, liquidity, compliance, settings)
 │   └── lib/                  Shared utilities & Stellar SDK integration
 │
@@ -267,11 +267,10 @@ See [`docs/vercel-deployment.md`](docs/vercel-deployment.md) for Vercel-specific
 
 - **Network:** Stellar Testnet (Soroban RPC)
 - **RPC:** `https://soroban-testnet.stellar.org:443`
-- **Deployed Contracts:**
+- **Deployed Contracts** — 3 on Testnet (`settlement` is Mainnet-only, see below):
   - **Axial Swap:** [`CDDAIDM4D62OZL5MQPKO5ZFWE7TBRFJD5Y3L2UZKP5OVGP2VHZ2UU736`](https://stellar.expert/explorer/testnet/contract/CDDAIDM4D62OZL5MQPKO5ZFWE7TBRFJD5Y3L2UZKP5OVGP2VHZ2UU736)
   - **Receivable Token:** [`CAQEEFBO44FONQKGCEHR2QFTLOIIO232Z7WM6722ZDA6MNAL2NNU7SOP`](https://stellar.expert/explorer/testnet/contract/CAQEEFBO44FONQKGCEHR2QFTLOIIO232Z7WM6722ZDA6MNAL2NNU7SOP)
   - **Payroll Split:** [`CBJCEJMDGRGLVU7VHAFR2VSVSBIKIWZA6LBQN6SCLZVJU6YROTETY3MB`](https://stellar.expert/explorer/testnet/contract/CBJCEJMDGRGLVU7VHAFR2VSVSBIKIWZA6LBQN6SCLZVJU6YROTETY3MB)
-  - **Settlement:** [`CCBHKV5N42TYZZF632N66YQO7IFJHRHHTZMWXWOPK2T6K74R5QOMH2I2`](https://stellar.expert/explorer/testnet/contract/CCBHKV5N42TYZZF632N66YQO7IFJHRHHTZMWXWOPK2T6K74R5QOMH2I2)
 - **Demo Wallets:**
 
 | Name | Role | Address |
@@ -279,10 +278,6 @@ See [`docs/vercel-deployment.md`](docs/vercel-deployment.md) for Vercel-specific
 | Admin (deploy + init) | Deployer | `GD67NPG7TKJDE5HEHSPWS3YAWYNHWTLWRSQMTO4NQOVSZAEFPICO3HYG` |
 | Treasury (funder) | Pays USDC | `GBRLGRWUJXJSHJDZQ4OH2SDH7ROF7EWAHI4ZIQM2E6TMONH7IG4P7QKL` |
 | MSME (receives advance) | Borrower | `GBCVJCRULTHI74CXNP4QFGE6OSK5XFUYIPPEONRNXS3JQSKA26TDAR66` |
-
-> 📸 Testnet screenshot (Stellar Expert):
->
-> ![Testnet Screenshot](./screenshots/testnet.png)
 
 ### Mainnet
 
@@ -294,10 +289,6 @@ See [`docs/vercel-deployment.md`](docs/vercel-deployment.md) for Vercel-specific
   - **Settlement:** [`CDMHMQNPO7GHJH6YRDCDT2L24SSUVKBOWNOY6F3QRWZRWLSH7G2DDG6K`](https://stellar.expert/explorer/public/contract/CDMHMQNPO7GHJH6YRDCDT2L24SSUVKBOWNOY6F3QRWZRWLSH7G2DDG6K)
 - **XLM Wallet Address:** `GB6TMTI6DB6BETQEPMKXOAYAMYKGNHR4AJVZHKEQ5LCVFINGEDQDKCFI`
 - **USDC Issuer (Circle):** `GA5ZSEJYB37JRC5AVCIA5MOP4RHTM335X2KGX3IHOJAPP5RE34K4KZVN`
-
-> 📸 Mainnet screenshot (Stellar Expert):
->
-> ![Mainnet Screenshot](./screenshots/mainnet.png)
 
 ---
 
