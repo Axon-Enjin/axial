@@ -150,8 +150,7 @@ function PulseRow({
   return (
     <div className="flex items-start gap-2.5 sm:gap-3.5 rounded-lg sm:rounded-xl border border-outline-variant/10 bg-surface-container-low p-3 sm:p-3.5">
       <div className="mt-0.5 sm:mt-1 flex h-8 w-8 sm:h-10 sm:w-10 shrink-0 items-center justify-center rounded-full border border-[#2DD4BF]/30 bg-surface shadow-[0_0_15px_rgba(45,212,191,0.15)]">
-        <Icon name={icon} size={16} className="sm:hidden text-[#2DD4BF]" />
-        <Icon name={icon} size={20} className="hidden sm:block text-[#2DD4BF]" />
+        <Icon name={icon} size={20} className="text-[#2DD4BF]" />
       </div>
       <div className="flex-1 min-w-0">
         <h4 className="font-body-md text-[13px] sm:text-body-md font-medium text-on-surface">{title}</h4>
@@ -159,8 +158,7 @@ function PulseRow({
           {subtitle}
         </p>
         <p className="mt-1.5 sm:mt-2 flex items-center gap-1 font-label-sm text-[10px] sm:text-label-sm text-[#2DD4BF]">
-          <Icon name="check_circle" size={12} className="sm:hidden" />
-          <Icon name="check_circle" size={14} className="hidden sm:block" />
+          <Icon name="check_circle" size={14} />
           {status}
         </p>
       </div>
@@ -243,51 +241,52 @@ export function OverviewView() {
     <main className="mx-auto max-w-container-max px-4 py-5 sm:px-6 sm:py-6 md:px-margin-desktop md:py-7">
       <div className="grid grid-cols-1 gap-4 sm:gap-5 md:gap-gutter md:grid-cols-12">
         <div className="md:col-span-8">
-          <Card padding="lg">
+          <Card padding="lg" className="flex flex-col h-full">
             <div className="pointer-events-none absolute -top-24 -right-24 h-64 w-64 rounded-full bg-primary/10 blur-[80px]" />
-            <div className="relative flex flex-col sm:flex-row items-start justify-between gap-4 sm:gap-0">
-              <div className="flex-1">
-                <div className="mb-1.5 flex items-center gap-2 text-on-surface-variant">
-                  <Icon name="account_balance" size={16} className="sm:hidden" />
-                  <Icon name="account_balance" size={18} className="hidden sm:block" />
-                  <span className="font-label-sm text-[11px] sm:text-label-sm uppercase tracking-wider">
-                    Available Liquidity
-                  </span>
-                </div>
-                <div className="mt-3 sm:mt-4 flex items-baseline gap-1">
-                  <span className="font-headline-xl text-[28px] sm:text-[36px] md:text-headline-xl tracking-tight text-on-surface">
-                    ₱{faceDisplay}
-                  </span>
-                  <span className="font-body-lg text-[16px] sm:text-body-lg text-on-surface-variant">.00</span>
-                </div>
-                <p className="mt-2 font-body-md text-[13px] sm:text-body-md text-on-surface-variant">
-                  {bookSub}
-                </p>
-                {summary?.treasury?.funderUsdc ? (
-                  <p className="mt-1 font-label-sm text-[11px] sm:text-label-sm text-[#2DD4BF]">
-                    Treasury USDC {summary.treasury.funderUsdc} · testnet
+            <div className="relative flex flex-col sm:flex-row items-start justify-between gap-4 sm:gap-0 flex-1">
+              <div className="flex-1 flex flex-col justify-between min-h-full">
+                <div>
+                  <div className="mb-1.5 flex items-center gap-2 text-on-surface-variant">
+                    <Icon name="account_balance" size={18} />
+                    <span className="font-label-sm text-[11px] sm:text-label-sm uppercase tracking-wider">
+                      Available Liquidity
+                    </span>
+                  </div>
+                  <div className="mt-3 sm:mt-4 flex items-baseline gap-1">
+                    <span className="font-headline-xl text-[28px] sm:text-[36px] md:text-headline-xl tracking-tight text-on-surface">
+                      ₱{faceDisplay}
+                    </span>
+                    <span className="font-body-lg text-[16px] sm:text-body-lg text-on-surface-variant">.00</span>
+                  </div>
+                  <p className="mt-2 font-body-md text-[13px] sm:text-body-md text-on-surface-variant">
+                    {bookSub}
                   </p>
-                ) : null}
+                  {summary?.treasury?.funderUsdc ? (
+                    <p className="mt-1 font-label-sm text-[11px] sm:text-label-sm text-[#2DD4BF]">
+                      Treasury USDC {summary.treasury.funderUsdc} · testnet
+                    </p>
+                  ) : null}
+                </div>
+                <div className="mt-8 sm:mt-12 flex flex-col sm:flex-row gap-3 sm:gap-3.5">
+                  <Link href="/app/liquidity" className="flex-1 sm:flex-initial">
+                    <Button variant="primary" size="lg" onClick={() => dispatch("unlock")} className="w-full sm:w-auto">
+                      Unlock Capital
+                    </Button>
+                  </Link>
+                  <Button
+                    variant="secondary"
+                    size="lg"
+                    icon="swap_horiz"
+                    onClick={() => dispatch("transfer")}
+                    className="w-full sm:w-auto"
+                  >
+                    Transfer
+                  </Button>
+                </div>
               </div>
               <StatusBadge kind={chain?.onChainReady ? "active" : "scanning"}>
                 {networkLabel}
               </StatusBadge>
-            </div>
-            <div className="relative mt-8 sm:mt-12 flex flex-col sm:flex-row gap-3 sm:gap-3.5">
-              <Link href="/app/liquidity" className="flex-1 sm:flex-initial">
-                <Button variant="primary" size="lg" onClick={() => dispatch("unlock")} className="w-full sm:w-auto">
-                  Unlock Capital
-                </Button>
-              </Link>
-              <Button
-                variant="secondary"
-                size="lg"
-                icon="swap_horiz"
-                onClick={() => dispatch("transfer")}
-                className="w-full sm:w-auto"
-              >
-                Transfer
-              </Button>
             </div>
           </Card>
         </div>
@@ -422,8 +421,7 @@ export function OverviewView() {
                         row.accent ? "text-[#2DD4BF]" : "text-on-surface-variant",
                       ].join(" ")}
                     >
-                      <Icon name={row.icon} size={14} className="sm:hidden" />
-                      <Icon name={row.icon} size={16} className="hidden sm:block" />
+                      <Icon name={row.icon} size={16} />
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="font-body-md text-[13px] sm:text-body-md text-on-surface truncate">{row.title}</div>

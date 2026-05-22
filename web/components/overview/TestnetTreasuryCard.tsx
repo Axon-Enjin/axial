@@ -155,15 +155,13 @@ export function TestnetTreasuryCard() {
             </div>
             {w.role === "funder" && usdcLow(w.usdc) ? (
               <p className="mt-2 flex items-center gap-1 font-label-sm text-[10px] sm:text-label-sm text-amber-400/90">
-                <Icon name="info" size={12} className="sm:hidden shrink-0" />
-                <Icon name="info" size={14} className="hidden sm:block shrink-0" />
+                <Icon name="info" size={14} className="shrink-0" />
                 <span className="break-words">Low USDC — use Circle faucet before Tokenize &amp; Swap</span>
               </p>
             ) : null}
             {w.role === "msme" && usdcLow(w.usdc) ? (
               <p className="mt-2 flex items-center gap-1 font-label-sm text-[10px] sm:text-label-sm text-amber-400/90">
-                <Icon name="info" size={12} className="sm:hidden shrink-0" />
-                <Icon name="info" size={14} className="hidden sm:block shrink-0" />
+                <Icon name="info" size={14} className="shrink-0" />
                 <span className="break-words">Fund after swap — payroll routes from this wallet</span>
               </p>
             ) : null}

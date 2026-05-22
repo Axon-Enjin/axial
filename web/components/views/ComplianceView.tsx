@@ -333,27 +333,27 @@ export function ComplianceView() {
   const grossForPct = quote?.gross ?? gross;
 
   return (
-    <main className="compliance-route mx-auto max-w-container-max space-y-gutter px-margin-mobile py-7 md:px-margin-desktop">
+    <main className="compliance-route mx-auto max-w-container-max space-y-4 sm:space-y-5 md:space-y-gutter px-4 py-5 sm:px-6 sm:py-6 md:px-margin-desktop md:py-7">
       {chain ? (
         <div
           className={[
-            "flex flex-wrap items-center gap-2 rounded-xl border px-4 py-2.5 font-label-sm text-label-sm",
+            "flex flex-wrap items-center gap-2 rounded-lg sm:rounded-xl border px-3 py-2 sm:px-4 sm:py-2.5 font-label-sm text-[11px] sm:text-label-sm",
             chain.payrollReady
               ? "border-[#2DD4BF]/30 bg-[#2DD4BF]/10 text-[#2DD4BF]"
               : "border-outline-variant/30 bg-surface-container-high/60 text-on-surface-variant",
           ].join(" ")}
         >
-          <span className="material-symbols-outlined text-[16px]">account_balance</span>
-          <span>
+          <span className="material-symbols-outlined text-[14px] sm:text-[16px]">account_balance</span>
+          <span className="flex-1 min-w-0 break-words">
             {freighterPublicKey
-              ? `Stellar ${chain.network} — payroll signed by your Freighter wallet (self-custody)`
+              ? `Stellar ${chain.network} — self-custody payroll`
               : chain.payrollReady
-                ? `Stellar ${chain.network} — statutory payroll routing on-chain`
-                : `Stellar ${chain.network} — demo split (deploy payroll_split + STELLAR_MSME_SECRET)`}
+                ? `Stellar ${chain.network} — payroll on-chain`
+                : `Stellar ${chain.network} — demo split`}
           </span>
           {freighterPublicKey ? (
-            <span className="ml-auto font-mono text-xs opacity-80">
-              {freighterPublicKey.slice(0, 6)}…{freighterPublicKey.slice(-4)}
+            <span className="font-mono text-[10px] sm:text-xs opacity-80 shrink-0">
+              {freighterPublicKey.slice(0, 4)}…{freighterPublicKey.slice(-4)}
             </span>
           ) : null}
           {chain.payrollContractId ? (
@@ -361,16 +361,16 @@ export function ComplianceView() {
               href={`https://stellar.expert/explorer/testnet/contract/${chain.payrollContractId}`}
               target="_blank"
               rel="noreferrer"
-              className="ml-auto font-mono text-xs underline opacity-80 hover:opacity-100"
+              className="font-mono text-[10px] sm:text-xs underline opacity-80 hover:opacity-100 shrink-0"
             >
-              {chain.payrollContractId.slice(0, 8)}…
+              {chain.payrollContractId.slice(0, 6)}…
             </a>
           ) : null}
         </div>
       ) : null}
 
-      <div className="flex items-start justify-between gap-4">
-        <p className="font-body-lg text-body-lg text-on-surface-variant">
+      <div className="flex flex-col sm:flex-row items-start justify-between gap-3 sm:gap-4">
+        <p className="font-body-lg text-[15px] sm:text-body-lg text-on-surface-variant">
           Invisible background regulatory processes.
         </p>
         <StatusBadge kind={routed ? "settled" : "active"}>
@@ -378,7 +378,7 @@ export function ComplianceView() {
         </StatusBadge>
       </div>
 
-      <div className="grid grid-cols-1 gap-gutter md:grid-cols-12">
+      <div className="grid grid-cols-1 gap-4 sm:gap-5 md:gap-gutter md:grid-cols-12">
         <div className="md:col-span-8">
           <Card>
             <div className="mb-6 flex items-start justify-between">

@@ -10,12 +10,7 @@ export function CardHeader({ icon, label, action }: CardHeaderProps) {
   return (
     <div className="mb-3 sm:mb-4 flex items-center justify-between">
       <div className="flex items-center gap-1.5 sm:gap-2 text-on-surface-variant">
-        {icon ? (
-          <>
-            <Icon name={icon} size={16} className="sm:hidden" />
-            <Icon name={icon} size={18} className="hidden sm:block" />
-          </>
-        ) : null}
+        {icon ? <Icon name={icon} size={18} /> : null}
         <span className="font-label-sm text-[11px] sm:text-label-sm uppercase tracking-wider">{label}</span>
       </div>
       {action}
