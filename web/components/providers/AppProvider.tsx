@@ -129,7 +129,11 @@ export function AppProvider({
           payload.includes("Failed") ||
           payload.includes("before funding") ||
           payload.includes("not initialized") ||
-          payload.includes("Not initialized"));
+          payload.includes("Not initialized") ||
+          payload.includes("trustline") ||
+          payload.includes("Trustline") ||
+          payload.includes("HostError") ||
+          payload.includes("USDC balance"));
       showToast(
         { message, variant: isError ? "error" : "success" },
         isError ? 4500 : 3200,

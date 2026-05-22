@@ -167,6 +167,20 @@ export function WalletCard() {
             Payroll splits are signed by you — not held by Axial.
           </p>
 
+          {!isTestnet && freighterPublicKey && !isDeployWallet ? (
+            <div className="rounded-lg border border-amber-500/25 bg-amber-500/5 p-3.5">
+              <div className="mb-2 font-label-sm text-label-sm uppercase tracking-wider text-amber-200/90">
+                Mainnet USDC
+              </div>
+              <p className="font-body-md text-body-md text-on-surface-variant">
+                Before swap or payroll on mainnet, add a{" "}
+                <strong className="font-medium text-on-surface">USDC</strong> trustline in
+                Freighter (Assets → Add → USDC). Without it, the atomic swap fails with SAC
+                error #13.
+              </p>
+            </div>
+          ) : null}
+
           {isTestnet ? (
             <div className="rounded-lg border border-outline-variant/30 bg-surface-container-low p-3.5">
               <div className="mb-2 font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant">

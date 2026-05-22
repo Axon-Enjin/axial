@@ -26,7 +26,12 @@ const MESSAGES: Record<DemoActionKind, string | ((payload?: string) => string)> 
     if (
       payload.includes("not initialized") ||
       payload.includes("failed") ||
-      payload.includes("Tokenize")
+      payload.includes("Tokenize") ||
+      payload.includes("trustline") ||
+      payload.includes("Trustline") ||
+      payload.includes("HostError") ||
+      payload.includes("USDC balance") ||
+      payload.includes("Error(Contract")
     ) {
       return payload;
     }

@@ -23,6 +23,29 @@ function formatSimulationError(error: string): string {
   if (error.includes("Error(Contract, #1)")) {
     return "Swap contract is not initialized on this deployment.";
   }
+  // Stellar Asset Contract (USDC) errors surfaced through axial_swap
+  if (error.includes("Error(Contract, #13)")) {
+    return (
+      "Recipient has no USDC trustline (SAC error #13). " +
+      "In Freighter → Assets → add USDC on mainnet, then retry the swap."
+    );
+  }
+  if (error.includes("Error(Contract, #10)")) {
+    return (
+      "Treasury USDC balance too low for this advance (SAC error #10). " +
+      "Fund the funder wallet with USDC on mainnet."
+    );
+  }
+  if (error.includes("HostError") || error.includes("Event log")) {
+    if (error.includes("#13")) {
+      return (
+        "Recipient has no USDC trustline. Add USDC in Freighter (mainnet), then retry."
+      );
+    }
+    if (error.includes("#10")) {
+      return "Treasury USDC balance too low. Fund the funder wallet with USDC.";
+    }
+  }
   return error.length > 200 ? `${error.slice(0, 200)}…` : error;
 }
 
