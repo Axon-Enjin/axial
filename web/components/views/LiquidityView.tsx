@@ -174,8 +174,23 @@ function UploadZone({
             className="text-[#2DD4BF] hover:underline disabled:opacity-50"
           >
             sample invoice
-          </button>{" "}
-          (no OCR) or a text-based PDF.
+          </button>
+          {" · "}
+          <a
+            href="/samples/invoices/invoice-inv-2023-8901.pdf"
+            download="axial-demo-invoice.pdf"
+            className="text-[#2DD4BF] hover:underline"
+          >
+            demo PDF
+          </a>
+          {" · "}
+          <a
+            href="/samples/invoices/invoice-inv-2023-8912.png"
+            download="axial-demo-invoice-ocr.png"
+            className="text-[#2DD4BF] hover:underline"
+          >
+            demo PNG (OCR)
+          </a>
         </p>
       </div>
     </Card>
