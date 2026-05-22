@@ -3,6 +3,7 @@
 import { Fragment, useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { InvoiceTrustRow } from "@/components/liquidity/InvoiceTrustRow";
+import { PayerPanel } from "@/components/liquidity/PayerPanel";
 import { TokenizationPipeline } from "@/components/liquidity/TokenizationPipeline";
 import { useApp } from "@/components/providers/AppProvider";
 import { Button } from "@/components/ui/Button";
@@ -462,7 +463,7 @@ export function LiquidityView() {
         const res = await fetch("/api/swap/execute", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ invoiceId: chainInvoiceId, faceAmount: face }),
+          body: JSON.stringify({ invoiceId: chainInvoiceId, faceAmount: face, sourceInvoiceId: id }),
         });
         const data = (await res.json()) as {
           mode?: string;
@@ -598,6 +599,8 @@ export function LiquidityView() {
           </Card>
         </div>
       </div>
+
+      <PayerPanel onPayerRegistered={() => void loadInvoices(page, true)} />
 
       <Card padding="none">
         <div className="flex items-start justify-between border-b border-outline-variant/15 p-6">
