@@ -34,6 +34,7 @@ This is the working task board for Axial, derived from the **CTO/auditor review 
 |---|---|
 | [`Axial.md`](Axial.md) | Canonical foundation — origin, locked decisions, audit log, submission record. **Update here first.** |
 | [`flow.md`](flow.md) | Visual built/mock/planned matrix + sequence diagrams |
+| [`remaining-work-axial.md`](remaining-work-axial.md) | Prioritized backlog — what's not done, P0/P1/P2, suggested build order |
 | [`brd-axial.md`](brd-axial.md) | Business justification, success metrics, stakeholders |
 | [`prd-axial.md`](prd-axial.md) | Feature specs, user stories, acceptance criteria |
 | [`sdd-axial.md`](sdd-axial.md) | System design — **note: backend section predates the current `web/app/api/` build; trust the code** |
