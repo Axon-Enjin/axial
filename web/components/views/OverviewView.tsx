@@ -178,12 +178,30 @@ export function OverviewView() {
   const [eisStore, setEisStore] = useState<string>("file");
   const [recentActions, setRecentActions] = useState<RecentAction[]>([]);
   const [summary, setSummary] = useState<DashboardSummary | null>(null);
+  const [funderSummary, setFunderSummary] = useState<{
+    totalDeals: number;
+    atRisk: number;
+    awaitingCollection: number;
+  } | null>(null);
 
   const loadLiveStatus = useCallback(() => {
     fetch("/api/dashboard/summary")
       .then((r) => r.json())
       .then((d) => setSummary(d as DashboardSummary))
       .catch(() => setSummary(null));
+
+    fetch("/api/funder/book?page=1&pageSize=1")
+      .then((r) => r.json())
+      .then((d) => {
+        if (d.summary) {
+          setFunderSummary({
+            totalDeals: d.summary.totalDeals,
+            atRisk: d.summary.atRisk,
+            awaitingCollection: d.summary.awaitingCollection,
+          });
+        }
+      })
+      .catch(() => setFunderSummary(null));
 
     fetch("/api/soroban/status")
       .then((r) => r.json())
@@ -265,6 +283,23 @@ export function OverviewView() {
                     <p className="mt-1 font-label-sm text-[11px] sm:text-label-sm text-[#2DD4BF]">
                       Treasury USDC {summary.treasury.funderUsdc} · mainnet
                     </p>
+                  ) : null}
+                  {funderSummary && funderSummary.totalDeals > 0 ? (
+                    <div className="mt-2 flex flex-wrap items-center gap-2">
+                      <Link href="/app/funder-portal">
+                        <StatusBadge kind="minted" icon="shield">
+                          {funderSummary.totalDeals} funder deal
+                          {funderSummary.totalDeals === 1 ? "" : "s"}
+                        </StatusBadge>
+                      </Link>
+                      {funderSummary.atRisk > 0 ? (
+                        <Link href="/app/funder-portal">
+                          <StatusBadge kind="warning" icon="warning">
+                            {funderSummary.atRisk} at risk
+                          </StatusBadge>
+                        </Link>
+                      ) : null}
+                    </div>
                   ) : null}
                 </div>
                 <div className="mt-6 sm:mt-8 flex flex-col sm:flex-row gap-3 sm:gap-3.5">

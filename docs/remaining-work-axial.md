@@ -142,9 +142,15 @@ Protect with `CRON_SECRET` (Bearer). Cloud Run has no built-in cron — use **GC
 
 ### 9. Funder Protection Center / Funder portal
 
-**Status:** `❌` v1 skip ([`flow.md`](flow.md))
+**Status:** `⬜` planned — **not** v1 skip long-term; see [`alignment-plan-axial.md`](alignment-plan-axial.md) **B-10**
 
-PRD Should-Have funder-facing view (payer confirmed, NoA, reserve, recourse). Revisit post-hackathon if targeting institutional funders.
+PRD Should-Have (US-06): payer confirmed, NoA, reserve, recourse. **Build API-first** (`/api/funder/*`), embed in Liquidity, then optional `/app/funder-portal`.
+
+| Step | Status |
+|------|--------|
+| B-10.1–6 Domain + API + Liquidity embed | ⬜ |
+| B-10.7 Standalone funder portal | ✅ |
+| Deal “Repaid” state in book | ⬜ blocked on B-2 S5 |
 
 ---
 
@@ -170,6 +176,8 @@ Do not reopen without updating [`Axial.md`](Axial.md) first:
 ---
 
 ## Suggested build order
+
+> Full alignment (MSME + payer + funder + settlement + docs): [`alignment-plan-axial.md`](alignment-plan-axial.md)
 
 ```mermaid
 flowchart TD

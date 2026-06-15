@@ -59,9 +59,10 @@ export async function middleware(request: NextRequest) {
     url.pathname.startsWith("/signup") ||
     url.pathname.startsWith("/invite");
   const isPayerPortal = url.pathname.startsWith("/app/payer-portal");
+  const isFunderPortal = url.pathname.startsWith("/app/funder-portal");
 
-  // Payer portal uses token-based auth, not session auth — always allow
-  if (isPayerPortal) {
+  // Token portals use their own auth — always allow through middleware
+  if (isPayerPortal || isFunderPortal) {
     return supabaseResponse;
   }
 

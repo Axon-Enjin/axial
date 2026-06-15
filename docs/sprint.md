@@ -35,6 +35,7 @@ This is the working task board for Axial, derived from the **CTO/auditor review 
 | [`Axial.md`](Axial.md) | Canonical foundation — origin, locked decisions, audit log, submission record. **Update here first.** |
 | [`flow.md`](flow.md) | Visual built/mock/planned matrix + sequence diagrams |
 | [`remaining-work-axial.md`](remaining-work-axial.md) | Prioritized backlog — what's not done, P0/P1/P2, suggested build order |
+| [`alignment-plan-axial.md`](alignment-plan-axial.md) | **Master alignment** — three actors/surfaces, B-10 funder plan, phased roadmap, doc checklist |
 | [`brd-axial.md`](brd-axial.md) | Business justification, success metrics, stakeholders |
 | [`prd-axial.md`](prd-axial.md) | Feature specs, user stories, acceptance criteria |
 | [`sdd-axial.md`](sdd-axial.md) | System design — **note: backend section predates the current `web/app/api/` build; trust the code** |
@@ -375,6 +376,30 @@ Dropped from hackathon scope — sandbox access not granted (D1). The SEP-24 abs
 means PDAX can wire in later behind the existing mocked UI with no contract changes.
 Revisit only if PDAX grants access post-hackathon.
 - **References:** `../web/components/settings/PdaxRampCard.tsx`, `Axial.md` §13.8 (SEP-24 abstraction)
+
+### B-10 · Funder Protection Center + funder portal · `P1` · ⬜ planned
+**Status:** Not built. Canonical plan: [`alignment-plan-axial.md`](alignment-plan-axial.md).
+
+**Approach (long-run):** API-first (`lib/funder/book.ts`, `/api/funder/*`) → shared
+`FunderProtectionCenter` components → embed in **Liquidity** (PRD) → optional
+`/app/funder-portal` for external LPs (same API, thin shell like payer portal).
+
+**Sprint steps:**
+
+| Step | Task | Status |
+|------|------|--------|
+| B-10.1 | `lib/funder/book.ts` + types | ✅ |
+| B-10.2 | `GET /api/funder/book` | ✅ |
+| B-10.3 | `GET /api/funder/deals/[id]` | ✅ |
+| B-10.4 | `FunderProtectionCenter` components | ✅ |
+| B-10.5 | Embed in `LiquidityView` | ✅ |
+| B-10.6 | Overview “deals at risk” chip | ✅ |
+| B-10.7 | `/app/funder-portal` + token auth | ✅ |
+| B-10.8 | Doc sync (flow, Axial, remaining-work) | ⬜ |
+
+**Blocked for “Repaid” column:** B-2 S5 on-chain `settle`.
+
+- **References:** [`alignment-plan-axial.md`](alignment-plan-axial.md), [`prd-axial.md`](prd-axial.md) US-06, `web/lib/settlement/store.ts`, `web/components/views/PayerPortalView.tsx` (portal pattern)
 
 ---
 

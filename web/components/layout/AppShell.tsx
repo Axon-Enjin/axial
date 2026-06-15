@@ -17,6 +17,9 @@ export function AppShell({
   user?: AuthUser | null;
 }) {
   const pathname = usePathname();
+  const isPortalRoute =
+    pathname.startsWith("/app/payer-portal") ||
+    pathname.startsWith("/app/funder-portal");
   const meta = PAGE_META[pathname] ?? PAGE_META["/app"];
   const {
     walletConnected,
@@ -25,6 +28,14 @@ export function AppShell({
     connectWalletFromShell,
     dispatch,
   } = useApp();
+
+  if (isPortalRoute) {
+    return (
+      <div className="min-h-screen overflow-x-hidden bg-surface-container-lowest font-body-md text-body-md text-on-surface">
+        {children}
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen overflow-x-hidden bg-surface-container-lowest font-body-md text-body-md text-on-surface selection:bg-primary/20 selection:text-primary">

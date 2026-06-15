@@ -85,7 +85,8 @@ jobs:
             --update-secrets="SUPABASE_SERVICE_ROLE_KEY=SUPABASE_SERVICE_ROLE_KEY:latest" \
             --update-secrets="MAINNET_STELLAR_ISSUER_SECRET=MAINNET_STELLAR_ISSUER_SECRET:latest" \
             --update-secrets="MAINNET_STELLAR_FUNDER_SECRET=MAINNET_STELLAR_FUNDER_SECRET:latest" \
-            --update-secrets="MAINNET_STELLAR_MSME_SECRET=MAINNET_STELLAR_MSME_SECRET:latest"
+            --update-secrets="MAINNET_STELLAR_MSME_SECRET=MAINNET_STELLAR_MSME_SECRET:latest" \
+            --update-secrets="AXIAL_FUNDER_PORTAL_TOKEN=AXIAL_FUNDER_PORTAL_TOKEN:latest"
 
       - name: Show Cloud Run URL
         run: |

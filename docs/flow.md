@@ -291,7 +291,8 @@ stateDiagram-v2
 | PDAX PHP ramp UI | L2 | ✅ | Settings `PdaxRampCard` |
 | Operating network | L1 | ✅ | Stellar Mainnet — all 4 contracts deployed + initialized; system runs Mainnet-only |
 | Live BIR submission | — | ⬜ | Mock by default; `BIR_EIS_LIVE` gates real client |
-| Funder portal | Could | ❌ | v1 skip |
+| Funder Protection Center | Should | ✅ | Embedded in Liquidity + share link to `/app/funder-portal` |
+| Funder portal (external LP) | Could | ✅ | Token or org-session preview · [`/app/funder-portal`](../../web/app/app/funder-portal/page.tsx) |
 
 ---
 

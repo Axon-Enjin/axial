@@ -12,6 +12,7 @@ import { Card } from "@/components/ui/Card";
 import { Icon } from "@/components/ui/Icon";
 import { StatTile } from "@/components/ui/StatTile";
 import { StatusBadge } from "@/components/ui/StatusBadge";
+import { FunderProtectionCenter } from "@/components/funder/FunderProtectionCenter";
 import { DEMO_INVOICE_PNGS } from "@/lib/invoices/demo-png-samples";
 import type { FactoringInvoiceClient } from "@/lib/invoices/types";
 import { isFundable, trustHint } from "@/lib/msme/invoice-trust";
@@ -251,6 +252,7 @@ export function LiquidityView() {
     treasury?: { funderUsdc: string | null };
     contractsDeployed?: number;
   } | null>(null);
+  const [funderRefreshKey, setFunderRefreshKey] = useState(0);
   const hasLoadedRef = useRef(false);
 
   useEffect(() => {
@@ -294,6 +296,7 @@ export function LiquidityView() {
       setTotalPages(data.totalPages ?? 1);
       setStoreBackend(data.store ?? null);
       hasLoadedRef.current = true;
+      setFunderRefreshKey((k) => k + 1);
     } catch {
       if (!background) {
         setInvoices([]);
@@ -911,6 +914,15 @@ export function LiquidityView() {
           </div>
         </div>
       </Card>
+
+      <FunderProtectionCenter
+        explorerTxBase={
+          chain?.explorerTxBase ?? "https://stellar.expert/explorer/public/tx"
+        }
+        treasuryUsdc={summary?.treasury?.funderUsdc}
+        refreshKey={funderRefreshKey}
+        showShareLink
+      />
       </div>
     </main>
   );
