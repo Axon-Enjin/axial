@@ -5,7 +5,7 @@ export default function manifest(): MetadataRoute.Manifest {
     name: "Axial",
     short_name: "Axial",
     description:
-      "Instant Capital, Invisible Compliance. Liquidity and compliance engine for Philippine MSMEs.",
+      "Instant Capital, Effortless Compliance. Liquidity and compliance engine for Philippine MSMEs.",
     start_url: "/",
     display: "standalone",
     background_color: "#0B0E14",

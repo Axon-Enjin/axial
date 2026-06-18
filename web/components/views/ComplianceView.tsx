@@ -350,7 +350,7 @@ export function ComplianceView() {
 
       <div className="flex flex-col sm:flex-row items-start justify-between gap-3 sm:gap-4">
         <p className="font-body-lg text-[15px] sm:text-body-lg text-on-surface-variant">
-          Invisible background regulatory processes.
+          Effortless regulatory compliance — prepared for your review.
         </p>
         <StatusBadge kind={routed ? "settled" : "active"}>
           {routed ? "Payroll Routed" : "Systems Synchronized"}

@@ -19,24 +19,24 @@ export const metadata: Metadata = {
     process.env.NEXT_PUBLIC_BASE_URL ?? "https://axial-phi.vercel.app"
   ),
   title: {
-    default: "Axial — Instant Capital, Invisible Compliance",
+    default: "Axial — Instant Capital, Effortless Compliance",
     template: "%s · Axial",
   },
   description:
-    "Liquidity and compliance engine for Philippine MSMEs. Unlock cash from tokenized receivables on Stellar while BIR EIS compliance runs automatically.",
+    "Liquidity and compliance engine for Philippine MSMEs. Unlock cash from tokenized receivables on Stellar while BIR EIS filings are prepared for one-click review and submission.",
   applicationName: "Axial",
   openGraph: {
     type: "website",
     siteName: "Axial",
-    title: "Axial — Instant Capital, Invisible Compliance",
+    title: "Axial — Instant Capital, Effortless Compliance",
     description:
-      "Liquidity and compliance engine for Philippine MSMEs. Tokenize receivables on Stellar, fund payroll instantly, automate BIR EIS compliance.",
+      "Liquidity and compliance engine for Philippine MSMEs. Tokenize receivables on Stellar, fund payroll instantly, and prepare BIR EIS filings for one-click review.",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Axial — Instant Capital, Invisible Compliance",
+    title: "Axial — Instant Capital, Effortless Compliance",
     description:
-      "Liquidity and compliance engine for Philippine MSMEs. Tokenize receivables on Stellar, fund payroll instantly, automate BIR EIS compliance.",
+      "Liquidity and compliance engine for Philippine MSMEs. Tokenize receivables on Stellar, fund payroll instantly, and prepare BIR EIS filings for one-click review.",
   },
 };
 

@@ -3,9 +3,9 @@ import Link from "next/link";
 import { LogoMark } from "@/components/ui/Logo";
 
 export const metadata: Metadata = {
-  title: { absolute: "Axial — Instant Capital, Invisible Compliance" },
+  title: { absolute: "Axial — Instant Capital, Effortless Compliance" },
   description:
-    "Liquidity and compliance engine for Philippine MSMEs. Unlock cash from tokenized receivables on Stellar while BIR EIS submissions happen automatically.",
+    "Liquidity and compliance engine for Philippine MSMEs. Unlock cash from tokenized receivables on Stellar while BIR EIS filings are prepared for one-click review and submission.",
 };
 
 const STEPS = [
@@ -31,8 +31,8 @@ const STEPS = [
   },
   {
     n: "05",
-    title: "BIR EIS filed silently",
-    body: "The compliance oracle assembles 20 BIR fields, JWS-signs, and submits within T+3 — no manual input.",
+    title: "BIR EIS, ready to submit",
+    body: "The compliance oracle assembles 20 BIR fields and JWS-signs them — you review and submit within T+3.",
   },
 ];
 
@@ -87,15 +87,15 @@ export default function LandingPage() {
           {/* Right side - Content (70% width on desktop, full width on mobile) */}
           <div className="lg:order-2 lg:w-[70%] w-full">
             <p className="mb-4 sm:mb-5 font-label-sm text-[10px] sm:text-label-sm uppercase tracking-wider text-[#2DD4BF]">
-              Build on Stellar Philippines · Hackathon 2026
+              Live on Stellar Mainnet · 2nd Runner-Up, Build on Stellar Philippines 2026
             </p>
             <h1 className="font-headline-xl text-[32px] leading-[1.15] sm:text-[40px] md:text-headline-xl text-on-surface">
-              Instant Capital,<br />Invisible Compliance.
+              Instant Capital,<br />Effortless Compliance.
             </h1>
             <p className="mt-5 sm:mt-6 font-body-md text-[15px] leading-relaxed sm:font-body-lg sm:text-body-lg text-on-surface-variant">
               Philippine MSMEs lose months of cash flow to Net 60–90 B2B payment terms.
               Axial unlocks that capital through tokenized receivables on Stellar — and
-              files BIR EIS automatically, on every transaction.
+              prepares your BIR EIS filing for one-click submission, on every transaction.
             </p>
             <div className="mt-8 sm:mt-10 flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center gap-3 sm:gap-4">
               <Link
@@ -200,10 +200,10 @@ export default function LandingPage() {
               <span className="material-symbols-outlined text-[28px] sm:text-[32px] text-[#2DD4BF]">cloud_done</span>
             </div>
             <h3 className="mb-2 font-headline-sm text-[16px] sm:text-headline-sm text-on-surface">
-              Invisible BIR EIS
+              Effortless BIR EIS
             </h3>
             <p className="font-body-md text-[13px] leading-relaxed sm:text-body-md text-on-surface-variant">
-              Off-chain oracle maps Stellar events to BIR&apos;s 20-field schema, JWS-signs, submits within T+3. Success ref
+              Off-chain oracle maps Stellar events to BIR&apos;s 20-field schema and JWS-signs — you approve, it submits within T+3. Success ref
               → Stellar memo.
             </p>
           </div>
@@ -268,7 +268,7 @@ export default function LandingPage() {
               USDC on Stellar
             </h3>
             <p className="font-body-md text-[13px] leading-relaxed sm:text-body-md text-on-surface-variant">
-              Circle-issued production settlement. No external stablecoin risk.
+              Circle-issued production settlement. Issuer and FX exposure are managed, not ignored — contracts stay denomination-agnostic.
             </p>
           </div>
           <div className="rounded-lg sm:rounded-xl border border-outline-variant/10 bg-surface-container/30 p-5 sm:p-6 backdrop-blur-sm">
@@ -276,7 +276,7 @@ export default function LandingPage() {
               3–5s Finality
             </h3>
             <p className="font-body-md text-[13px] leading-relaxed sm:text-body-md text-on-surface-variant">
-              Settlement triggers compliance oracle within T+3. Compliance as a background process.
+              Settlement triggers the compliance oracle within T+3. Filings prepared for your review.
             </p>
           </div>
         </div>

@@ -13,7 +13,7 @@ export default function AuthLayout({
           <Logo className="h-8 w-auto" />
         </Link>
         <p className="font-body-md text-body-md text-on-surface-variant">
-          Instant Capital · Invisible Compliance
+          Instant Capital · Effortless Compliance
         </p>
       </div>
 

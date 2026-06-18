@@ -76,7 +76,7 @@ flowchart LR
     C2["⬜ Pay suppliers / ops"]
   end
 
-  subgraph phaseD [D — Invisible compliance]
+  subgraph phaseD [D — Effortless compliance: review and submit]
     D1["✅ Oracle → 20 BIR fields"]
     D2["✅ JWS mock sign"]
     D3["✅ Mock BIR accept"]

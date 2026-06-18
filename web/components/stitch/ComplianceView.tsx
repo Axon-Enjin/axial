@@ -26,7 +26,7 @@ export function ComplianceView() {
                 Compliance Ledger
               </h2>
               <p className="font-body-lg text-body-lg text-on-surface-variant">
-                Invisible background regulatory processes.
+                Effortless regulatory compliance — prepared for your review.
               </p>
             </div>
             <div className="flex items-center gap-2 rounded-full border border-outline-variant/20 bg-surface-container py-2 px-4">

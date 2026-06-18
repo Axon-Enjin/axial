@@ -14,11 +14,11 @@
 
 ## 1. Product Summary (GTM View)
 
-**What it does (one sentence):** Axial gives Philippine B2B MSMEs instant working capital from tokenized receivables and invisible compliance — statutory payroll routing and BIR EIS submission — on Stellar/Soroban, with a calm, architect-grade UI.
+**What it does (one sentence):** Axial gives Philippine B2B MSMEs instant working capital from tokenized receivables and effortless compliance — statutory payroll routing and review-and-submit BIR EIS filing — on Stellar/Soroban, with a calm, architect-grade UI.
 
 **Who it's for:** Digitally fluent B2B service MSMEs (10–50 people) — software, creative, specialized manpower agencies — whose enterprise buyers enforce Net 60–90 while payroll and government obligations run on shorter, non-negotiable cycles.
 
-**Core value proposition:** "Instant capital, invisible compliance." Liquidity when you need it. Statutory and BIR flows handled as verified background outcomes, not spreadsheet panic.
+**Core value proposition:** "Instant capital, effortless compliance." Liquidity when you need it. Statutory and BIR filings prepared for you and submitted on your approval — verified outcomes, not spreadsheet panic.
 
 **Category:** Philippine fintech infrastructure — liquidity and regulatory automation. Not generic SMB accounting. Not DeFi for its own sake.
 
@@ -54,7 +54,7 @@
 
 ## 3. Positioning and Messaging
 
-**Primary tagline:** "Instant capital, invisible compliance."
+**Primary tagline:** "Instant capital, effortless compliance." *(Updated 2026-06-18; "invisible compliance" retired as headline — north-star vision only.)*
 
 **Hero message:** Axial is the central axis where receivable liquidity and Philippine regulatory execution meet — without legacy ERP anxiety.
 
