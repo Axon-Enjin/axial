@@ -54,7 +54,7 @@ export async function GET(request: NextRequest) {
       })()
     : new URL(next, baseUrl);
 
-  let response = NextResponse.redirect(destination);
+  const response = NextResponse.redirect(destination);
 
   const supabase = createServerClient(supabaseUrl, supabaseAnonKey, {
     cookies: {

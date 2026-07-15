@@ -248,8 +248,7 @@ export function deriveOrgJourney(input: OrgJourneyInput): JourneyStage[] {
   ) {
     for (const id of ORDER) {
       if (id === "collect") resolved[id] = "active";
-      else if (resolved[id] === "active" && id !== "collect")
-        resolved[id] = "idle";
+      else if (resolved[id] === "active") resolved[id] = "idle";
     }
   }
 
