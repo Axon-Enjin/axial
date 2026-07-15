@@ -1,5 +1,7 @@
 # Axial — Pitch Script (~3 min)
 
+> ⚠️ **Superseded for Philippine Blockchain Week.** This is the original ~3-min **hackathon** script (tagline "Invisible Compliance", auto-submission framing). For PBW use [`pbw-script.md`](pbw-script.md) — the ~10-min, 5-element narrative with the pivoted **"Effortless Compliance" / human-in-the-loop** positioning. Kept here as a historical record.
+
 Slide-synced to [`pitch-deck.html`](pitch-deck.html). Advance the deck at each `[advance]` cue.
 
 ---

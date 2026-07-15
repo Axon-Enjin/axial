@@ -14,7 +14,7 @@
 
 ## 1. Product Purpose and Value Proposition
 
-Axial is a **liquidity and compliance engine** for Philippine MSMEs. It lets businesses unlock cash from tokenized receivables through Stellar/Soroban atomic swaps into USDC on Stellar (proceeds displayed in PHP), automatically split and route statutory payroll obligations (SSS, PhilHealth, Pag-IBIG), and generate and submit BIR EIS payloads after ledger-final events — so founders get **instant capital** and **invisible compliance** without legacy ERP anxiety.
+Axial is a **liquidity and compliance engine** for Philippine MSMEs. It lets businesses unlock cash from tokenized receivables through Stellar/Soroban atomic swaps into USDC on Stellar (proceeds displayed in PHP), automatically split and route statutory payroll obligations (SSS, PhilHealth, Pag-IBIG), and generate BIR EIS payloads after ledger-final events and surface them for one-click review and submission — so founders get **instant capital** and **effortless compliance** without legacy ERP anxiety. *(Compliance model: human-in-the-loop "Compliance Co-Pilot" — prepare → review → submit; auto-submission gated on BIR Permit to Transmit. Updated 2026-06-18 — see [Axial.md](Axial.md) PBW review.)*
 
 Built for digitally fluent B2B operators — starting with software and creative agencies — who suffer Net 60–90 terms against bi-weekly payroll and strict government reporting windows.
 

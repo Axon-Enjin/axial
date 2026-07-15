@@ -14,7 +14,7 @@
 
 ### What we're building (one paragraph)
 
-Axial is a liquidity and compliance engine for Philippine MSMEs, built for the **Build on Stellar Philippines Hackathon 2026 (May 18–24)**. The flow: a B2B payer is onboarded and confirms an invoice (acknowledging a Notice of Assignment) → the MSME tokenizes that confirmed receivable on Soroban → an atomic swap funds the MSME instantly in USDC on Stellar (advance with reserve + recourse) → a Soroban payroll contract splits the next bi-weekly payroll across SSS, PhilHealth, and Pag-IBIG → an off-chain oracle maps the ledger-final event into BIR EIS JSON, JWS-signs it, and submits to BIR within T+3, writing the success reference back to the Stellar transaction memo. UI is four tabs (Liquidity, Compliance, Overview, Settings), dark-mode-first, glassmorphic, calm. Brand archetype is **The Architect** — never alarmist, never data-soup.
+Axial is a liquidity and compliance engine for Philippine MSMEs, built for the **Build on Stellar Philippines Hackathon 2026 (May 18–24)**. The flow: a B2B payer is onboarded and confirms an invoice (acknowledging a Notice of Assignment) → the MSME tokenizes that confirmed receivable on Soroban → an atomic swap funds the MSME instantly in USDC on Stellar (advance with reserve + recourse) → a Soroban payroll contract splits the next bi-weekly payroll across SSS, PhilHealth, and Pag-IBIG → an off-chain oracle maps the ledger-final event into a BIR-EIS-ready JSON payload and JWS-signs it, then surfaces it for **human review and one-click submission** within T+3 (mock endpoint today; live transmission gated on BIR software certification + Permit to Transmit), writing the reference back to the Stellar transaction memo. UI is four tabs (Liquidity, Compliance, Overview, Settings), dark-mode-first, glassmorphic, calm. Brand archetype is **The Architect** — never alarmist, never data-soup.
 
 ### What changed in this latest review (locked decisions)
 
@@ -51,6 +51,18 @@ A CTO/auditor review on Day 5 of the hackathon checked the `web/` and `soroban/`
 | Operating network — Mainnet only | ✅ Locked (2026-05-22) | Axial runs on **Stellar Mainnet only**. All 4 contracts are deployed + initialized on Mainnet (`deployments/mainnet.json`). This **reverses** the earlier "testnet is the live demo path" decision — testnet is retired as an operating target and kept only as a developer sandbox. |
 | Closed-loop settlement build gap | ⚠️ Acknowledged | The closed loop is built in code — payer portal, NoA issue/ack, reconciliation cron, and the `settlement` contract (deployed + initialized on Mainnet). But it is **not exercised**: the app does not yet call settlement — the `register_invoice`/`settle` wiring (B-2 phases S3–S6) is the active workstream. Do **not** present the closed loop as live until that lands. |
 | Hardcoded demo data | ⚠️ Acknowledged | FX rate (`56.5`), Settings credentials/audit log, and seller/buyer TINs are hardcoded demo values. Acceptable for the hackathon; tracked for replacement in [`docs/sprint.md`](sprint.md). |
+
+### PBW review & compliance pivot (2026-06-18)
+
+Ahead of the **Philippine Blockchain Week** presentation (Day 1, SMX), we ran a scrutiny pass against industry reality and the hackathon judges' standing challenge — *"What if the company closes? What if it's a scam? How do you prevent it?"* Findings: [`scrutiny-pbw.md`](scrutiny-pbw.md); full risk register: [`rfc-axial-risk-mitigation.md`](rfc-axial-risk-mitigation.md). The following are now **locked**.
+
+| Decision | Status | Locked decision |
+|---|---|---|
+| **Compliance model — human in the loop** | ✅ Locked (2026-06-18) | Reposition from *auto-submission* to a **"Compliance Co-Pilot": prepare → review → submit.** Axial maps each ledger-final event into a BIR-EIS-ready, JWS-signable payload and SSS/PhilHealth/Pag-IBIG schedules, then surfaces them for **human review and explicit approval** before submission. Auto-submission is a roadmap item, **gated on EIS software certification + Permit to Transmit (PTT)**. Rationale: filing wrong/fraudulent returns automatically is an uninsured liability, and it is the human checkpoint that answers "what if it's wrong or a scam." |
+| **Primary tagline** | ✅ Locked (2026-06-18) | **"Instant Capital, Effortless Compliance."** *"Invisible Compliance"* is retired as the headline claim and kept only as the **north-star vision** (full automation, post-certification). |
+| **Funder framing** | ✅ Locked (2026-06-18) | Funders are **regulated / qualified liquidity partners**, not an open on-chain pool. Factoring/discounting AR is a financing-company activity under **RA 8556** (SEC Certificate of Authority), and assigned receivables may transfer only to defined regulated buyers. Axial presents as **tech + origination rails on top of a licensed financing entity**. Entity/CA posture → **counsel** ([`clr-axial.md`](clr-axial.md)). |
+| **Honesty about dependencies** | ✅ Locked (2026-06-18) | Stop calling USDC "no external dependency." Name **Circle counterparty + freeze/blacklist risk** and **PHP/USDC FX risk** openly as managed risks (mitigated by denomination-agnostic contracts). |
+| **PBW framing** | ✅ Locked (2026-06-18) | This is an **industry talk**, not a hackathon pitch. The 2nd-Runner-Up win is **evidence**, not the headline. Lead with the change in the world (BIR e-invoicing + real-time CTC), not the competition. |
 
 ### Locked architecture in one paragraph
 
@@ -95,7 +107,7 @@ Snapshot of what ships in **`web/`** today vs locked product vision. Visual tab 
 | Area | Status | Notes |
 |------|--------|-------|
 | Soroban L1 (mint, swap, payroll) | ✅ Mainnet | Happy path wired from Liquidity + Compliance |
-| BIR EIS oracle (20 fields, JWS mock, memo) | ✅ | Supabase `eis_submissions`; API-triggered on chain events |
+| BIR EIS oracle / Co-Pilot (20 fields, JWS mock, memo) | ✅ | Supabase `eis_submissions`; API-triggered on chain events; **prepares filings for human review/approval** — auto-submit gated on PTT (2026-06-18 pivot) |
 | T+3 submission worker | ✅ | `eis/worker` cron — retries stale submissions inside the T+3 window, expires the rest |
 | Horizon event poll | ✅ | `eis/horizon-poll` cron — ingests chain events the live API path missed |
 | Reconciliation / leakage scan | ✅ | `reconciliation/scan` cron — daily leakage scan |
@@ -411,7 +423,7 @@ Axial is **The Architect**: meticulous, organized, structural. It builds autonom
 
 To engineer autonomous financial and regulatory systems that absorb the friction of business operations, allowing founders to step out of the execution trench and focus on high-level strategy.
 
-**The paradigm shift:** Regulatory compliance (BIR EIS payloads, statutory deductions) stops being a high-stress, manual chore and becomes an invisible, self-executing background process. Liquidity stops being a crisis that interrupts operations and becomes a designed system the business relies on without noticing.
+**The paradigm shift:** Regulatory compliance (BIR EIS payloads, statutory deductions) stops being a high-stress, manual chore and becomes a low-friction, self-executing background process — with a human approving each filing in one click until full automation is BIR-certified. Liquidity stops being a crisis that interrupts operations and becomes a designed system the business relies on without noticing.
 
 ### 6.3 Visual Identity
 
@@ -447,7 +459,7 @@ To engineer autonomous financial and regulatory systems that absorb the friction
 
 ### 6.5 Core Messaging Pillars
 
-1. **"Instant Capital, Invisible Compliance."** — The primary tagline. Both words are doing work. "Instant" means now, not 60 days from now. "Invisible" means handled in the background, not a chore.
+1. **"Instant Capital, Effortless Compliance."** — The primary tagline (updated 2026-06-18). "Instant" means now, not 60 days from now. "Effortless" means Axial does the heavy lifting — mapping, JWS signing, statutory scheduling — so compliance collapses to a one-click *review and approve*, not a manual chore and not a silent robot filing on your behalf. *(The earlier "Invisible Compliance" is retired as the headline claim and kept only as the north-star vision of full automation once BIR-certified — see the PBW review block near the top of this doc.)*
 2. **"Engineered for Autonomy."** — The system runs without being managed. The founder should not need to remember deadlines or check portals.
 3. **"Your Ledger, Synchronized."** — The Stellar ledger and the BIR/government systems and the MSME's accounting view are always in agreement. No reconciliation anxiety.
 
@@ -471,8 +483,8 @@ Institutional lenders or liquidity pools evaluate the confirmed receivable and t
 **Step 3 — Programmable Statutory Payroll Splitting**
 As the MSME routes the settlement asset for bi-weekly payroll, a Soroban smart contract replaces manual spreadsheets. It automatically calculates and routes the exact statutory deductions (SSS, PhilHealth, Pag-IBIG — employee and employer shares) to the respective government agency wallets in real-time. Contracts are denomination-agnostic — they take the asset address as a parameter, so any future Stellar-native PHP-pegged asset slots in without changing routing logic.
 
-**Step 4 — Automated BIR EIS Bridging**
-The moment the financial transaction achieves Stellar ledger consensus (3–5 seconds), an off-chain oracle service pulls the metadata, maps it to the 20 mandatory BIR EIS fields, applies JWS signing, and transmits to the BIR EIS API within T+3. The BIR success reference ID is written back to the Stellar transaction memo as immutable, auditable proof.
+**Step 4 — BIR EIS Bridging (Compliance Co-Pilot — human in the loop)**
+The moment the financial transaction achieves Stellar ledger consensus (3–5 seconds), an off-chain oracle service pulls the metadata and maps it to the 20 mandatory BIR EIS fields, producing a JWS-signable payload. Rather than transmitting silently, Axial **surfaces the prepared filing for human review and explicit approval**; on approval it submits within the T+3 window and writes the reference ID back to the Stellar transaction memo as immutable, auditable proof. Submission is mock today; live transmission is gated on BIR software certification + Permit to Transmit. Full auto-submission (no human step) is a post-certification roadmap option, never the default. The human checkpoint is the control that catches OCR/mapping errors and fraudulent invoices *before* they reach the government — which is precisely why "invisible" became "effortless." (Locked 2026-06-18 — see the PBW review block at the top of this doc.)
 
 **Step 5 — Closed-Loop Settlement and Reconciliation**
 On Day 60, the confirmed payer settles to the **designated lockbox / collection address** named in the NoA — the only payment instruction it ever received. The settlement contract repays the liquidity provider (principal + discount), releases the holdback reserve, and returns the residual margin to the MSME. A reconciliation worker watches every active invoice: if a due invoice has no funds in the lockbox by T+X, the MSME account is auto-frozen, the funder is notified, and recourse + blacklist are triggered. Because the payer acknowledged the NoA, paying the MSME directly does **not** discharge the debt — leakage is the payer's/MSME's liability, never the funder's loss.
@@ -483,7 +495,7 @@ Two revenue engines. The first scales with volume; the second is the recurring, 
 
 **1. Liquidity spread (transaction).** Discount fee ≈ **2–3.5% of face value per ~30-day tenor** (so ~6–9% all-in on a Net-90 invoice). Most of that is funder yield for risk capital; **Axial keeps a platform spread of ~0.5–1.5% of face value per funded invoice** (rule of thumb: ≈ 1% of every funded peso), plus a thin PHP↔USDC FX spread at the edge and a small flat origination fee on sub-₱50k tickets so micro-invoices stay economic. Hard ceiling: total all-in cost must stay below traditional PH factoring (1–5%, often 15–30% APR, collateral-required) — undercutting that is the wedge.
 
-**2. Compliance subscription (recurring — the moat).** "Invisible Compliance" is **not** free bait. The BIR EIS Dec-2026 mandate makes the EIS oracle + statutory payroll engine a must-have. Tiered monthly subscription by invoice volume / headcount monetizes MSMEs who are not factoring this month but must still file — smoothing revenue and raising switching cost.
+**2. Compliance subscription (recurring — the moat).** "Effortless Compliance" is **not** free bait. The BIR EIS Dec-2026 mandate makes the EIS oracle + statutory payroll engine a must-have. Tiered monthly subscription by invoice volume / headcount monetizes MSMEs who are not factoring this month but must still file — smoothing revenue and raising switching cost.
 
 ### 7.2 What Success Looks Like for the Founder
 
@@ -604,7 +616,8 @@ These are things we have decided at a high level but where the implementation de
 
 | Decision | Status | Current Posture | Notes |
 |---|---|---|---|
-| Settlement asset | ✅ Resolved | **USDC on Stellar** | Real, on Mainnet, no external dependency. UI denominates in PHP via FX conversion at the edge. |
+| Settlement asset | ✅ Resolved | **USDC on Stellar** | Real, on Mainnet. UI denominates in PHP via FX conversion at the edge. **Not** dependency-free: Circle counterparty + freeze/blacklist risk and PHP/USDC FX risk are acknowledged as managed risks (PBW review 2026-06-18; see [`rfc-axial-risk-mitigation.md`](rfc-axial-risk-mitigation.md) O4/C5). |
+| Compliance submission model | ✅ Locked | **Human-in-the-loop "Compliance Co-Pilot" — prepare → review → submit** | Locked 2026-06-18 (PBW review). Auto-submission gated on Permit to Transmit. See top-of-doc PBW block + [`rfc-axial-risk-mitigation.md`](rfc-axial-risk-mitigation.md) R1–R2. |
 | PHP stablecoin = PHPC on Stellar | ❌ Retired | Not pursued | PHPC is on Polygon and Ronin, not Stellar. Exited BSP sandbox July 2025. Bridging is out of scope for v1. |
 | PHP fiat rail (production) | ✅ Resolved | **PDAX as primary anchor** via PDAX Connect API; SEP-24 abstraction allows Coins.ph or future PHP-Stellar issuers to plug in without changing contract logic | PDAX sandbox access **not granted (2026-05-22)** — L3 dropped; hackathon ships L2 mocked PDAX UI. SEP-24 abstraction lets PDAX wire in post-hackathon with no contract changes. |
 | Direct QRPh integration | ❌ Retired | Not buildable as third-party | QRPh requires BSP-licensed PSP/EMI status. Handled at the anchor edge. |
@@ -663,10 +676,10 @@ Axial is a Stellar/Soroban-powered **liquidity and compliance engine** that turn
 1. The B2B payer is onboarded, confirms the invoice, and e-acknowledges a Notice of Assignment — only then is the receivable tokenized as a Stellar Asset on Soroban.
 2. A Soroban contract executes an atomic swap: the receivable token to the liquidity provider, USDC to the MSME — instantly, without physical collateral, advancing ~80–90% with a holdback reserve and MSME recourse.
 3. When the MSME runs payroll, a Soroban contract splits the gross amount into employee net pay, employer share, and the three statutory routes (SSS, PhilHealth, Pag-IBIG) — calculated against versioned, legally-reviewed bracket tables.
-4. Every reportable ledger event triggers an off-chain compliance oracle that maps Stellar transaction metadata to the BIR EIS 20-field schema, signs the payload with JWS, and submits to BIR within T+3. The BIR success reference is written back to the Stellar memo as immutable proof.
+4. Every reportable ledger event triggers an off-chain compliance oracle that maps Stellar transaction metadata to the BIR EIS 20-field schema and JWS-signs the payload, then presents it for **human review and approval** before submission within T+3 (mock endpoint today; live transmission gated on BIR certification + Permit to Transmit). The reference is written back to the Stellar memo as immutable proof.
 5. The confirmed payer settles to the designated lockbox; the contract repays the liquidity provider, releases the reserve, and returns the margin to the MSME. Reconciliation auto-escalates any leakage — and because the NoA was acknowledged, off-system payment does not discharge the debt.
 
-The brand promise is **"Instant Capital, Invisible Compliance."** Both halves run on the same on-chain event, which is what makes the integration architecturally inseparable rather than two products glued together.
+The brand promise is **"Instant Capital, Effortless Compliance."** Both halves run on the same on-chain event, which is what makes the integration architecturally inseparable rather than two products glued together.
 
 ### 13.4 Target Users / Audience
 
@@ -700,7 +713,7 @@ The brand promise is **"Instant Capital, Invisible Compliance."** Both halves ru
 - **Client:** Next.js 15 (App Router) · React 19 · TypeScript 5 · Tailwind CSS 4 · Geist · Material Symbols. Four-tab IA: Liquidity, Compliance, Overview, Settings.
 - **Application tier:** modular monolith. API gateway + domain services + job workers (BullMQ or Temporal — TBD). REST + OpenAPI preferred over tRPC for BIR API parity and external integration legibility.
 - **Smart contracts:** Soroban (Rust → WASM) for SAC issuance, atomic swap, statutory payroll router, settlement.
-- **Compliance oracle:** off-chain service in the application tier — subscribes to Stellar ledger events, maps to the BIR EIS 20-field schema, JWS-signs in a vault-mediated key context, submits to BIR with idempotency keys, writes acknowledgement memo back on-chain.
+- **Compliance oracle (Co-Pilot):** off-chain service in the application tier — subscribes to Stellar ledger events, maps to the BIR EIS 20-field schema, JWS-signs in a vault-mediated key context, surfaces the prepared filing for human review/approval, then submits to BIR with idempotency keys on approval, writing the acknowledgement memo back on-chain.
 - **Data:** PostgreSQL (authoritative for UX projections and submission state) · Redis (distributed locks, rate limits) · Vault/KMS (BIR signing keys, wallet material — never in env files).
 - **Hosting target:** Asia Pacific region for BIR API latency and connectivity path.
 

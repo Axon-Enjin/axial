@@ -84,7 +84,7 @@ export default function OgImage() {
             letterSpacing: "0px",
           }}
         >
-          Instant Capital, Invisible Compliance.
+          Instant Capital, Effortless Compliance.
         </div>
 
         {/* Sub-line */}
