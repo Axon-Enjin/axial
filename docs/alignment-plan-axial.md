@@ -13,7 +13,7 @@
 
 ## 1. North star (unchanged)
 
-**Tagline:** Instant capital, invisible compliance.
+**Tagline:** Instant capital, effortless compliance.
 
 **Three problems, one pipeline:**
 

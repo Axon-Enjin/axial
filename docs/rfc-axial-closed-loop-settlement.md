@@ -180,6 +180,7 @@ Reconciliation is a scheduled worker (same queue tech as the EIS submission work
 - The eligibility gate is the sole funding enforcement point; it is server-side and cannot be satisfied by client-supplied state.
 - Stellar assets issued **clawback-enabled** + `AUTH_REQUIRED`: a receivable token minted on a later-disproven invoice can be revoked; statutory tokens only flow to whitelisted government addresses.
 - Lockbox addresses are derived per-invoice and never reused; a leaked address cannot be repointed.
+- **Update (B-2 S5, 2026-07-15):** `settleOnChain` reads the settlement contract's USDC SAC balance before calling `settlement::settle`. Empty lockbox → hard error (502 to client). `collectedAmount` is capped to on-chain balance for partial recovery. `onChainInvoiceId` on `factoring_invoices` must match `register_invoice` id at swap time — payer portal calls `mark_collected` after lockbox fund and returns `settlement.txHash` in the API response.
 - **Update (B-2 S4, 2026-05-22):** NoA `lockboxAddress` now resolves to the single Mainnet `settlement` contract ID (`cfg.settlementContractId`), not the earlier `deriveDemoLockbox` GAXL string — per-invoice attribution is recorded inside the contract via `register_invoice(invoice_id, …)` rather than via distinct on-chain addresses. The demo GAXL string remains only as an off-chain fallback when settlement chain config is absent.
 
 **Performance:**

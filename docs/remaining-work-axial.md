@@ -54,14 +54,16 @@ See [`Axial.md`](Axial.md) § "Implementation status" for the full table.
 
 ### 2. Closed-loop settlement — on-chain `settle` (B-2 S5)
 
-**Status:** `🟡` — S3–S4 done; **S5–S6 open**
+**Status:** `✅` — S5 shipped in code; **verify on Mainnet** via [`settle-dry-run-checklist.md`](settle-dry-run-checklist.md)
 
 | Step | Status | Notes |
 |------|--------|-------|
 | `register_invoice` after swap | ✅ | Fire-and-forget in `swap/execute` |
 | Payer Freighter → lockbox USDC | ✅ | `/api/lockbox/fund/build` + payer portal |
-| **`settle` + contract-balance pre-check** | ⬜ **S5** | Wire `settleOnChain` in app; verify full + partial paths on Mainnet |
-| Reconcile + attribution hardening | ⬜ **S6** | Document trust model in [`rfc-axial-closed-loop-settlement.md`](rfc-axial-closed-loop-settlement.md) |
+| **`settle` + contract-balance pre-check** | ✅ **S5** | Awaited on `mark_collected`; returns `settlement.txHash`; caps collected to lockbox balance |
+| Reconcile + attribution hardening | ✅ **S6** | [`rfc-axial-closed-loop-settlement.md`](rfc-axial-closed-loop-settlement.md) updated |
+
+**UX (Pink Raft adaptations, 2026-07-15):** Liquidity pipeline shows Trigger→Logic→Action; clear-signing confirm panel before mint/swap.
 
 **Do not claim** full closed-loop enforcement in pitch until S5 lands ([`Axial.md`](Axial.md) build audit).
 
@@ -211,4 +213,5 @@ flowchart TD
 
 | Date | Change |
 |------|--------|
+| 2026-07-15 | S5 balance pre-check + onChainInvoiceId; Pink Raft UX (TLA + clear-sign); feasibility / unit economics / canvas docs; investor landing (no competition framing) |
 | 2026-06-14 | Initial backlog from implementation audit vs `Axial.md`, `flow.md`, `sprint.md` |

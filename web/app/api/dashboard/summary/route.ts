@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 import { fetchDemoWalletBalances } from "@/lib/soroban/balances";
 import { getInvoiceStoreBackend, listInvoices } from "@/lib/invoices/store";
-import { getEisStoreBackend } from "@/lib/eis/store";
-import { listSubmissions } from "@/lib/eis/store";
+import { getEisStoreBackend, listSubmissions } from "@/lib/eis/store";
+import { listFunderBook } from "@/lib/funder/book";
 import {
   resolvePublicChainStatus,
   resolveSorobanConfig,
@@ -17,6 +17,7 @@ export async function GET() {
     const totalFacePhp = items.reduce((sum, inv) => sum + inv.face, 0);
     const fundableCount = items.filter((i) => i.status === "fundable").length;
     const settledCount = items.filter((i) => i.status === "settled").length;
+    const collectedCount = items.filter((i) => i.collectionStatus === "collected").length;
     const pendingPayerCount = items.filter((i) => i.status === "awaiting_payer").length;
 
     let treasury: {
@@ -43,7 +44,20 @@ export async function GET() {
     }
 
     const eisRows = await listSubmissions(50);
-    const eisSynchronized = eisRows.filter((r) => r.status === "acknowledged" || r.status === "memo_written").length;
+    const eisSynchronized = eisRows.filter(
+      (r) => r.status === "acknowledged" || r.status === "memo_written",
+    ).length;
+    const payrollRouted = eisRows.filter((r) => r.eventKind === "payroll_routed").length;
+
+    let funderAtRisk = 0;
+    let funderRepaid = 0;
+    try {
+      const book = await listFunderBook(1, 500);
+      funderAtRisk = book.summary.atRisk;
+      funderRepaid = book.summary.repaid;
+    } catch {
+      // Non-fatal — overview still renders without funder aggregates
+    }
 
     const contractsLive = [
       chain.swapContractId,
@@ -60,12 +74,20 @@ export async function GET() {
         totalFacePhp,
         fundableCount,
         settledCount,
+        collectedCount,
         pendingPayerCount,
       },
       treasury,
       eis: {
         total: eisRows.length,
         synchronized: eisSynchronized,
+      },
+      payroll: {
+        routed: payrollRouted,
+      },
+      funder: {
+        atRisk: funderAtRisk,
+        repaid: funderRepaid,
       },
       contractsDeployed: contractsLive,
     });

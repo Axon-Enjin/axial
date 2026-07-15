@@ -4,6 +4,10 @@ import { Fragment, useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { InvoiceTrustRow } from "@/components/liquidity/InvoiceTrustRow";
 import { PayerPanel } from "@/components/liquidity/PayerPanel";
+import {
+  AdvanceConfirmPanel,
+  type AdvanceConfirmDraft,
+} from "@/components/liquidity/AdvanceConfirmPanel";
 import { TokenizationPipeline } from "@/components/liquidity/TokenizationPipeline";
 import { useApp } from "@/components/providers/AppProvider";
 import { FreighterConnectGate } from "@/components/wallet/FreighterConnectGate";
@@ -253,6 +257,7 @@ export function LiquidityView() {
     contractsDeployed?: number;
   } | null>(null);
   const [funderRefreshKey, setFunderRefreshKey] = useState(0);
+  const [pendingAdvance, setPendingAdvance] = useState<AdvanceConfirmDraft | null>(null);
   const hasLoadedRef = useRef(false);
 
   useEffect(() => {
@@ -566,6 +571,7 @@ export function LiquidityView() {
             immediate: advancePhp || row.immediate || 0,
             mintTxHash: mintTx || null,
             swapTxHash: swapTx || null,
+            onChainInvoiceId: chainInvoiceId,
           }),
         });
         const settleData = (await settleRes.json()) as { invoice?: Invoice };
@@ -841,7 +847,13 @@ export function LiquidityView() {
                             variant="teal"
                             size="sm"
                             disabled={!walletReady || swappingId === row.id}
-                            onClick={() => void executeSwap(row.id, row.face)}
+                            onClick={() =>
+                              setPendingAdvance({
+                                id: row.id,
+                                party: row.party,
+                                face: row.face,
+                              })
+                            }
                             className="whitespace-nowrap"
                           >
                             {swappingId === row.id
@@ -924,6 +936,19 @@ export function LiquidityView() {
         showShareLink
       />
       </div>
+
+      {pendingAdvance ? (
+        <AdvanceConfirmPanel
+          draft={pendingAdvance}
+          busy={swappingId === pendingAdvance.id}
+          onCancel={() => setPendingAdvance(null)}
+          onConfirm={() => {
+            const draft = pendingAdvance;
+            setPendingAdvance(null);
+            void executeSwap(draft.id, draft.face);
+          }}
+        />
+      ) : null}
     </main>
   );
 }

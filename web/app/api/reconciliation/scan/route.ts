@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { listInvoices, markCollectedInvoice } from "@/lib/invoices/store";
+import { getInvoice, listInvoices } from "@/lib/invoices/store";
 import { getReserveEntry, listOpenEntries, markEntryLeaked } from "@/lib/settlement/store";
 import { resolveSorobanConfig } from "@/lib/soroban/server-config";
 import { isSettlementChainEnabled, reportLeakageOnChain } from "@/lib/soroban/invoke-settlement";
@@ -7,6 +7,16 @@ import type { ReconciliationResult } from "@/lib/settlement/types";
 
 // T+X = 7 calendar days after due date before leakage is reported
 const LEAKAGE_GRACE_DAYS = 7;
+
+function assertCronAuth(request: Request): NextResponse | null {
+  const secret = process.env.CRON_SECRET;
+  if (!secret) return null;
+  const auth = request.headers.get("authorization");
+  if (auth !== `Bearer ${secret}`) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  return null;
+}
 
 /**
  * POST /api/reconciliation/scan
@@ -23,7 +33,10 @@ const LEAKAGE_GRACE_DAYS = 7;
  *
  * The scanner never touches settled or already-leaked entries.
  */
-export async function POST() {
+export async function POST(request: Request) {
+  const denied = assertCronAuth(request);
+  if (denied) return denied;
+
   const result: ReconciliationResult = {
     scanned: 0,
     settled: 0,
@@ -69,7 +82,9 @@ export async function POST() {
             // Report on-chain if settlement contract is available
             if (isSettlementChainEnabled(cfg)) {
               try {
-                await reportLeakageOnChain(cfg, entry.receivableId);
+                const invoice = await getInvoice(entry.receivableId);
+                const chainId = invoice?.onChainInvoiceId ?? entry.receivableId;
+                await reportLeakageOnChain(cfg, chainId);
               } catch (chainErr) {
                 // Non-fatal — off-chain record is the source of truth for now
                 result.errors.push(

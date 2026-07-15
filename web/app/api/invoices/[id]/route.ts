@@ -19,6 +19,8 @@ type PatchBody = {
   immediate?: number;
   mintTxHash?: string | null;
   swapTxHash?: string | null;
+  /** Chain-scoped id passed to settlement::register_invoice */
+  onChainInvoiceId?: string | null;
   /** Gross collected amount (for mark_collected settlement path) */
   collectedAmount?: number;
 };
@@ -58,14 +60,69 @@ export async function PATCH(request: Request, context: RouteContext) {
         break;
       case "mark_collected": {
         inv = await markCollectedInvoice(decoded);
-        // Update reserve ledger + trigger on-chain settlement (fire-and-forget)
         const cfg = await resolveSorobanConfig();
         const collected = body.collectedAmount ?? inv.face;
-        void markEntrySettled(decoded, { collectedAmount: collected }).catch(() => null);
-        if (isSettlementChainEnabled(cfg)) {
-          void settleOnChain(cfg, decoded, collected).catch(() => null);
+        const settleId = inv.onChainInvoiceId ?? decoded;
+
+        let settlement:
+          | {
+              txHash: string;
+              effectiveCollected: number;
+              lockboxBalance: number;
+              skipped?: boolean;
+              error?: string;
+            }
+          | undefined;
+
+        try {
+          await markEntrySettled(decoded, { collectedAmount: collected });
+        } catch (ledgerErr) {
+          const msg =
+            ledgerErr instanceof Error ? ledgerErr.message : "Reserve ledger update failed";
+          return NextResponse.json(
+            { error: msg, invoice: toClientInvoice(inv) },
+            { status: 409 },
+          );
         }
-        break;
+
+        if (isSettlementChainEnabled(cfg)) {
+          try {
+            const result = await settleOnChain(cfg, settleId, collected);
+            await markEntrySettled(decoded, {
+              collectedAmount: result.effectiveCollected,
+              settlementTxHash: result.txHash,
+            });
+            settlement = {
+              txHash: result.txHash,
+              effectiveCollected: result.effectiveCollected,
+              lockboxBalance: result.lockboxBalance,
+            };
+          } catch (settleErr) {
+            const msg =
+              settleErr instanceof Error ? settleErr.message : "On-chain settle failed";
+            settlement = { txHash: "", effectiveCollected: 0, lockboxBalance: 0, error: msg };
+            return NextResponse.json(
+              {
+                invoice: toClientInvoice(inv),
+                settlement,
+                warning: msg,
+              },
+              { status: 502 },
+            );
+          }
+        } else {
+          settlement = {
+            txHash: "",
+            effectiveCollected: collected,
+            lockboxBalance: 0,
+            skipped: true,
+          };
+        }
+
+        return NextResponse.json({
+          invoice: toClientInvoice(inv),
+          settlement,
+        });
       }
       case "settle": {
         const immediate = body.immediate;
@@ -79,6 +136,7 @@ export async function PATCH(request: Request, context: RouteContext) {
           immediate: immediate!,
           mintTxHash: body.mintTxHash,
           swapTxHash: body.swapTxHash,
+          onChainInvoiceId: body.onChainInvoiceId,
         });
         // Create reserve ledger entry (fire-and-forget)
         void (async () => {

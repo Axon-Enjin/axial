@@ -2,12 +2,16 @@
 
 import { Fragment, useCallback, useEffect, useState } from "react";
 import { EisPayloadPanel } from "@/components/compliance/EisPayloadPanel";
+import { PayrollConfirmPanel } from "@/components/compliance/PayrollConfirmPanel";
+import { FlowPipeline } from "@/components/pipeline/FlowPipeline";
 import { useApp } from "@/components/providers/AppProvider";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { Icon } from "@/components/ui/Icon";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import type { BirEisPayload } from "@/lib/eis/types";
+import type { PayrollPipelineStage } from "@/lib/pipeline/configs";
+import { payrollPipelineSteps } from "@/lib/pipeline/configs";
 
 /** Demo payroll pool when no swap yet — matches ~85% advance on ₱125k invoice. */
 const FALLBACK_GROSS = 106_250;
@@ -172,6 +176,8 @@ export function ComplianceView() {
     synchronized: 0,
     total: 0,
   });
+  const [payrollStage, setPayrollStage] = useState<PayrollPipelineStage>("idle");
+  const [pendingPayrollConfirm, setPendingPayrollConfirm] = useState(false);
 
   const gross = lastSwapAdvancePhp ?? FALLBACK_GROSS;
   const explorerTx =
@@ -235,11 +241,11 @@ export function ComplianceView() {
     }
 
     setRouting(true);
+    setPayrollStage("quoting");
     const payrollId = `PAY-${Date.now()}`;
 
     try {
       if (signer) {
-        // Step 1: build unsigned XDR on server
         const buildRes = await fetch("/api/payroll/build", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -253,10 +259,12 @@ export function ComplianceView() {
         };
         if (!buildRes.ok || !buildData.xdr) {
           dispatch("payroll-routed", buildData.error ?? `Payroll build failed (${buildRes.status})`);
+          setPayrollStage("idle");
           return;
         }
 
-        // Step 2: sign with Freighter in-browser
+        setPayrollStage("routing");
+
         let signedXdr: string;
         try {
           const { signXdrWithFreighter } = await import("@/lib/soroban/freighter");
@@ -272,10 +280,10 @@ export function ComplianceView() {
             "payroll-routed",
             signErr instanceof Error ? signErr.message : "Freighter signing cancelled",
           );
+          setPayrollStage("idle");
           return;
         }
 
-        // Step 3: submit signed XDR
         const submitRes = await fetch("/api/tx/submit", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -284,6 +292,7 @@ export function ComplianceView() {
         const submitData = (await submitRes.json()) as { txHash?: string; error?: string };
         if (!submitRes.ok) {
           dispatch("payroll-routed", submitData.error ?? `Payroll submit failed (${submitRes.status})`);
+          setPayrollStage("idle");
           return;
         }
 
@@ -291,6 +300,7 @@ export function ComplianceView() {
           setQuote({ gross, ...buildData.quote });
         }
         setRouted(true);
+        setPayrollStage("complete");
         const hash = submitData.txHash ?? "";
         if (hash) {
           setTxHash(hash);
@@ -587,7 +597,7 @@ export function ComplianceView() {
                 variant="teal"
                 size="sm"
                 disabled={!walletReady || routing || !quote}
-                onClick={() => void routePayroll()}
+                onClick={() => setPendingPayrollConfirm(true)}
               >
                 {routing ? "Routing…" : "Route Payroll"}
               </Button>
@@ -603,6 +613,13 @@ export function ComplianceView() {
               </a>
             ) : null}
           </div>
+        </div>
+
+        <div className="mb-6">
+          <p className="mb-3 font-label-sm text-[11px] uppercase tracking-wider text-on-surface-variant">
+            Payroll pipeline
+          </p>
+          <FlowPipeline steps={payrollPipelineSteps(payrollStage)} />
         </div>
 
         <div className="grid grid-cols-1 items-center gap-4 md:grid-cols-[1fr_auto_3fr]">
@@ -644,6 +661,24 @@ export function ComplianceView() {
           </div>
         </div>
       </Card>
+
+      {pendingPayrollConfirm && quote ? (
+        <PayrollConfirmPanel
+          draft={{
+            gross: quote.gross,
+            sss: quote.sss,
+            philhealth: quote.philhealth,
+            pagibig: quote.pagibig,
+            net: quote.net,
+          }}
+          busy={routing}
+          onCancel={() => setPendingPayrollConfirm(false)}
+          onConfirm={() => {
+            setPendingPayrollConfirm(false);
+            void routePayroll();
+          }}
+        />
+      ) : null}
     </main>
   );
 }

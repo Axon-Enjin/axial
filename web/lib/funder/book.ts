@@ -22,12 +22,16 @@ function deriveDealStatus(
   reserve: ReserveLedgerEntry | null,
 ): FunderDealStatus {
   if (reserve?.recourseStatus === "triggered") {
+    if ((reserve.shortfall ?? 0) > 0 && (reserve.collectedAmount ?? 0) > 0) {
+      return "partial";
+    }
     if (reserve.leakageDetectedAt || (reserve.shortfall ?? 0) > 0) {
-      return reserve.releasedAt ? "partial" : "leaked";
+      return "leaked";
     }
   }
 
   if (reserve?.releasedAt || invoice.collectionStatus === "collected") {
+    if ((reserve?.shortfall ?? 0) > 0) return "partial";
     return "repaid";
   }
 

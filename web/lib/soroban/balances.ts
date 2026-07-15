@@ -91,16 +91,23 @@ async function fetchNativeXlm(
   }
 }
 
-async function fetchSacUsdcBalance(
+/**
+ * SAC `balance` for a G-address wallet or C-address contract (e.g. settlement lockbox).
+ * Simulation source account is `sourcePublic` (must exist on-network).
+ */
+export async function fetchSacUsdcBalance(
   cfg: SorobanConfig,
-  publicKey: string,
+  holderAddress: string,
+  sourcePublic?: string,
 ): Promise<number | null> {
   if (!cfg.usdcTokenId) return null;
+  const simSource = sourcePublic ?? cfg.funderPublic;
+  if (!simSource) return null;
 
   const server = new rpc.Server(cfg.rpcUrl);
   try {
     const account = await withTimeout(
-      server.getAccount(publicKey),
+      server.getAccount(simSource),
       SOROBAN_TIMEOUT_MS,
       "Soroban getAccount",
     );
@@ -109,7 +116,7 @@ async function fetchSacUsdcBalance(
       fee: "100",
       networkPassphrase: cfg.networkPassphrase,
     })
-      .addOperation(contract.call("balance", new Address(publicKey).toScVal()))
+      .addOperation(contract.call("balance", new Address(holderAddress).toScVal()))
       .setTimeout(30)
       .build();
 

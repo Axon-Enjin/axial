@@ -1,405 +1,476 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { LogoMark } from "@/components/ui/Logo";
+import {
+  CANVAS,
+  ECONOMICS_ENGINE_A,
+  ECONOMICS_ENGINE_B,
+  FEASIBILITY_ROWS,
+  LIVE_NOW,
+  NAV_LINKS,
+  NEXT_UP,
+  STEPS,
+  TEAM,
+} from "@/lib/landing/startup-content";
 
 export const metadata: Metadata = {
   title: { absolute: "Axial — Instant Capital, Effortless Compliance" },
   description:
-    "Liquidity and compliance engine for Philippine MSMEs. Unlock cash from tokenized receivables on Stellar while BIR EIS filings are prepared for one-click review and submission.",
+    "Liquidity and compliance infrastructure for Philippine MSMEs. Unlock cash from confirmed receivables on Stellar Mainnet while BIR EIS filings are prepared for one-click review.",
 };
-
-const STEPS = [
-  {
-    n: "01",
-    title: "Payer confirms invoice",
-    body: "B2B payer verifies the receivable and acknowledges the Notice of Assignment.",
-  },
-  {
-    n: "02",
-    title: "Tokenize the receivable",
-    body: "Axial mints a Stellar Asset Contract (SAC) representing the verified receivable.",
-  },
-  {
-    n: "03",
-    title: "Receive instant USDC advance",
-    body: "An atomic swap delivers ~85% of face value in USDC to your Stellar wallet.",
-  },
-  {
-    n: "04",
-    title: "Route statutory payroll",
-    body: "A single Soroban transaction splits SSS, PhilHealth, and Pag-IBIG contributions on-chain.",
-  },
-  {
-    n: "05",
-    title: "BIR EIS, ready to submit",
-    body: "The compliance oracle assembles 20 BIR fields and JWS-signs them — you review and submit within T+3.",
-  },
-];
 
 export default function LandingPage() {
   return (
     <div className="min-h-screen bg-surface-container-lowest text-on-surface selection:bg-primary/20 selection:text-primary">
-      {/* ── Nav ── */}
       <header className="sticky top-0 z-50 border-b border-outline-variant/10 bg-surface-container-lowest/80 backdrop-blur-xl">
-        <div className="mx-auto flex max-w-[1440px] items-center justify-between px-5 py-4 sm:px-8 sm:py-5 md:px-[64px] md:py-6">
+        <div className="mx-auto flex max-w-[1440px] items-center justify-between gap-4 px-5 py-4 sm:px-8 md:px-[64px]">
           <div className="flex items-center gap-2 sm:gap-3">
-            <div className="flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-lg border border-outline-variant/20 bg-surface-container text-primary shadow-[0_0_15px_rgba(190,198,224,0.1)]">
-              <LogoMark size={20} className="sm:hidden" />
-              <LogoMark size={22} className="hidden sm:block" />
+            <div className="flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-lg border border-outline-variant/20 bg-surface-container text-primary">
+              <LogoMark size={20} />
             </div>
             <span className="font-headline-md text-[18px] sm:text-[20px] font-bold tracking-tight text-primary">
               Axial
             </span>
           </div>
+          <nav className="hidden lg:flex items-center gap-5">
+            {NAV_LINKS.map((l) => (
+              <a
+                key={l.href}
+                href={l.href}
+                className="font-label-sm text-[12px] text-on-surface-variant hover:text-on-surface transition-colors"
+              >
+                {l.label}
+              </a>
+            ))}
+          </nav>
           <Link
             href="/app"
-            className="inline-flex items-center gap-1.5 sm:gap-2 rounded-lg bg-primary px-3 py-2 sm:px-4 sm:py-2.5 font-label-md text-[13px] sm:text-[14px] font-semibold text-on-primary shadow-[0_0_15px_rgba(190,198,224,0.15)] transition-all hover:opacity-90 active:scale-95"
+            className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-2 sm:px-4 sm:py-2.5 font-label-md text-[13px] sm:text-[14px] font-semibold text-on-primary transition-opacity hover:opacity-90"
           >
-            <span className="hidden sm:inline">Open app</span>
-            <span className="sm:hidden">App</span>
-            <span className="material-symbols-outlined text-[16px] sm:text-[18px]">arrow_forward</span>
+            Open product
+            <span className="material-symbols-outlined text-[16px]">arrow_forward</span>
           </Link>
         </div>
       </header>
 
-      {/* ── Hero ── */}
-      <section className="mx-auto max-w-[1440px] px-5 py-16 sm:px-8 sm:py-20 md:px-[64px] md:py-24 lg:py-32">
-        <div className="flex flex-col lg:flex-row gap-8 lg:gap-6 xl:gap-8 items-center">
-          {/* Left side - Logo with 3D effect (30% width) - Hidden on mobile */}
-          <div className="hidden lg:flex lg:order-1 justify-end lg:w-[30%] flex-shrink-0 lg:pr-4">
-            <div className="group perspective-1000">
-              <div className="logo-3d-hover relative">
-                {/* Glow effect on hover */}
-                <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-[#2DD4BF]/0 via-[#2DD4BF]/0 to-[#2DD4BF]/0 opacity-0 blur-2xl transition-all duration-500 group-hover:opacity-100 group-hover:from-[#2DD4BF]/30 group-hover:via-[#2DD4BF]/20 group-hover:to-primary/30 -z-10" style={{ transform: 'translateZ(-20px)' }} />
-                
-                {/* Logo container */}
-                <div className="relative flex h-72 w-72 xl:h-96 xl:w-96 items-center justify-center rounded-2xl border border-outline-variant/20 bg-gradient-to-br from-surface-container to-surface-container-high shadow-[0_8px_32px_rgba(0,0,0,0.12)] backdrop-blur-xl transition-all duration-500 group-hover:border-[#2DD4BF]/40 group-hover:shadow-[0_12px_48px_rgba(45,212,191,0.2)]" style={{ transform: 'translateZ(0px)' }}>
-                  <LogoMark size={180} className="text-primary transition-all duration-500 group-hover:text-[#2DD4BF] xl:hidden" />
-                  <LogoMark size={240} className="text-primary transition-all duration-500 group-hover:text-[#2DD4BF] hidden xl:block" />
-                  
-                  {/* Shine effect */}
-                  <div className="absolute inset-0 rounded-2xl bg-gradient-to-tr from-transparent via-white/0 to-transparent opacity-0 transition-opacity duration-500 group-hover:opacity-10" style={{ transform: 'translateZ(1px)' }} />
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Right side - Content (70% width on desktop, full width on mobile) */}
-          <div className="lg:order-2 lg:w-[70%] w-full">
-            <p className="mb-4 sm:mb-5 font-label-sm text-[10px] sm:text-label-sm uppercase tracking-wider text-[#2DD4BF]">
-              Live on Stellar Mainnet · 2nd Runner-Up, Build on Stellar Philippines 2026
-            </p>
-            <h1 className="font-headline-xl text-[32px] leading-[1.15] sm:text-[40px] md:text-headline-xl text-on-surface">
-              Instant Capital,<br />Effortless Compliance.
-            </h1>
-            <p className="mt-5 sm:mt-6 font-body-md text-[15px] leading-relaxed sm:font-body-lg sm:text-body-lg text-on-surface-variant">
-              Philippine MSMEs lose months of cash flow to Net 60–90 B2B payment terms.
-              Axial unlocks that capital through tokenized receivables on Stellar — and
-              prepares your BIR EIS filing for one-click submission, on every transaction.
-            </p>
-            <div className="mt-8 sm:mt-10 flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center gap-3 sm:gap-4">
-              <Link
-                href="/app"
-                className="inline-flex items-center justify-center gap-2 sm:gap-2.5 rounded-lg sm:rounded-xl bg-primary px-5 py-3 sm:px-6 sm:py-3.5 font-label-md text-sm sm:text-label-md font-semibold text-on-primary shadow-[0_0_20px_rgba(190,198,224,0.15)] transition-opacity hover:opacity-90"
-              >
-                Launch demo
-                <span className="material-symbols-outlined text-[16px] sm:text-[18px]">arrow_forward</span>
-              </Link>
-              <a
-                href="https://github.com/Axon-Enjin/axial"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center justify-center gap-2 font-label-md text-sm sm:text-label-md text-on-surface-variant transition-colors hover:text-on-surface"
-              >
-                <span className="material-symbols-outlined text-[16px] sm:text-[18px]">code</span>
-                View source
-              </a>
-            </div>
+      {/* Hero */}
+      <section className="relative overflow-hidden border-b border-outline-variant/10">
+        <div
+          className="pointer-events-none absolute inset-0 opacity-70"
+          style={{
+            background:
+              "radial-gradient(ellipse 80% 60% at 70% 20%, rgba(45,212,191,0.12), transparent 55%), radial-gradient(ellipse 50% 40% at 10% 80%, rgba(190,198,224,0.08), transparent 50%)",
+          }}
+        />
+        <div className="relative mx-auto max-w-[1440px] px-5 py-16 sm:px-8 sm:py-20 md:px-[64px] md:py-28">
+          <p className="mb-4 font-label-sm text-[10px] sm:text-label-sm uppercase tracking-wider text-[#2DD4BF]">
+            Live on Stellar Mainnet · Philippines-first
+          </p>
+          <h1 className="max-w-4xl font-headline-xl text-[36px] leading-[1.1] sm:text-[48px] md:text-[56px] text-on-surface">
+            Axial
+          </h1>
+          <p className="mt-3 max-w-2xl font-headline-lg text-[22px] sm:text-[28px] text-on-surface/90">
+            Instant Capital, Effortless Compliance.
+          </p>
+          <p className="mt-6 max-w-2xl font-body-md text-[15px] leading-relaxed sm:text-body-lg text-on-surface-variant">
+            Infrastructure for Philippine MSMEs: unlock working capital from confirmed B2B
+            receivables on Stellar, and prepare BIR EIS plus statutory payroll for human review —
+            on one pipeline.
+          </p>
+          <div className="mt-10 flex flex-col sm:flex-row gap-3 sm:gap-4">
+            <Link
+              href="/app"
+              className="inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-6 py-3.5 font-label-md font-semibold text-on-primary transition-opacity hover:opacity-90"
+            >
+              Enter the product
+              <span className="material-symbols-outlined text-[18px]">arrow_forward</span>
+            </Link>
+            <a
+              href="#canvas"
+              className="inline-flex items-center justify-center gap-2 rounded-xl border border-outline-variant/30 px-6 py-3.5 font-label-md text-on-surface-variant hover:text-on-surface transition-colors"
+            >
+              Business canvas
+            </a>
           </div>
         </div>
       </section>
 
-      {/* ── Problem ── */}
-      <section className="mx-auto max-w-[1440px] px-5 pb-12 sm:px-8 sm:pb-16 md:px-[64px] md:pb-20">
-        <h2 className="mb-6 sm:mb-8 font-headline-lg text-[24px] sm:text-headline-lg text-on-surface">
-          The Problem
+      {/* Problem */}
+      <section id="problem" className="mx-auto max-w-[1440px] px-5 py-16 sm:px-8 md:px-[64px] md:py-20 scroll-mt-24">
+        <h2 className="mb-2 font-headline-lg text-[24px] sm:text-headline-lg text-on-surface">
+          The structural gap
         </h2>
-        <div className="grid grid-cols-1 gap-4 sm:gap-6 md:grid-cols-2">
-          <div className="rounded-lg sm:rounded-xl border border-outline-variant/10 bg-surface-container/40 p-5 sm:p-6 md:p-8 backdrop-blur-md">
-            <span className="material-symbols-outlined mb-3 sm:mb-4 block text-[24px] sm:text-[28px] text-[#FB7185]">
+        <p className="mb-8 max-w-2xl font-body-md text-on-surface-variant">
+          Philippine MSMEs are not failing because they are unprofitable — they are cash-trapped and
+          compliance-loaded at the same time.
+        </p>
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+          <div className="rounded-xl border border-outline-variant/10 bg-surface-container/40 p-6 md:p-8">
+            <span className="material-symbols-outlined mb-3 block text-[28px] text-[#FB7185]">
               account_balance
             </span>
-            <h3 className="mb-2 sm:mb-3 font-headline-md text-[20px] sm:text-headline-md text-on-surface">
-              The Liquidity Trap
-            </h3>
-            <p className="font-body-md text-[14px] leading-relaxed sm:text-body-md text-on-surface-variant mb-3">
-              Enterprise buyers enforce <strong className="text-on-surface">Net 60–90</strong> payment terms while
-              Philippine labor law mandates <strong className="text-on-surface">bi-weekly payroll</strong>. A growing,
-              profitable MSME can face technical insolvency — not because it&apos;s losing money, but because its cash is
-              locked in receivables.
+            <h3 className="mb-2 font-headline-md text-[20px] text-on-surface">Liquidity trap</h3>
+            <p className="font-body-md text-[14px] leading-relaxed text-on-surface-variant">
+              Enterprise buyers enforce <span className="text-on-surface">Net 60–90</span> while
+              labor law demands <span className="text-on-surface">bi-weekly payroll</span>. Cash sits
+              in receivables; payroll does not wait.
             </p>
-            <p className="font-label-sm text-[11px] sm:text-label-sm text-[#2DD4BF]">
-              $221B funding demand vs $15B formal supply
+            <p className="mt-3 font-label-sm text-[11px] text-[#2DD4BF]">
+              ~$221B funding demand vs ~$15B formal supply
             </p>
           </div>
-          <div className="rounded-lg sm:rounded-xl border border-outline-variant/10 bg-surface-container/40 p-5 sm:p-6 md:p-8 backdrop-blur-md">
-            <span className="material-symbols-outlined mb-3 sm:mb-4 block text-[24px] sm:text-[28px] text-[#F59E0B]">
+          <div className="rounded-xl border border-outline-variant/10 bg-surface-container/40 p-6 md:p-8">
+            <span className="material-symbols-outlined mb-3 block text-[28px] text-[#F59E0B]">
               gavel
             </span>
-            <h3 className="mb-2 sm:mb-3 font-headline-md text-[20px] sm:text-headline-md text-on-surface">
-              The Compliance Burden
-            </h3>
-            <p className="font-body-md text-[14px] leading-relaxed sm:text-body-md text-on-surface-variant mb-3">
-              The BIR Electronic Invoicing System (EIS) mandate — deadline <strong className="text-on-surface">December
-              31, 2026</strong> — requires JSON + JWS within T+3. Meanwhile, <strong className="text-on-surface">56%
-              of MSMEs</strong> still manage statutory payroll on spreadsheets.
+            <h3 className="mb-2 font-headline-md text-[20px] text-on-surface">Compliance burden</h3>
+            <p className="font-body-md text-[14px] leading-relaxed text-on-surface-variant">
+              BIR Electronic Invoicing — deadline{" "}
+              <span className="text-on-surface">December 31, 2026</span> — requires JSON + JWS within
+              T+3. Most MSMEs still run statutory payroll on spreadsheets.
             </p>
-            <p className="font-label-sm text-[11px] sm:text-label-sm text-[#2DD4BF]">
-              Manual compliance = retroactive penalties
+            <p className="mt-3 font-label-sm text-[11px] text-[#2DD4BF]">
+              Mandate urgency pulls adoption without paid acquisition
             </p>
           </div>
         </div>
       </section>
 
-      {/* ── Solution ── */}
-      <section className="mx-auto max-w-[1440px] px-5 pb-12 sm:px-8 sm:pb-16 md:px-[64px] md:pb-20">
-        <h2 className="mb-2 font-headline-lg text-[24px] sm:text-headline-lg text-on-surface">
-          One pipeline. <span className="text-[#2DD4BF]">Liquidity in. Compliance out.</span>
-        </h2>
-        <p className="mb-8 sm:mb-10 font-body-md text-[15px] sm:font-body-lg sm:text-body-lg text-on-surface-variant max-w-3xl">
-          Axial merges tokenized invoice factoring with automated BIR EIS reporting and statutory
-          payroll splitting into a single Stellar/Soroban pipeline.
-        </p>
-        <div className="grid grid-cols-1 gap-4 sm:gap-6 md:grid-cols-3">
-          <div className="rounded-lg sm:rounded-xl border border-outline-variant/10 bg-surface-container/30 p-5 sm:p-6 backdrop-blur-sm text-center">
-            <div className="mb-3 sm:mb-4 flex h-12 w-12 sm:h-14 sm:w-14 mx-auto items-center justify-center rounded-full border border-[#2DD4BF]/30 bg-surface shadow-[0_0_15px_rgba(45,212,191,0.15)]">
-              <span className="material-symbols-outlined text-[28px] sm:text-[32px] text-[#2DD4BF]">account_balance</span>
-            </div>
-            <h3 className="mb-2 font-headline-sm text-[16px] sm:text-headline-sm text-on-surface">
-              Instant Capital
-            </h3>
-            <p className="font-body-md text-[13px] leading-relaxed sm:text-body-md text-on-surface-variant">
-              Tokenize receivables as Stellar Asset Contracts. Get ~80–90% advance in USDC instantly via atomic swap. No
-              collateral.
-            </p>
+      {/* Product */}
+      <section id="product" className="border-y border-outline-variant/10 bg-surface-container/20">
+        <div className="mx-auto max-w-[1440px] px-5 py-16 sm:px-8 md:px-[64px] md:py-20 scroll-mt-24">
+          <h2 className="mb-2 font-headline-lg text-[24px] sm:text-headline-lg text-on-surface">
+            One pipeline.{" "}
+            <span className="text-[#2DD4BF]">Liquidity in. Compliance out.</span>
+          </h2>
+          <p className="mb-10 max-w-3xl font-body-md text-on-surface-variant">
+            Confirmed-invoice financing on Stellar Mainnet, with a Compliance Co-Pilot that prepares
+            filings for your approval — not silent auto-submission.
+          </p>
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-3 mb-14">
+            {[
+              {
+                icon: "bolt",
+                title: "Instant capital",
+                body: "Tokenize a payer-confirmed receivable. Advance ~85% in USDC via atomic swap. No collateral.",
+              },
+              {
+                icon: "call_split",
+                title: "Statutory payroll",
+                body: "Route SSS, PhilHealth, and Pag-IBIG in one Soroban transaction.",
+              },
+              {
+                icon: "fact_check",
+                title: "Effortless BIR EIS",
+                body: "Oracle maps 20 fields and JWS-signs. You review and submit within T+3.",
+              },
+            ].map((c) => (
+              <div
+                key={c.title}
+                className="rounded-xl border border-outline-variant/10 bg-surface-container-lowest/60 p-6"
+              >
+                <span className="material-symbols-outlined mb-3 block text-[28px] text-[#2DD4BF]">
+                  {c.icon}
+                </span>
+                <h3 className="mb-2 font-headline-sm text-[16px] text-on-surface">{c.title}</h3>
+                <p className="font-body-md text-[13px] text-on-surface-variant">{c.body}</p>
+              </div>
+            ))}
           </div>
-          <div className="rounded-lg sm:rounded-xl border border-outline-variant/10 bg-surface-container/30 p-5 sm:p-6 backdrop-blur-sm text-center">
-            <div className="mb-3 sm:mb-4 flex h-12 w-12 sm:h-14 sm:w-14 mx-auto items-center justify-center rounded-full border border-[#2DD4BF]/30 bg-surface shadow-[0_0_15px_rgba(45,212,191,0.15)]">
-              <span className="material-symbols-outlined text-[28px] sm:text-[32px] text-[#2DD4BF]">call_split</span>
-            </div>
-            <h3 className="mb-2 font-headline-sm text-[16px] sm:text-headline-sm text-on-surface">
-              Auto Statutory Payroll
-            </h3>
-            <p className="font-body-md text-[13px] leading-relaxed sm:text-body-md text-on-surface-variant">
-              Soroban contract calculates and routes exact SSS, PhilHealth, Pag-IBIG deductions to government wallets in
-              real-time.
-            </p>
+
+          <h3 className="mb-6 font-headline-md text-[18px] text-on-surface">How it works</h3>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
+            {STEPS.map((step) => (
+              <div
+                key={step.n}
+                className="rounded-xl border border-outline-variant/10 bg-surface-container-lowest/50 p-5"
+              >
+                <span className="mb-3 block font-headline-md text-[20px] font-bold text-[#2DD4BF]/50">
+                  {step.n}
+                </span>
+                <h4 className="mb-2 font-label-md text-[12px] font-semibold uppercase tracking-wider text-on-surface">
+                  {step.title}
+                </h4>
+                <p className="mb-3 font-body-md text-[13px] text-on-surface-variant">{step.body}</p>
+                <p className="font-label-sm text-[10px] leading-relaxed text-on-surface-variant/70">
+                  <span className="text-[#2DD4BF]/80">T</span> {step.trigger} ·{" "}
+                  <span className="text-[#2DD4BF]/80">L</span> {step.logic} ·{" "}
+                  <span className="text-[#2DD4BF]/80">A</span> {step.action}
+                </p>
+              </div>
+            ))}
           </div>
-          <div className="rounded-lg sm:rounded-xl border border-outline-variant/10 bg-surface-container/30 p-5 sm:p-6 backdrop-blur-sm text-center">
-            <div className="mb-3 sm:mb-4 flex h-12 w-12 sm:h-14 sm:w-14 mx-auto items-center justify-center rounded-full border border-[#2DD4BF]/30 bg-surface shadow-[0_0_15px_rgba(45,212,191,0.15)]">
-              <span className="material-symbols-outlined text-[28px] sm:text-[32px] text-[#2DD4BF]">cloud_done</span>
+
+          <div className="mt-14 grid grid-cols-1 gap-6 md:grid-cols-2">
+            <div>
+              <h3 className="mb-4 font-headline-md text-[18px] text-on-surface">Live today</h3>
+              <ul className="space-y-2">
+                {LIVE_NOW.map((item) => (
+                  <li key={item} className="flex gap-2 font-body-md text-[14px] text-on-surface-variant">
+                    <span className="material-symbols-outlined text-[18px] text-[#2DD4BF]">check</span>
+                    {item}
+                  </li>
+                ))}
+              </ul>
             </div>
-            <h3 className="mb-2 font-headline-sm text-[16px] sm:text-headline-sm text-on-surface">
-              Effortless BIR EIS
-            </h3>
-            <p className="font-body-md text-[13px] leading-relaxed sm:text-body-md text-on-surface-variant">
-              Off-chain oracle maps Stellar events to BIR&apos;s 20-field schema and JWS-signs — you approve, it submits within T+3. Success ref
-              → Stellar memo.
-            </p>
+            <div>
+              <h3 className="mb-4 font-headline-md text-[18px] text-on-surface">Building next</h3>
+              <ul className="space-y-2">
+                {NEXT_UP.map((item) => (
+                  <li key={item} className="flex gap-2 font-body-md text-[14px] text-on-surface-variant">
+                    <span className="material-symbols-outlined text-[18px] text-on-surface-variant/50">
+                      arrow_forward
+                    </span>
+                    {item}
+                  </li>
+                ))}
+              </ul>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* ── How it works ── */}
-      <section className="mx-auto max-w-[1440px] px-5 pb-16 sm:px-8 sm:pb-20 md:px-[64px] md:pb-24">
+      {/* Feasibility */}
+      <section id="feasibility" className="mx-auto max-w-[1440px] px-5 py-16 sm:px-8 md:px-[64px] md:py-20 scroll-mt-24">
         <h2 className="mb-2 font-headline-lg text-[24px] sm:text-headline-lg text-on-surface">
-          How it works
+          Feasibility
         </h2>
-        <p className="mb-8 sm:mb-12 font-body-md text-[15px] sm:font-body-lg sm:text-body-lg text-on-surface-variant">
-          End-to-end in one atomic flow
+        <p className="mb-8 max-w-2xl font-body-md text-on-surface-variant">
+          Technically ready on Mainnet. Commercially gated on BIR Permit to Transmit, licensed
+          financing posture, and payer KYB — not on reinventing the chain stack.
         </p>
-        <div className="grid grid-cols-1 gap-4 sm:gap-5 md:grid-cols-5 md:gap-6">
-          {STEPS.map((step) => (
-            <div
-              key={step.n}
-              className="rounded-lg sm:rounded-xl border border-outline-variant/10 bg-surface-container/30 p-5 sm:p-6 backdrop-blur-sm"
-            >
-              <span className="mb-3 sm:mb-4 block font-headline-md text-[20px] sm:text-headline-md font-bold text-[#2DD4BF]/60">
-                {step.n}
-              </span>
-              <h3 className="mb-2 font-label-md text-[12px] sm:text-label-md font-semibold uppercase tracking-wider text-on-surface">
-                {step.title}
+        <div className="overflow-x-auto rounded-xl border border-outline-variant/10">
+          <table className="w-full min-w-[640px] text-left">
+            <thead>
+              <tr className="border-b border-outline-variant/10 bg-surface-container/40">
+                <th className="px-4 py-3 font-label-sm text-[11px] uppercase tracking-wider text-on-surface-variant">
+                  Dimension
+                </th>
+                <th className="px-4 py-3 font-label-sm text-[11px] uppercase tracking-wider text-on-surface-variant">
+                  Rating
+                </th>
+                <th className="px-4 py-3 font-label-sm text-[11px] uppercase tracking-wider text-on-surface-variant">
+                  Notes
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {FEASIBILITY_ROWS.map((row) => (
+                <tr key={row.dim} className="border-b border-outline-variant/10 last:border-0">
+                  <td className="px-4 py-4 font-body-md text-[14px] text-on-surface">{row.dim}</td>
+                  <td className="px-4 py-4">
+                    <span className="rounded-md border border-[#2DD4BF]/30 bg-[#2DD4BF]/10 px-2 py-0.5 font-label-sm text-[11px] text-[#2DD4BF]">
+                      {row.rating}
+                    </span>
+                  </td>
+                  <td className="px-4 py-4 font-body-md text-[13px] text-on-surface-variant">
+                    {row.note}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      {/* Unit economics */}
+      <section id="economics" className="border-y border-outline-variant/10 bg-surface-container/20">
+        <div className="mx-auto max-w-[1440px] px-5 py-16 sm:px-8 md:px-[64px] md:py-20 scroll-mt-24">
+          <h2 className="mb-2 font-headline-lg text-[24px] sm:text-headline-lg text-on-surface">
+            Unit economics
+          </h2>
+          <p className="mb-10 max-w-2xl font-body-md text-on-surface-variant">
+            Two engines. Planning assumptions for partners — not audited financials.
+          </p>
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+            <div className="rounded-xl border border-outline-variant/10 bg-surface-container-lowest/60 p-6">
+              <h3 className="mb-1 font-headline-md text-[18px] text-on-surface">
+                A · Liquidity spread
               </h3>
-              <p className="font-body-md text-[13px] leading-relaxed sm:text-body-md text-on-surface-variant">
-                {step.body}
+              <p className="mb-5 font-body-md text-[13px] text-on-surface-variant">
+                Per funded invoice · target platform take 0.5–1.5% of face (≈1% rule of thumb)
               </p>
+              <dl className="space-y-3">
+                {ECONOMICS_ENGINE_A.map((row) => (
+                  <div key={row.label} className="flex justify-between gap-4 border-b border-outline-variant/10 pb-3 last:border-0">
+                    <dt className="font-label-sm text-[12px] text-on-surface-variant">{row.label}</dt>
+                    <dd className="font-body-md text-[14px] text-on-surface text-right">{row.value}</dd>
+                  </div>
+                ))}
+              </dl>
+            </div>
+            <div className="rounded-xl border border-outline-variant/10 bg-surface-container-lowest/60 p-6">
+              <h3 className="mb-1 font-headline-md text-[18px] text-on-surface">
+                B · Compliance SaaS
+              </h3>
+              <p className="mb-5 font-body-md text-[13px] text-on-surface-variant">
+                Recurring moat — EIS mandate makes this stick even without factoring that month
+              </p>
+              <ul className="space-y-4">
+                {ECONOMICS_ENGINE_B.map((t) => (
+                  <li key={t.tier} className="border-b border-outline-variant/10 pb-4 last:border-0">
+                    <div className="flex justify-between gap-3">
+                      <span className="font-label-md text-[13px] text-on-surface">{t.tier}</span>
+                      <span className="font-body-md text-[13px] text-[#2DD4BF]">{t.price}</span>
+                    </div>
+                    <p className="mt-1 font-body-md text-[12px] text-on-surface-variant">{t.includes}</p>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+          <p className="mt-6 font-label-sm text-[11px] text-on-surface-variant/70">
+            Hard ceiling: MSME all-in cost stays below traditional PH factoring. Long-tenor AR is
+            priced for duration — not pitched as short-cycle PayFi APY.
+          </p>
+        </div>
+      </section>
+
+      {/* Business canvas */}
+      <section id="canvas" className="mx-auto max-w-[1440px] px-5 py-16 sm:px-8 md:px-[64px] md:py-20 scroll-mt-24">
+        <h2 className="mb-2 font-headline-lg text-[24px] sm:text-headline-lg text-on-surface">
+          Business canvas
+        </h2>
+        <p className="mb-8 max-w-2xl font-body-md text-on-surface-variant">
+          Lean canvas for Axial as a Philippines-first fintech infrastructure company.
+        </p>
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {CANVAS.map((block) => (
+            <div
+              key={block.title}
+              className="rounded-xl border border-outline-variant/10 bg-surface-container/30 p-5"
+            >
+              <h3 className="mb-2 font-label-md text-[11px] uppercase tracking-wider text-[#2DD4BF]">
+                {block.title}
+              </h3>
+              <p className="font-body-md text-[13px] leading-relaxed text-on-surface-variant">
+                {block.body}
+              </p>
+            </div>
+          ))}
+        </div>
+        <blockquote className="mt-10 max-w-3xl border-l-2 border-[#2DD4BF]/50 pl-5 font-body-md text-[15px] leading-relaxed text-on-surface">
+          Axial turns a confirmed B2B invoice into instant working capital and review-ready
+          tax/statutory compliance — on Stellar Mainnet, with closed-loop settlement so funders
+          finance receivables that actually exist.
+        </blockquote>
+      </section>
+
+      {/* Trust / rails */}
+      <section className="border-y border-outline-variant/10 bg-surface-container/20">
+        <div className="mx-auto max-w-[1440px] px-5 py-16 sm:px-8 md:px-[64px] md:py-20">
+          <h2 className="mb-8 font-headline-lg text-[24px] sm:text-headline-lg text-on-surface">
+            Rails & discipline
+          </h2>
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
+            {[
+              {
+                t: "Stellar Mainnet",
+                d: "Production USDC, 3–5s finality, audit trail for compliance memos.",
+              },
+              {
+                t: "Closed loop",
+                d: "Payer confirm + NoA + lockbox — anti-fraud is legal assignment, not “the chain prevents it.”",
+              },
+              {
+                t: "Co-Pilot compliance",
+                d: "Prepare → review → submit. Auto-file only after BIR certification + PTT.",
+              },
+              {
+                t: "Licensed capital",
+                d: "Funders are qualified financing partners under RA 8556 posture — not open DeFi pools.",
+              },
+            ].map((x) => (
+              <div
+                key={x.t}
+                className="rounded-xl border border-outline-variant/10 bg-surface-container-lowest/50 p-5"
+              >
+                <h3 className="mb-2 font-headline-sm text-[15px] text-[#2DD4BF]">{x.t}</h3>
+                <p className="font-body-md text-[13px] text-on-surface-variant">{x.d}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Team */}
+      <section id="team" className="mx-auto max-w-[1440px] px-5 py-16 sm:px-8 md:px-[64px] md:py-20 scroll-mt-24">
+        <h2 className="mb-2 font-headline-lg text-[24px] sm:text-headline-lg text-on-surface text-center">
+          Team
+        </h2>
+        <p className="mb-12 font-body-md text-on-surface-variant text-center">
+          Axon Enjin · Building Axial as production infrastructure for Philippine MSMEs
+        </p>
+        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4 max-w-6xl mx-auto">
+          {TEAM.map((m) => (
+            <div
+              key={m.name}
+              className="flex flex-col items-center text-center p-6 rounded-xl border border-outline-variant/10 bg-surface-container/30"
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={m.img}
+                alt={m.name}
+                className="mb-4 h-32 w-32 sm:h-36 sm:w-36 rounded-full border-2 border-[#2DD4BF]/20 object-cover"
+              />
+              <h3 className="font-headline-sm text-[15px] font-semibold text-on-surface mb-1">
+                {m.name}
+              </h3>
+              <p className="font-body-sm text-[12px] text-on-surface-variant">{m.role}</p>
+              {"tag" in m && m.tag ? (
+                <p className="mt-1 font-label-sm text-[11px] text-[#2DD4BF] uppercase tracking-wider">
+                  {m.tag}
+                </p>
+              ) : null}
             </div>
           ))}
         </div>
       </section>
 
-      {/* ── Why Stellar ── */}
-      <section className="mx-auto max-w-[1440px] px-5 pb-16 sm:px-8 sm:pb-20 md:px-[64px] md:pb-24">
-        <h2 className="mb-2 font-headline-lg text-[24px] sm:text-headline-lg text-on-surface">
-          Why Stellar
-        </h2>
-        <p className="mb-8 sm:mb-10 font-body-md text-[15px] sm:font-body-lg sm:text-body-lg text-on-surface-variant max-w-3xl">
-          Built on purpose-fit infrastructure
-        </p>
-        <div className="grid grid-cols-1 gap-4 sm:gap-5 md:grid-cols-2 md:gap-6">
-          <div className="rounded-lg sm:rounded-xl border border-outline-variant/10 bg-surface-container/30 p-5 sm:p-6 backdrop-blur-sm">
-            <h3 className="mb-2 font-headline-sm text-[16px] sm:text-headline-sm text-[#2DD4BF]">
-              Stellar Asset Contracts
-            </h3>
-            <p className="font-body-md text-[13px] leading-relaxed sm:text-body-md text-on-surface-variant">
-              Each receivable minted as a SAC — the on-chain legal right to payment.
-            </p>
-          </div>
-          <div className="rounded-lg sm:rounded-xl border border-outline-variant/10 bg-surface-container/30 p-5 sm:p-6 backdrop-blur-sm">
-            <h3 className="mb-2 font-headline-sm text-[16px] sm:text-headline-sm text-[#2DD4BF]">
-              Soroban Smart Contracts
-            </h3>
-            <p className="font-body-md text-[13px] leading-relaxed sm:text-body-md text-on-surface-variant">
-              Denomination-agnostic swap, statutory router, and settlement — all Rust/WASM.
-            </p>
-          </div>
-          <div className="rounded-lg sm:rounded-xl border border-outline-variant/10 bg-surface-container/30 p-5 sm:p-6 backdrop-blur-sm">
-            <h3 className="mb-2 font-headline-sm text-[16px] sm:text-headline-sm text-[#2DD4BF]">
-              USDC on Stellar
-            </h3>
-            <p className="font-body-md text-[13px] leading-relaxed sm:text-body-md text-on-surface-variant">
-              Circle-issued production settlement. Issuer and FX exposure are managed, not ignored — contracts stay denomination-agnostic.
-            </p>
-          </div>
-          <div className="rounded-lg sm:rounded-xl border border-outline-variant/10 bg-surface-container/30 p-5 sm:p-6 backdrop-blur-sm">
-            <h3 className="mb-2 font-headline-sm text-[16px] sm:text-headline-sm text-[#2DD4BF]">
-              3–5s Finality
-            </h3>
-            <p className="font-body-md text-[13px] leading-relaxed sm:text-body-md text-on-surface-variant">
-              Settlement triggers the compliance oracle within T+3. Filings prepared for your review.
-            </p>
-          </div>
-        </div>
-      </section>
-
-      {/* ── Team ── */}
-      <section className="mx-auto max-w-[1440px] px-5 pb-16 sm:px-8 sm:pb-20 md:px-[64px] md:pb-24">
-        <h2 className="mb-2 font-headline-lg text-[24px] sm:text-headline-lg text-on-surface text-center">
-          The Team
-        </h2>
-        <p className="mb-10 sm:mb-14 font-body-md text-[15px] sm:font-body-lg sm:text-body-lg text-on-surface-variant text-center">
-          Team Axon Enjin · Four builders. Seven days. One pipeline.
-        </p>
-        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 sm:gap-8 lg:grid-cols-4 lg:gap-6 max-w-6xl mx-auto">
-          <div className="group flex flex-col items-center text-center p-6 rounded-xl border border-outline-variant/10 bg-surface-container/30 backdrop-blur-sm transition-all duration-300 hover:border-[#2DD4BF]/40 hover:bg-surface-container/50">
-            <div className="relative mb-4 sm:mb-5">
-              <div className="absolute inset-0 rounded-full bg-[#2DD4BF]/20 blur-xl opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
-              <img
-                src="/pics/DelaTorre.webp"
-                alt="Carlos Jerico Dela Torre"
-                className="relative h-32 w-32 sm:h-40 sm:w-40 rounded-full border-2 border-[#2DD4BF]/20 object-cover transition-all duration-300 group-hover:border-[#2DD4BF]/60 group-hover:scale-105 shadow-lg"
-              />
-            </div>
-            <h3 className="font-headline-sm text-[15px] sm:text-headline-sm font-semibold text-on-surface mb-2">
-              Carlos Jerico Dela Torre
-            </h3>
-            <p className="font-body-sm text-[12px] sm:text-body-sm text-on-surface-variant mb-1">
-              Product & Business Architect
-            </p>
-            <p className="font-label-sm text-[11px] sm:text-label-sm text-[#2DD4BF] uppercase tracking-wider">
-              Team Lead
-            </p>
-          </div>
-          <div className="group flex flex-col items-center text-center p-6 rounded-xl border border-outline-variant/10 bg-surface-container/30 backdrop-blur-sm transition-all duration-300 hover:border-[#2DD4BF]/40 hover:bg-surface-container/50">
-            <div className="relative mb-4 sm:mb-5">
-              <div className="absolute inset-0 rounded-full bg-[#2DD4BF]/20 blur-xl opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
-              <img
-                src="/pics/Tiu.webp"
-                alt="Aidan Tiu"
-                className="relative h-32 w-32 sm:h-40 sm:w-40 rounded-full border-2 border-[#2DD4BF]/20 object-cover transition-all duration-300 group-hover:border-[#2DD4BF]/60 group-hover:scale-105 shadow-lg"
-              />
-            </div>
-            <h3 className="font-headline-sm text-[15px] sm:text-headline-sm font-semibold text-on-surface mb-2">
-              Aidan Tiu
-            </h3>
-            <p className="font-body-sm text-[12px] sm:text-body-sm text-on-surface-variant">
-              DevOps Engineer
-            </p>
-          </div>
-          <div className="group flex flex-col items-center text-center p-6 rounded-xl border border-outline-variant/10 bg-surface-container/30 backdrop-blur-sm transition-all duration-300 hover:border-[#2DD4BF]/40 hover:bg-surface-container/50">
-            <div className="relative mb-4 sm:mb-5">
-              <div className="absolute inset-0 rounded-full bg-[#2DD4BF]/20 blur-xl opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
-              <img
-                src="/pics/Berongoy.webp"
-                alt="Gerald Berongoy"
-                className="relative h-32 w-32 sm:h-40 sm:w-40 rounded-full border-2 border-[#2DD4BF]/20 object-cover transition-all duration-300 group-hover:border-[#2DD4BF]/60 group-hover:scale-105 shadow-lg"
-              />
-            </div>
-            <h3 className="font-headline-sm text-[15px] sm:text-headline-sm font-semibold text-on-surface mb-2">
-              Gerald Berongoy
-            </h3>
-            <p className="font-body-sm text-[12px] sm:text-body-sm text-on-surface-variant">
-              Full Stack Engineer
-            </p>
-          </div>
-          <div className="group flex flex-col items-center text-center p-6 rounded-xl border border-outline-variant/10 bg-surface-container/30 backdrop-blur-sm transition-all duration-300 hover:border-[#2DD4BF]/40 hover:bg-surface-container/50">
-            <div className="relative mb-4 sm:mb-5">
-              <div className="absolute inset-0 rounded-full bg-[#2DD4BF]/20 blur-xl opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
-              <img
-                src="/pics/Sales.webp"
-                alt="Rhandie Sales Jr."
-                className="relative h-32 w-32 sm:h-40 sm:w-40 rounded-full border-2 border-[#2DD4BF]/20 object-cover transition-all duration-300 group-hover:border-[#2DD4BF]/60 group-hover:scale-105 shadow-lg"
-              />
-            </div>
-            <h3 className="font-headline-sm text-[15px] sm:text-headline-sm font-semibold text-on-surface mb-2">
-              Rhandie Sales Jr.
-            </h3>
-            <p className="font-body-sm text-[12px] sm:text-body-sm text-on-surface-variant">
-              Full Stack Engineer
-            </p>
-          </div>
-        </div>
-      </section>
-
-      {/* ── Bottom CTA ── */}
+      {/* CTA */}
       <section className="border-t border-outline-variant/10">
-        <div className="mx-auto flex max-w-[1440px] flex-col items-center gap-5 sm:gap-6 px-5 py-12 sm:px-8 sm:py-16 md:px-[64px] md:py-20 text-center">
+        <div className="mx-auto flex max-w-[1440px] flex-col items-center gap-5 px-5 py-16 md:px-[64px] text-center">
           <h2 className="font-headline-lg text-[24px] sm:text-headline-lg text-on-surface">
-            See it run on Stellar.
+            See the product on Mainnet
           </h2>
-          <p className="max-w-2xl font-body-md text-[15px] leading-relaxed sm:font-body-lg sm:text-body-lg text-on-surface-variant px-4 sm:px-0">
-            Upload a real invoice, mint a receivable, execute an atomic USDC swap, and
-            watch BIR EIS file itself — all in one session. Full E2E pipeline operational on Stellar Mainnet.
+          <p className="max-w-xl font-body-md text-[15px] text-on-surface-variant">
+            Upload an invoice, confirm the payer, advance USDC, and review an EIS-ready filing —
+            the same rails we are taking to production.
           </p>
           <Link
             href="/app"
-            className="inline-flex items-center gap-2 sm:gap-2.5 rounded-lg sm:rounded-xl bg-primary px-5 py-3 sm:px-6 sm:py-3.5 font-label-md text-sm sm:text-label-md font-semibold text-on-primary shadow-[0_0_20px_rgba(190,198,224,0.15)] transition-opacity hover:opacity-90"
+            className="inline-flex items-center gap-2 rounded-xl bg-primary px-6 py-3.5 font-label-md font-semibold text-on-primary transition-opacity hover:opacity-90"
           >
-            Launch demo
-            <span className="material-symbols-outlined text-[16px] sm:text-[18px]">arrow_forward</span>
+            Open product
+            <span className="material-symbols-outlined text-[18px]">arrow_forward</span>
           </Link>
+          <img
+            src="/axial-axonenjin-qr.png"
+            alt="Scan to open Axial"
+            width={72}
+            height={72}
+            className="hidden sm:block rounded-lg border border-outline-variant/20 opacity-90"
+          />
         </div>
       </section>
 
-      {/* ── Footer ── */}
       <footer className="border-t border-outline-variant/10">
-        <div className="mx-auto flex max-w-[1440px] flex-col sm:flex-row items-center justify-between gap-3 sm:gap-4 px-5 py-5 sm:px-8 sm:py-6 md:px-[64px]">
-          <span className="flex items-center gap-2 font-label-sm text-[11px] sm:text-label-sm uppercase tracking-wider text-on-surface-variant">
-            <LogoMark size={14} className="sm:hidden" />
-            <LogoMark size={16} className="hidden sm:block" />
-            Axial · Team Axon Enjin · 2026
+        <div className="mx-auto flex max-w-[1440px] flex-col sm:flex-row items-center justify-between gap-3 px-5 py-6 md:px-[64px]">
+          <span className="flex items-center gap-2 font-label-sm text-[11px] uppercase tracking-wider text-on-surface-variant">
+            <LogoMark size={14} />
+            Axial · Axon Enjin · 2026
           </span>
-          <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-4">
+          <div className="flex items-center gap-4">
             <a
               href="https://github.com/Axon-Enjin/axial"
               target="_blank"
               rel="noopener noreferrer"
-              className="font-label-sm text-[10px] sm:text-label-sm text-on-surface-variant hover:text-[#2DD4BF] transition-colors"
+              className="font-label-sm text-[11px] text-on-surface-variant hover:text-[#2DD4BF] transition-colors"
             >
               GitHub
             </a>
-            <span className="font-label-sm text-[10px] sm:text-label-sm text-center sm:text-left text-on-surface-variant">
-              Build on Stellar Philippines 2026
+            <span className="font-label-sm text-[11px] text-on-surface-variant">
+              Stellar Mainnet · USDC
             </span>
           </div>
         </div>

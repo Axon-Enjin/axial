@@ -154,6 +154,7 @@ export async function upsertFromParse(fields: {
     collectionStatus: "awaiting_payer",
     mintTxHash: null,
     swapTxHash: null,
+    onChainInvoiceId: null,
     createdAt: existing?.createdAt ?? now,
     updatedAt: now,
   };
@@ -186,6 +187,7 @@ export async function settleInvoice(
     immediate: number;
     mintTxHash?: string | null;
     swapTxHash?: string | null;
+    onChainInvoiceId?: string | null;
   },
 ): Promise<FactoringInvoice> {
   const existing = await getInvoice(id);
@@ -199,6 +201,7 @@ export async function settleInvoice(
     immediate: patch.immediate,
     mintTxHash: patch.mintTxHash ?? null,
     swapTxHash: patch.swapTxHash ?? null,
+    onChainInvoiceId: patch.onChainInvoiceId ?? existing.onChainInvoiceId ?? null,
     collectionStatus: "open",
     updatedAt: now,
   });
@@ -253,6 +256,7 @@ export function buildSeedInvoice(
       (seed.status === "settled" ? "open" : "awaiting_payer"),
     mintTxHash: seed.mintTxHash ?? null,
     swapTxHash: seed.swapTxHash ?? null,
+    onChainInvoiceId: null,
     createdAt: ts,
     updatedAt: ts,
   };

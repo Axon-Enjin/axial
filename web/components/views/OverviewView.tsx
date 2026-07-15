@@ -50,9 +50,12 @@ type DashboardSummary = {
     totalFacePhp: number;
     fundableCount: number;
     settledCount: number;
+    collectedCount?: number;
   };
   treasury?: { funderUsdc: string | null; msmeUsdc: string | null };
   eis?: { total: number; synchronized: number };
+  payroll?: { routed: number };
+  funder?: { atRisk: number; repaid: number };
   contractsDeployed?: number;
 };
 
@@ -257,6 +260,48 @@ export function OverviewView() {
 
   return (
     <main className="mx-auto max-w-container-max px-4 py-5 sm:px-6 sm:py-6 md:px-margin-desktop md:py-7">
+      {summary ? (
+        <div className="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-4">
+          {[
+            {
+              label: "Financed face",
+              value: summary.book?.totalFacePhp
+                ? `₱${(summary.book.totalFacePhp / 1_000_000).toFixed(1)}M`
+                : "—",
+              sub: `${summary.book?.settledCount ?? 0} advances`,
+            },
+            {
+              label: "Repaid",
+              value: String(summary.funder?.repaid ?? summary.book?.collectedCount ?? 0),
+              sub: "lockbox collected",
+            },
+            {
+              label: "EIS synchronized",
+              value: String(summary.eis?.synchronized ?? 0),
+              sub: "within T+3 window",
+            },
+            {
+              label: "Payroll routed",
+              value: String(summary.payroll?.routed ?? 0),
+              sub: "statutory splits",
+            },
+          ].map((tile) => (
+            <div
+              key={tile.label}
+              className="rounded-lg border border-outline-variant/10 bg-surface-container/30 px-3 py-3 sm:px-4 sm:py-4"
+            >
+              <p className="font-label-sm text-[10px] sm:text-[11px] uppercase tracking-wider text-on-surface-variant">
+                {tile.label}
+              </p>
+              <p className="mt-1 font-headline-md text-[18px] sm:text-[20px] text-on-surface">
+                {tile.value}
+              </p>
+              <p className="mt-0.5 font-label-sm text-[10px] text-[#2DD4BF]/80">{tile.sub}</p>
+            </div>
+          ))}
+        </div>
+      ) : null}
+
       <div className="grid grid-cols-1 gap-4 sm:gap-5 md:gap-gutter md:grid-cols-12">
         <div className="md:col-span-8">
           <Card padding="lg" className="h-full">

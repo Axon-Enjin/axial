@@ -18,6 +18,12 @@ export function FunderDealDrawer({ deal }: Props) {
             {deal.collectedAmount != null ? (
               <span>Collected ₱{deal.collectedAmount.toLocaleString()}</span>
             ) : null}
+            {deal.advanceAmount != null ? (
+              <span>Expected advance ₱{deal.advanceAmount.toLocaleString()}</span>
+            ) : null}
+            {deal.faceAmount != null ? (
+              <span>Face ₱{deal.faceAmount.toLocaleString()}</span>
+            ) : null}
             {deal.shortfall != null && deal.shortfall > 0 ? (
               <span className="text-amber-300">Shortfall ₱{deal.shortfall.toLocaleString()}</span>
             ) : null}

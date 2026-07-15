@@ -6,6 +6,9 @@ import { LogoMark } from "@/components/ui/Logo";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { Icon } from "@/components/ui/Icon";
+import { FlowPipeline } from "@/components/pipeline/FlowPipeline";
+import type { SettlePipelineStage } from "@/lib/pipeline/configs";
+import { settlePipelineSteps } from "@/lib/pipeline/configs";
 import type { NoticeOfAssignment } from "@/lib/payers/types";
 import {
   getFreighterPublicKey,
@@ -53,6 +56,9 @@ export function PayerPortalView({ token, invoiceId }: Props) {
   const [paying, setPaying] = useState(false);
   const [payTxHash, setPayTxHash] = useState<string | null>(null);
   const [payError, setPayError] = useState<string | null>(null);
+  const [settleStage, setSettleStage] = useState<SettlePipelineStage>("idle");
+  const [settleTxHash, setSettleTxHash] = useState<string | null>(null);
+  const [settleError, setSettleError] = useState<string | null>(null);
 
   useEffect(() => {
     void fetch("/api/soroban/status")
@@ -171,7 +177,9 @@ export function PayerPortalView({ token, invoiceId }: Props) {
   const handlePayInvoice = async () => {
     if (!invoiceId || !freighterPublic || amount == null) return;
     setPayError(null);
+    setSettleError(null);
     setPaying(true);
+    setSettleStage("funding");
     try {
       const buildRes = await fetch("/api/lockbox/fund/build", {
         method: "POST",
@@ -189,6 +197,7 @@ export function PayerPortalView({ token, invoiceId }: Props) {
       };
       if (!buildRes.ok || !build.xdr) {
         setPayError(build.error ?? "Could not build payment transaction.");
+        setSettleStage("idle");
         return;
       }
 
@@ -205,14 +214,50 @@ export function PayerPortalView({ token, invoiceId }: Props) {
       const submit = (await submitRes.json()) as { txHash?: string; error?: string };
       if (!submitRes.ok || !submit.txHash) {
         setPayError(submit.error ?? "Payment submission failed.");
+        setSettleStage("idle");
         return;
       }
 
       setPayTxHash(submit.txHash);
+      setSettleStage("collecting");
+
+      const collectRes = await fetch(`/api/invoices/${encodeURIComponent(rid)}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "mark_collected",
+          collectedAmount: amount,
+        }),
+      });
+      const collect = (await collectRes.json()) as {
+        settlement?: { txHash?: string; error?: string; effectiveCollected?: number };
+        warning?: string;
+        error?: string;
+      };
+
+      if (!collectRes.ok) {
+        setSettleError(collect.warning ?? collect.error ?? "Collection recorded failed.");
+        setSettleStage("collecting");
+        setStep("paid");
+        return;
+      }
+
+      setSettleStage("settling");
+      const settleHash = collect.settlement?.txHash;
+      if (settleHash) {
+        setSettleTxHash(settleHash);
+      }
+      if (collect.settlement?.error) {
+        setSettleError(collect.settlement.error);
+        setSettleStage("settling");
+      } else {
+        setSettleStage("complete");
+      }
       setStep("paid");
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Payment failed";
       setPayError(msg);
+      setSettleStage("idle");
     } finally {
       setPaying(false);
     }
@@ -422,27 +467,50 @@ export function PayerPortalView({ token, invoiceId }: Props) {
         )}
 
         {step === "paid" && (
-          <Card className="text-center">
-            <div className="py-6">
+          <Card>
+            <div className="py-4 text-center">
               <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full border border-[#2DD4BF]/30 bg-[#2DD4BF]/10">
                 <Icon name="payments" size={28} className="text-[#2DD4BF]" />
               </div>
               <h1 className="mb-2 font-headline-md text-headline-md tracking-tight text-on-surface">
-                Payment submitted
+                {settleStage === "complete" ? "Payment & settlement complete" : "Payment submitted"}
               </h1>
               <p className="font-body-md text-body-md text-on-surface-variant">
-                USDC transfer to the lockbox is on-chain.
+                {settleStage === "complete"
+                  ? "Lockbox funded and on-chain settle distributed to funder + MSME."
+                  : "USDC transfer to the lockbox is on-chain."}
               </p>
               {payTxHash && txExplorerUrl && (
                 <a
                   href={txExplorerUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="mt-4 inline-block font-mono text-sm text-[#2DD4BF] hover:underline"
+                  className="mt-3 inline-block font-mono text-sm text-[#2DD4BF] hover:underline"
                 >
-                  {payTxHash.slice(0, 16)}…
+                  Fund tx {payTxHash.slice(0, 16)}…
                 </a>
               )}
+              {settleTxHash && chain.explorerTxBase && (
+                <a
+                  href={`${chain.explorerTxBase}/${settleTxHash}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-2 block font-mono text-sm text-[#2DD4BF] hover:underline"
+                >
+                  Settle tx {settleTxHash.slice(0, 16)}…
+                </a>
+              )}
+              {settleError && (
+                <p className="mt-4 rounded-lg border border-amber-500/20 bg-amber-500/5 px-4 py-3 font-label-sm text-label-sm text-amber-200/90">
+                  {settleError}
+                </p>
+              )}
+            </div>
+            <div className="mt-4 border-t border-outline-variant/10 pt-4">
+              <p className="mb-4 font-label-sm text-[11px] uppercase tracking-wider text-on-surface-variant">
+                Settlement pipeline
+              </p>
+              <FlowPipeline steps={settlePipelineSteps(settleStage)} />
             </div>
           </Card>
         )}

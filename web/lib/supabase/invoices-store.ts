@@ -15,6 +15,7 @@ type InvoiceRow = {
   collection_status: CollectionStatus;
   mint_tx_hash: string | null;
   swap_tx_hash: string | null;
+  on_chain_invoice_id: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -34,6 +35,7 @@ function rowToInvoice(row: InvoiceRow): FactoringInvoice {
     collectionStatus: row.collection_status,
     mintTxHash: row.mint_tx_hash,
     swapTxHash: row.swap_tx_hash,
+    onChainInvoiceId: row.on_chain_invoice_id ?? null,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -54,6 +56,7 @@ function invoiceToRow(inv: FactoringInvoice): InvoiceRow {
     collection_status: inv.collectionStatus,
     mint_tx_hash: inv.mintTxHash,
     swap_tx_hash: inv.swapTxHash,
+    on_chain_invoice_id: inv.onChainInvoiceId,
     created_at: inv.createdAt,
     updated_at: inv.updatedAt,
   };

@@ -6,6 +6,7 @@ import {
   rpc,
   TransactionBuilder,
 } from "@stellar/stellar-sdk";
+import { fetchSacUsdcBalance } from "./balances";
 import type { SorobanConfig } from "./config";
 
 export type SettlementResult = {
@@ -107,15 +108,43 @@ export async function registerInvoiceOnChain(
 
 /**
  * Calls settlement::settle — distributes USDC from the lockbox to funder + MSME.
- * `collectedAmount` must equal what was already transferred to the contract address.
+ *
+ * S5 pre-check: reads the settlement contract's USDC SAC balance and refuses to
+ * settle when empty. Caps `collectedAmount` to on-chain balance so partial
+ * recoveries match what the lockbox actually holds.
  */
 export async function settleOnChain(
   cfg: SorobanConfig,
   invoiceId: string,
   collectedAmount: number,
-): Promise<SettlementResult> {
+): Promise<SettlementResult & { effectiveCollected: number; lockboxBalance: number }> {
   if (!cfg.settlementContractId || !cfg.funderSecret) {
     throw new Error("Settlement contract env is not configured");
+  }
+  if (!Number.isFinite(collectedAmount) || collectedAmount <= 0) {
+    throw new Error("collectedAmount must be a positive number");
+  }
+
+  const lockboxBalance = await fetchSacUsdcBalance(
+    cfg,
+    cfg.settlementContractId,
+    cfg.funderPublic ?? undefined,
+  );
+
+  if (lockboxBalance == null) {
+    throw new Error(
+      "Could not read settlement lockbox USDC balance — check RPC and SOROBAN_USDC_TOKEN_ID.",
+    );
+  }
+  if (lockboxBalance <= 0) {
+    throw new Error(
+      "Settlement lockbox USDC balance is zero. Fund the lockbox before settling.",
+    );
+  }
+
+  const effectiveCollected = Math.min(Math.trunc(collectedAmount), lockboxBalance);
+  if (effectiveCollected <= 0) {
+    throw new Error("Effective collected amount is zero after balance pre-check.");
   }
 
   const server = new rpc.Server(cfg.rpcUrl);
@@ -123,7 +152,7 @@ export async function settleOnChain(
   const account = await server.getAccount(admin.publicKey());
   const contract = new Contract(cfg.settlementContractId);
 
-  return buildAndSubmit(
+  const result = await buildAndSubmit(
     server,
     account,
     contract,
@@ -132,10 +161,16 @@ export async function settleOnChain(
     [
       new Address(admin.publicKey()).toScVal(),
       nativeToScVal(invoiceId, { type: "string" }),
-      nativeToScVal(BigInt(Math.trunc(collectedAmount)), { type: "i128" }),
+      nativeToScVal(BigInt(effectiveCollected), { type: "i128" }),
     ],
     admin,
   );
+
+  return {
+    ...result,
+    effectiveCollected,
+    lockboxBalance,
+  };
 }
 
 /**

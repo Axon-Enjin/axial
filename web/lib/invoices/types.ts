@@ -16,6 +16,8 @@ export type FactoringInvoice = {
   collectionStatus: CollectionStatus;
   mintTxHash: string | null;
   swapTxHash: string | null;
+  /** Soroban invoice id used in register_invoice / settle (may differ from row id). */
+  onChainInvoiceId: string | null;
   createdAt: string;
   updatedAt: string;
 };
