@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { createPayer, listPayersByOrg, triggerMockKyb } from "@/lib/payers/store";
+import { createPayer, listPayersByOrg } from "@/lib/payers/store";
+import { createKybProvider } from "@/lib/payers/kyb";
 
 const DEFAULT_ORG_ID = "demo-org";
 
@@ -48,10 +49,11 @@ export async function POST(request: Request) {
 
   try {
     const payer = await createPayer({ orgId, legalName, tin, contactEmail });
-    // Mock KYB: auto-advance to verified for demo
-    await triggerMockKyb(payer.id);
-    const verified = { ...payer, kybStatus: "verified" as const };
-    return NextResponse.json({ payer: verified }, { status: 201 });
+    const kyb = createKybProvider();
+    await kyb.verifyOnCreate(payer.id);
+    const refreshed = await listPayersByOrg(orgId);
+    const verified = refreshed.find((p) => p.id === payer.id) ?? payer;
+    return NextResponse.json({ payer: verified, kybMode: kyb.mode }, { status: 201 });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Create failed";
     return NextResponse.json({ error: message }, { status: 502 });

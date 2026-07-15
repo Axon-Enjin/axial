@@ -25,6 +25,8 @@ export type InvoiceConfirmation = {
   status: ConfirmationStatus;
   authToken: string;
   confirmedAt: string | null;
+  disputeReason: string | null;
+  disputedAt: string | null;
   createdAt: string;
   updatedAt: string;
 };
@@ -49,7 +51,10 @@ export type EligibilityBlocker =
   | "payer_not_found"
   | "payer_kyb"
   | "confirmation"
-  | "noa_ack";
+  | "noa_ack"
+  | "disputed"
+  | "org_frozen"
+  | "trust_boundary";
 
 export type EligibilityResult = {
   fundable: boolean;

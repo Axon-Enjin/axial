@@ -9,6 +9,7 @@ Axial background workers are HTTP endpoints on Cloud Run. Schedule them with **G
 | `axial-eis-worker` | `POST /api/eis/worker` | `0 */6 * * *` | T+3 retry / expiry |
 | `axial-eis-horizon-poll` | `POST /api/eis/horizon-poll` | `*/10 * * * *` | Chain event ingest |
 | `axial-reconciliation-scan` | `POST /api/reconciliation/scan` | `0 2 * * *` | Leakage scan |
+| `axial-eis-monitor` | `GET /api/eis/monitor` | `0 8 * * *` | Stuck EIS past T+3 |
 
 ## Auth
 

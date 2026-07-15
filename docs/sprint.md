@@ -79,7 +79,7 @@ This is the working task board for Axial, derived from the **CTO/auditor review 
 | D2 | **Custodial signing (Q7)** | Server holds funder/MSME/issuer secrets and signs all Soroban txns. No Freighter in v1. |
 | D3 | **Mainnet-only** (revised 2026-05-22) | Axial runs on **Stellar Mainnet only**. Reverses the earlier "conditional Mainnet / testnet is the demo path" stance — testnet is retired as an operating target and kept only as a developer sandbox. |
 | D4 | **Closed loop wired (verify on Mainnet)** | Payer portal, NoA issue/ack, `register_invoice`, Freighter lockbox funding, and on-chain `settle` (S5) are wired. Exercise via [`settle-dry-run-checklist.md`](settle-dry-run-checklist.md) before claiming production collection ops. |
-| D5 | **Post-submission re-scope (2026-05-22; S5 updated 2026-07)** | Settlement B-2 S3–S6 delivered in code (`register_invoice`, Freighter lockbox funding, `settle` + reconcile, trust doc). Remaining: Mainnet verify + residual hardening. BIR EIS stays mock-only (live path PTT-gated; Co-Pilot prepare → review → submit). Real-KYB integration deferred; PDAX (B-9) stays dropped. |
+| D5 | **Post-submission re-scope (2026-05-22; S5 updated 2026-07)** | Settlement B-2 S3–S6 delivered in code (`register_invoice`, Freighter lockbox funding, `settle` + reconcile, trust doc). Remaining: Mainnet verify + residual hardening. BIR EIS stays mock-only (live path PTT-gated; Co-Pilot prepare → review → submit). Real-KYB via manual/vendor modes. PDAX (B-9) stays dropped. |
 
 ---
 
@@ -170,9 +170,9 @@ make deploy-all NETWORK=mainnet SOURCE=<your-mainnet-identity>
 - Mainnet USDC issuer: `GA5ZSEJYB37JRC5AVCIA5MOP4RHTM335X2KGX3IHOJAPP5RE34K4KZVN`
 - **References:** [`../soroban/README.md`](../soroban/README.md), `Axial.md` §13.8–13.9, depends on **S0-4** ✅
 
-### S0-6 · Demo recording + ≥3 dry runs · `P0` · 🔴 todo
+### S0-6 · Demo recording + ≥3 dry runs · `P0` · 🟡 checklist ready
 Record a clean end-to-end demo. Have the recording ready as a fallback before the
-live presentation. All routes are now at `/app/*`.
+live presentation. Operator completes ≥3 runs using [`s0-6-demo-dry-run.md`](s0-6-demo-dry-run.md).
 
 **Demo shot list (in order):**
 
@@ -381,8 +381,8 @@ means PDAX can wire in later behind the existing mocked UI with no contract chan
 Revisit only if PDAX grants access post-hackathon.
 - **References:** `../web/components/settings/PdaxRampCard.tsx`, `Axial.md` §13.8 (SEP-24 abstraction)
 
-### B-10 · Funder Protection Center + funder portal · `P1` · ⬜ planned
-**Status:** Not built. Canonical plan: [`alignment-plan-axial.md`](alignment-plan-axial.md).
+### B-10 · Funder Protection Center + funder portal · `P1` · ✅ done
+**Status:** Shipped. Canonical plan: [`alignment-plan-axial.md`](alignment-plan-axial.md).
 
 **Approach (long-run):** API-first (`lib/funder/book.ts`, `/api/funder/*`) → shared
 `FunderProtectionCenter` components → embed in **Liquidity** (PRD) → optional
@@ -399,7 +399,7 @@ Revisit only if PDAX grants access post-hackathon.
 | B-10.5 | Embed in `LiquidityView` | ✅ |
 | B-10.6 | Overview “deals at risk” chip | ✅ |
 | B-10.7 | `/app/funder-portal` + token auth | ✅ |
-| B-10.8 | Doc sync (flow, Axial, remaining-work) | ⬜ |
+| B-10.8 | Doc sync (flow, Axial, remaining-work) | ✅ |
 
 **Blocked for “Repaid” column:** none — B-2 S5 on-chain `settle` is wired; verify on Mainnet.
 

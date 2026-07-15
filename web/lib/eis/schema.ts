@@ -1,16 +1,5 @@
 import type { BirEisPayload, ChainLedgerEvent } from "./types";
-
-const DEMO_SELLER = {
-  tin: process.env.AXIAL_SELLER_TIN ?? "123-456-789-00000",
-  name: process.env.AXIAL_SELLER_NAME ?? "Axial Demo MSME Inc.",
-  address: process.env.AXIAL_SELLER_ADDRESS ?? "Makati City, Metro Manila, PH",
-};
-
-const DEMO_BUYER = {
-  tin: process.env.AXIAL_BUYER_TIN ?? "987-654-321-00000",
-  name: process.env.AXIAL_BUYER_NAME ?? "Acme Logistics Corp",
-  address: process.env.AXIAL_BUYER_ADDRESS ?? "BGC, Taguig City, Metro Manila, PH",
-};
+import { resolveEisPartyDefaults } from "@/lib/org/store";
 
 function eventDescription(kind: ChainLedgerEvent["kind"]): string {
   switch (kind) {
@@ -24,21 +13,25 @@ function eventDescription(kind: ChainLedgerEvent["kind"]): string {
 }
 
 /** Map ledger event → BIR EIS 20-field JSON (amounts in PHP demo units). */
-export function mapLedgerEventToEisPayload(event: ChainLedgerEvent): BirEisPayload {
+export async function mapLedgerEventToEisPayload(
+  event: ChainLedgerEvent,
+  orgId?: string | null,
+): Promise<BirEisPayload> {
   const gross = event.amount;
   const taxable = Math.floor(gross * 0.88);
   const vat = Math.floor(taxable * 0.12);
   const today = new Date().toISOString().slice(0, 10);
+  const parties = await resolveEisPartyDefaults(orgId);
 
   return {
     invoiceNumber: event.referenceId,
     invoiceDate: today,
-    sellerTin: DEMO_SELLER.tin,
-    sellerName: DEMO_SELLER.name,
-    sellerAddress: DEMO_SELLER.address,
-    buyerTin: DEMO_BUYER.tin,
-    buyerName: DEMO_BUYER.name,
-    buyerAddress: DEMO_BUYER.address,
+    sellerTin: parties.seller.tin,
+    sellerName: parties.seller.name,
+    sellerAddress: parties.seller.address,
+    buyerTin: parties.buyer.tin,
+    buyerName: parties.buyer.name,
+    buyerAddress: parties.buyer.address,
     description: eventDescription(event.kind),
     quantity: 1,
     unitOfMeasure: "service",

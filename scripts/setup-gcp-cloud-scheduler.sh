@@ -43,5 +43,6 @@ create_job() {
 create_job "axial-eis-worker" "0 */6 * * *" "/api/eis/worker"
 create_job "axial-eis-horizon-poll" "*/10 * * * *" "/api/eis/horizon-poll"
 create_job "axial-reconciliation-scan" "0 2 * * *" "/api/reconciliation/scan"
+create_job "axial-eis-monitor" "0 8 * * *" "/api/eis/monitor"
 
 echo "Scheduler jobs created in ${REGION} for ${BASE_URL}"

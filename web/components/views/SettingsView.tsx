@@ -3,6 +3,8 @@
 import { useState, useEffect } from "react";
 import { NetworkModeCard } from "@/components/settings/NetworkModeCard";
 import { OrgCard } from "@/components/settings/OrgCard";
+import { OrgTaxProfileCard } from "@/components/settings/OrgTaxProfileCard";
+import { TrustBoundaryCard } from "@/components/settings/TrustBoundaryCard";
 import { PdaxRampCard } from "@/components/settings/PdaxRampCard";
 import { WalletCard } from "@/components/settings/WalletCard";
 import { Button } from "@/components/ui/Button";
@@ -161,6 +163,10 @@ export function SettingsView() {
 
       <OrgCard />
 
+      <TrustBoundaryCard />
+
+      <OrgTaxProfileCard />
+
       <NetworkModeCard />
 
       <div className="grid grid-cols-1 gap-gutter md:grid-cols-12">
@@ -240,9 +246,14 @@ export function SettingsView() {
       </div>
 
       <Card>
-        <div className="mb-4 flex items-center justify-between">
-          <h3 className="font-headline-md text-headline-md text-on-surface">System Audit Logs</h3>
-          <Button variant="ghost" iconRight="file_download" className="text-primary">
+        <div className="mb-4 flex items-start justify-between gap-4">
+          <div>
+            <h3 className="font-headline-md text-headline-md text-on-surface">System Audit Logs</h3>
+            <p className="mt-1 font-body-md text-body-md text-on-surface-variant/70">
+              EIS pipeline events from on-chain activity (demo audit trail).
+            </p>
+          </div>
+          <Button variant="ghost" iconRight="file_download" className="shrink-0 text-primary">
             Export CSV
           </Button>
         </div>

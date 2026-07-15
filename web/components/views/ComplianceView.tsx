@@ -12,6 +12,7 @@ import { StatusBadge } from "@/components/ui/StatusBadge";
 import type { BirEisPayload } from "@/lib/eis/types";
 import type { PayrollPipelineStage } from "@/lib/pipeline/configs";
 import { payrollPipelineSteps } from "@/lib/pipeline/configs";
+import { formatStatutoryLabel, getEffectiveStatutoryRates } from "@/lib/payroll/statutory-tables";
 
 /** Demo payroll pool when no swap yet — matches ~85% advance on ₱125k invoice. */
 const FALLBACK_GROSS = 106_250;
@@ -581,7 +582,7 @@ export function ComplianceView() {
           <div>
             <h3 className="font-headline-md text-headline-md text-on-surface">Statutory Splitter</h3>
             <p className="mt-1 font-body-md text-body-md text-on-surface-variant">
-              Demo rates: SSS 11% · PhilHealth 5% · Pag-IBIG 2% · Net 82%
+              {formatStatutoryLabel(getEffectiveStatutoryRates())}
               {lastSwapAdvancePhp
                 ? " · Pool sized to your last swap advance (USDC on wallet)."
                 : " · Run Tokenize & Swap on Liquidity first for an on-chain payroll budget."}

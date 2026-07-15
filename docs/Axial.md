@@ -120,7 +120,15 @@ Snapshot of what ships in **`web/`** today vs locked product vision. Visual tab 
 | Public landing page | ✅ | Marketing landing at `/`; `/app` is the authenticated Overview |
 | PDAX ramp (L2) | ✅ UI | Settings demo card; **L3 Connect API not pursued — sandbox access not granted (2026-05-22)** |
 | Wallet signing | ✅ Custodial | Server-side signing with funder/MSME/issuer secrets; optional Freighter client-sign path (Q7 locked custodial 2026-05-22) |
-| On-chain lockbox enforcement | ✅ | `settlement` on Mainnet; S3–S4 wired (`register_invoice`, payer Freighter fund); **S5** balance pre-check + awaited settle on `mark_collected`; **S6** trust model in [`rfc-axial-closed-loop-settlement.md`](rfc-axial-closed-loop-settlement.md) |
+| On-chain lockbox enforcement | ✅ | `settlement` on Mainnet; S3–S6 wired (`register_invoice`, payer Freighter fund, **S5** balance pre-check + awaited settle on `mark_collected`; **S6** trust model in [`rfc-axial-closed-loop-settlement.md`](rfc-axial-closed-loop-settlement.md)) |
+| Funder Protection Center + portal | ✅ | `/api/funder/*`, embedded in Liquidity, `/app/funder-portal` (token or session) |
+| Trust & Boundary ack gate | ✅ | Settings card + tokenize blocked until acknowledged (draft counsel copy) |
+| Payer dispute workflow | ✅ | `/api/disputes`, payer portal, eligibility `disputed` blocker |
+| Calm notification center | ✅ | TopBar bell, `/api/notifications`, emitters on fund/leak/EIS fail |
+| Org EIS tax profile | ✅ | Per-org seller/buyer TIN in Settings; feeds EIS payload |
+| Payer KYB modes | 🟡 | `AXIAL_KYB_MODE=mock\|manual\|vendor`; manual verify in PayerPanel |
+| Statutory payroll tables | ✅ | Versioned `lib/payroll/statutory-tables.ts` + effective-dated quotes |
+| EIS stuck-submission monitor | ✅ | `GET /api/eis/monitor` (cron-ready) |
 | Operating network | ✅ | **Stellar Mainnet** — all 4 contracts deployed + initialized; the system runs Mainnet-only |
 | Live BIR submission | ⬜ | Mock BIR by default; `BIR_EIS_LIVE` gates the real client (needs Permit to Transmit) |
 

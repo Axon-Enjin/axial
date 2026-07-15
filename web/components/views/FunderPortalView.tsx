@@ -180,7 +180,10 @@ function PortalShell({
       </div>
 
       <p className="mx-auto mt-8 max-w-container-max text-center font-label-sm text-label-sm text-outline">
-        Read-only book · Powered by Axial · Stellar Mainnet
+        Read-only book · Powered by Axial · Stellar Mainnet ·{" "}
+        <Link href="/app/settings" className="text-on-surface-variant hover:text-primary">
+          Trust &amp; boundary
+        </Link>
       </p>
       <p className="mt-2 text-center">
         <Link

@@ -2,6 +2,7 @@
 
 import { Avatar } from "@/components/ui/Avatar";
 import { Icon } from "@/components/ui/Icon";
+import { NotificationCenter } from "@/components/layout/NotificationCenter";
 
 function truncateKey(key: string): string {
   if (key.length <= 12) return key;
@@ -82,13 +83,7 @@ export function TopBar({
             <span className="ml-0.5 h-1.5 w-1.5 rounded-full bg-[#2DD4BF] shadow-[0_0_10px_rgba(45,212,191,0.6)]" />
           ) : null}
         </button>
-        <button
-          type="button"
-          className="relative flex h-10 w-10 items-center justify-center rounded-full border border-outline-variant/10 bg-surface-container transition-colors hover:bg-surface-variant/50"
-        >
-          <Icon name="notifications" size={20} />
-          <span className="absolute top-2 right-2 h-2 w-2 rounded-full bg-primary shadow-[0_0_8px_rgba(190,198,224,0.6)]" />
-        </button>
+        <NotificationCenter />
         <Avatar initials="AM" size={40} />
       </div>
     </header>

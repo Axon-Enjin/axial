@@ -15,6 +15,23 @@ import { NextResponse, type NextRequest } from "next/server";
 export async function middleware(request: NextRequest) {
   const url = request.nextUrl;
 
+  // Supabase sometimes redirects to Site URL root with ?code= instead of /auth/callback
+  if (
+    url.searchParams.has("code") &&
+    !url.pathname.startsWith("/auth/callback")
+  ) {
+    const callbackUrl = new URL("/auth/callback", url.origin);
+    url.searchParams.forEach((value, key) => {
+      callbackUrl.searchParams.set(key, value);
+    });
+    return NextResponse.redirect(callbackUrl);
+  }
+
+  // Let /auth/callback own session exchange — avoid double cookie writes (HTTP 431)
+  if (url.pathname.startsWith("/auth/callback")) {
+    return NextResponse.next();
+  }
+
   const supabaseUrl =
     process.env.NEXT_PUBLIC_SUPABASE_URL ?? process.env.SUPABASE_URL ?? "";
   const supabaseAnonKey =

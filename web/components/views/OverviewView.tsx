@@ -8,7 +8,9 @@ import { Card } from "@/components/ui/Card";
 import { CardHeader } from "@/components/ui/CardHeader";
 import { Icon } from "@/components/ui/Icon";
 import { TreasuryBalancesCard } from "@/components/overview/TreasuryBalancesCard";
+import { ConnectionJourneyMap } from "@/components/pipeline/ConnectionJourneyMap";
 import { StatusBadge } from "@/components/ui/StatusBadge";
+import { deriveOrgJourney } from "@/lib/pipeline/journey";
 
 type BarSpec = { h: number; active?: boolean };
 
@@ -186,12 +188,18 @@ export function OverviewView() {
     atRisk: number;
     awaitingCollection: number;
   } | null>(null);
+  const [orgFrozen, setOrgFrozen] = useState(false);
 
   const loadLiveStatus = useCallback(() => {
     fetch("/api/dashboard/summary")
       .then((r) => r.json())
       .then((d) => setSummary(d as DashboardSummary))
       .catch(() => setSummary(null));
+
+    fetch("/api/org/settings")
+      .then((r) => r.json())
+      .then((d) => setOrgFrozen(Boolean(d?.frozenAt)))
+      .catch(() => setOrgFrozen(false));
 
     fetch("/api/funder/book?page=1&pageSize=1")
       .then((r) => r.json())
@@ -258,6 +266,22 @@ export function OverviewView() {
     ? `${summary.book.totalInvoices} invoices · ${summary.book.fundableCount} fundable · ${summary.book.settledCount} funded`
     : "Loading book from API…";
 
+  const journeyStages = deriveOrgJourney({
+    book: summary?.book ?? null,
+    eis: {
+      total: eisStats.total,
+      synchronized: eisStats.synchronized,
+      pending: eisStats.pending,
+    },
+    payroll: summary?.payroll ?? null,
+    funder: {
+      atRisk: funderSummary?.atRisk ?? summary?.funder?.atRisk,
+      repaid: summary?.funder?.repaid,
+      awaitingCollection: funderSummary?.awaitingCollection,
+    },
+    orgFrozen,
+  });
+
   return (
     <main className="mx-auto max-w-container-max px-4 py-5 sm:px-6 sm:py-6 md:px-margin-desktop md:py-7">
       {summary ? (
@@ -302,132 +326,111 @@ export function OverviewView() {
         </div>
       ) : null}
 
-      <div className="grid grid-cols-1 gap-4 sm:gap-5 md:gap-gutter md:grid-cols-12">
-        <div className="md:col-span-8">
-          <Card padding="lg" className="h-full">
-            <div className="pointer-events-none absolute -top-24 -right-24 h-64 w-64 rounded-full bg-primary/10 blur-[80px]" />
-            <div className="relative flex flex-col sm:flex-row items-start justify-between gap-4 sm:gap-0">
-              <div className="flex-1">
-                <div>
-                  <div className="mb-1.5 flex items-center gap-2 text-on-surface-variant">
-                    <Icon name="account_balance" size={18} />
-                    <span className="font-label-sm text-[11px] sm:text-label-sm uppercase tracking-wider">
-                      Available Liquidity
-                    </span>
-                  </div>
-                  <div className="mt-3 sm:mt-4 flex items-baseline gap-1">
-                    <span className="font-headline-xl text-[28px] sm:text-[36px] md:text-headline-xl tracking-tight text-on-surface">
-                      ₱{faceDisplay}
-                    </span>
-                    <span className="font-body-lg text-[16px] sm:text-body-lg text-on-surface-variant">.00</span>
-                  </div>
-                  <p className="mt-2 font-body-md text-[13px] sm:text-body-md text-on-surface-variant">
-                    {bookSub}
-                  </p>
-                  {summary?.treasury?.funderUsdc ? (
-                    <p className="mt-1 font-label-sm text-[11px] sm:text-label-sm text-[#2DD4BF]">
-                      Treasury USDC {summary.treasury.funderUsdc} · mainnet
-                    </p>
-                  ) : null}
-                  {funderSummary && funderSummary.totalDeals > 0 ? (
-                    <div className="mt-2 flex flex-wrap items-center gap-2">
-                      <Link href="/app/funder-portal">
-                        <StatusBadge kind="minted" icon="shield">
-                          {funderSummary.totalDeals} funder deal
-                          {funderSummary.totalDeals === 1 ? "" : "s"}
-                        </StatusBadge>
-                      </Link>
-                      {funderSummary.atRisk > 0 ? (
-                        <Link href="/app/funder-portal">
-                          <StatusBadge kind="warning" icon="warning">
-                            {funderSummary.atRisk} at risk
-                          </StatusBadge>
-                        </Link>
-                      ) : null}
-                    </div>
-                  ) : null}
-                </div>
-                <div className="mt-6 sm:mt-8 flex flex-col sm:flex-row gap-3 sm:gap-3.5">
-                  <Link href="/app/liquidity" className="flex-1 sm:flex-initial">
-                    <Button variant="primary" size="lg" onClick={() => dispatch("unlock")} className="w-full sm:w-auto">
-                      Unlock Capital
-                    </Button>
-                  </Link>
-                  <Button
-                    variant="secondary"
-                    size="lg"
-                    icon="swap_horiz"
-                    onClick={() => dispatch("transfer")}
-                    className="w-full sm:w-auto"
-                  >
-                    Transfer
-                  </Button>
-                </div>
-                <div className="mt-6 sm:mt-8 grid grid-cols-3 gap-3 sm:gap-4">
-                  <div className="rounded-lg border border-outline-variant/10 bg-surface-container-low p-3 sm:p-3.5">
-                    <p className="font-label-sm text-[10px] sm:text-label-sm uppercase tracking-wider text-outline">
-                      Funded
-                    </p>
-                    <p className="mt-1 font-headline-sm text-[18px] sm:text-headline-sm text-on-surface">
-                      {summary?.book?.settledCount ?? 0}
-                    </p>
-                  </div>
-                  <div className="rounded-lg border border-outline-variant/10 bg-surface-container-low p-3 sm:p-3.5">
-                    <p className="font-label-sm text-[10px] sm:text-label-sm uppercase tracking-wider text-outline">
-                      Fundable
-                    </p>
-                    <p className="mt-1 font-headline-sm text-[18px] sm:text-headline-sm text-on-surface">
-                      {summary?.book?.fundableCount ?? 0}
-                    </p>
-                  </div>
-                  <div className="rounded-lg border border-outline-variant/10 bg-surface-container-low p-3 sm:p-3.5">
-                    <p className="font-label-sm text-[10px] sm:text-label-sm uppercase tracking-wider text-outline">
-                      Total
-                    </p>
-                    <p className="mt-1 font-headline-sm text-[18px] sm:text-headline-sm text-on-surface">
-                      {summary?.book?.totalInvoices ?? 0}
-                    </p>
-                  </div>
-                </div>
+      <Card padding="lg" className="mb-5 sm:mb-6">
+        <ConnectionJourneyMap stages={journeyStages} />
+      </Card>
+
+      <Card padding="md" className="relative mb-4 sm:mb-5">
+        <div className="pointer-events-none absolute -top-16 -right-16 h-40 w-40 rounded-full bg-primary/8 blur-[60px]" />
+        <div className="relative flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="min-w-0 flex-1">
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="flex items-center gap-2 text-on-surface-variant">
+                <Icon name="account_balance" size={16} />
+                <span className="font-label-sm text-[11px] uppercase tracking-wider">
+                  Available Liquidity
+                </span>
               </div>
               <StatusBadge kind={chain?.onChainReady ? "active" : "scanning"}>
                 {networkLabel}
               </StatusBadge>
             </div>
-          </Card>
-        </div>
-
-        <div className="flex flex-col gap-4 sm:gap-5 md:gap-gutter md:col-span-4">
-          <TreasuryBalancesCard />
-          <Card>
-            <CardHeader
-              icon="policy"
-              label="Regulatory Pulse"
-              action={<Icon name="more_horiz" size={20} className="text-outline-variant" />}
-            />
-            <div className="flex flex-col gap-4">
-              <PulseRow
-                icon="cloud_done"
-                title="BIR EIS Sync"
-                subtitle={birPulse.subtitle}
-                status={birPulse.status}
-              />
-              <PulseRow
-                icon="call_split"
-                title="Statutory Splitting"
-                subtitle={
-                  chain?.payrollReady
-                    ? "SSS · PhilHealth · Pag-IBIG on-chain"
-                    : "Demo split — deploy payroll_split"
-                }
-                status={
-                  chain?.payrollReady ? "Payroll router live" : "Preview in Compliance"
-                }
-              />
+            <div className="mt-2 flex flex-wrap items-baseline gap-x-1 gap-y-0">
+              <span className="font-headline-xl text-[26px] tracking-tight text-on-surface sm:text-[32px]">
+                ₱{faceDisplay}
+              </span>
+              <span className="font-body-md text-[14px] text-on-surface-variant">.00</span>
             </div>
-          </Card>
+            <p className="mt-1 font-body-md text-[13px] text-on-surface-variant">
+              {bookSub}
+              {summary?.treasury?.funderUsdc
+                ? ` · Treasury ${summary.treasury.funderUsdc} USDC`
+                : ""}
+            </p>
+            {funderSummary && funderSummary.totalDeals > 0 ? (
+              <div className="mt-2 flex flex-wrap items-center gap-2">
+                <Link href="/app/funder-portal">
+                  <StatusBadge kind="minted" icon="shield">
+                    {funderSummary.totalDeals} funder deal
+                    {funderSummary.totalDeals === 1 ? "" : "s"}
+                  </StatusBadge>
+                </Link>
+                {funderSummary.atRisk > 0 ? (
+                  <Link href="/app/funder-portal">
+                    <StatusBadge kind="warning" icon="warning">
+                      {funderSummary.atRisk} at risk
+                    </StatusBadge>
+                  </Link>
+                ) : null}
+              </div>
+            ) : null}
+          </div>
+          <div className="flex shrink-0 flex-col gap-2 sm:flex-row sm:items-center">
+            <Link href="/app/liquidity" className="sm:flex-initial">
+              <Button
+                variant="primary"
+                size="md"
+                onClick={() => dispatch("unlock")}
+                className="w-full sm:w-auto"
+              >
+                Unlock Capital
+              </Button>
+            </Link>
+            <Button
+              variant="secondary"
+              size="md"
+              icon="swap_horiz"
+              onClick={() => dispatch("transfer")}
+              className="w-full sm:w-auto"
+            >
+              Transfer
+            </Button>
+          </div>
         </div>
+      </Card>
 
+      <div className="mb-4 grid grid-cols-1 gap-4 sm:gap-5 md:mb-5 md:grid-cols-2 md:gap-gutter">
+        <TreasuryBalancesCard />
+        <Card className="h-full">
+          <CardHeader
+            icon="policy"
+            label="Regulatory Pulse"
+            action={<Icon name="more_horiz" size={20} className="text-outline-variant" />}
+          />
+          <div className="flex flex-col gap-4">
+            <PulseRow
+              icon="cloud_done"
+              title="BIR EIS Sync"
+              subtitle={birPulse.subtitle}
+              status={birPulse.status}
+            />
+            <PulseRow
+              icon="call_split"
+              title="Statutory Splitting"
+              subtitle={
+                chain?.payrollReady
+                  ? "SSS · PhilHealth · Pag-IBIG on-chain"
+                  : "Demo split — deploy payroll_split"
+              }
+              status={
+                chain?.payrollReady ? "Payroll router live" : "Preview in Compliance"
+              }
+            />
+          </div>
+        </Card>
+      </div>
+
+      <div className="grid grid-cols-1 gap-4 sm:gap-5 md:gap-gutter md:grid-cols-12">
         <div className="md:col-span-7">
           <Card className="flex min-h-[320px] sm:min-h-[380px] flex-col">
             <CardHeader

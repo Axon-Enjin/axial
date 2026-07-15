@@ -188,7 +188,7 @@ flowchart TD
   EIS --> UI2["✅ Compliance review + Overview update"]
 ```
 
-**Not built:** real payer KYB onboarding; live BIR PTT submission. **S5 settle** shipped in code — verify on Mainnet via [`settle-dry-run-checklist.md`](settle-dry-run-checklist.md).
+**Not built:** live vendor KYB; live BIR PTT submission. **S5 settle** shipped in code — verify on Mainnet via [`settle-dry-run-checklist.md`](settle-dry-run-checklist.md).
 
 ---
 
@@ -273,7 +273,7 @@ stateDiagram-v2
 |---------|--------------|--------------|--------|
 | Payer portal + confirm invoice | Must | ✅ | `/app/payer-portal` token auth + `/api/payers` + eligibility |
 | NoA e-acknowledgement | Must | ✅ | `/api/noa/[receivableId]` issue + ack |
-| Payer KYB onboarding | Must | ⬜ | No real KYB flow |
+| Payer KYB onboarding | Must | 🟡 | `AXIAL_KYB_MODE`; mock auto-verify or manual review in PayerPanel |
 | Invoice upload + OCR | Implied UI | ✅ | Parse API + persist |
 | Factoring book + pagination | Should | ✅ | Supabase `factoring_invoices` |
 | SAC mint / receivable token | Must | ✅ | Mainnet |
@@ -295,6 +295,11 @@ stateDiagram-v2
 | Live BIR submission | — | ⬜ | Mock by default; `BIR_EIS_LIVE` gates real client |
 | Funder Protection Center | Should | ✅ | Embedded in Liquidity + share link to `/app/funder-portal` |
 | Funder portal (external LP) | Could | ✅ | Token or org-session preview · [`/app/funder-portal`](../../web/app/app/funder-portal/page.tsx) |
+| Trust & Boundary screen | Should | ✅ | Settings ack gate before first tokenize |
+| Payer dispute workflow | Should | ✅ | Payer portal + `/api/disputes` |
+| Calm notifications | Should | ✅ | In-app notification center (no email/SMS) |
+| Per-org EIS TIN | P1 | ✅ | Org tax profile in Settings |
+| EIS monitor (stuck T+3) | P1 | ✅ | `/api/eis/monitor` |
 
 ---
 

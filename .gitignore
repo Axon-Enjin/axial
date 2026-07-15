@@ -1,6 +1,8 @@
 # Cursor / agent skills (local tooling — not product code)
 .agents/
-.cursor/
+.cursor/*
+!.cursor/mcp.json
+!.cursor/README.md
 .gemini/
 skills-lock.json
 
@@ -45,4 +47,4 @@ Thumbs.db
 *.swo
 *~
 .idea/
-.vscode/
+.vscode/

@@ -104,6 +104,22 @@ export function PayerPanel({ onPayerRegistered }: Props) {
     }
   };
 
+  const reviewKyb = async (payerId: string, status: "verified" | "rejected") => {
+    try {
+      const res = await fetch(`/api/payers/${encodeURIComponent(payerId)}/kyb`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status }),
+      });
+      const data = (await res.json()) as { payer?: Payer };
+      if (data.payer) {
+        setPayers((prev) => prev.map((p) => (p.id === payerId ? data.payer! : p)));
+      }
+    } catch {
+      // silent
+    }
+  };
+
   return (
     <div className="overflow-hidden rounded-2xl border border-outline-variant/10 bg-surface-container/40">
       {/* Header / toggle */}
@@ -151,7 +167,7 @@ export function PayerPanel({ onPayerRegistered }: Props) {
                   <table className="w-full border-collapse">
                     <thead>
                       <tr>
-                        {["Legal Name", "TIN", "Contact", "KYB Status"].map((h) => (
+                        {["Legal Name", "TIN", "Contact", "KYB Status", ""].map((h) => (
                           <th
                             key={h}
                             className="border-b border-outline-variant/10 px-6 py-3 text-left font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant"
@@ -175,6 +191,26 @@ export function PayerPanel({ onPayerRegistered }: Props) {
                           </td>
                           <td className="px-6 py-3">
                             <KybBadge status={p.kybStatus} />
+                          </td>
+                          <td className="px-6 py-3">
+                            {p.kybStatus === "pending" ? (
+                              <div className="flex gap-2">
+                                <button
+                                  type="button"
+                                  onClick={() => void reviewKyb(p.id, "verified")}
+                                  className="font-label-sm text-label-sm text-[#2DD4BF] hover:underline"
+                                >
+                                  Verify
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => void reviewKyb(p.id, "rejected")}
+                                  className="font-label-sm text-label-sm text-on-surface-variant hover:text-red-400"
+                                >
+                                  Reject
+                                </button>
+                              </div>
+                            ) : null}
                           </td>
                         </tr>
                       ))}

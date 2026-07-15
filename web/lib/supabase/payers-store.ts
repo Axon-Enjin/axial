@@ -29,6 +29,8 @@ type ConfirmationRow = {
   status: string;
   auth_token: string;
   confirmed_at: string | null;
+  dispute_reason: string | null;
+  disputed_at: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -72,6 +74,8 @@ function rowToConfirmation(row: ConfirmationRow): InvoiceConfirmation {
     status: row.status as InvoiceConfirmation["status"],
     authToken: row.auth_token,
     confirmedAt: row.confirmed_at,
+    disputeReason: row.dispute_reason ?? null,
+    disputedAt: row.disputed_at ?? null,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };

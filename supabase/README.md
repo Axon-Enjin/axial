@@ -18,11 +18,13 @@ PostgreSQL backing for **BIR EIS**, **Active Factoring** (invoices), **Payer reg
 | [`004_reserve_ledger.sql`](migrations/004_reserve_ledger.sql) | `reserve_ledger` — settlement reserves + leakage tracking |
 | [`005_eis_t3_fields.sql`](migrations/005_eis_t3_fields.sql) | `due_by`, `submitted_at` on `eis_submissions` — T+3 deadline enforcement |
 | [`006_auth_multitenancy.sql`](migrations/006_auth_multitenancy.sql) | `orgs`, `org_memberships`, `org_invites`; `org_id` on all data tables; RLS policies; `handle_new_user()` trigger |
+| [`007_on_chain_invoice_id.sql`](migrations/007_on_chain_invoice_id.sql) | `on_chain_invoice_id` on `factoring_invoices` — Soroban settle path |
+| [`008_org_features.sql`](migrations/008_org_features.sql) | Org trust boundary, EIS tax profile, freeze flags; `notifications` table; dispute fields on confirmations |
 
 ## Setup (one time)
 
 1. Open [dashboard](https://supabase.com/dashboard/project/ifzyntqwymmgimnxtguz).
-2. **SQL Editor** → run all 6 migrations in order (001 → 006).
+2. **SQL Editor** → run all 8 migrations in order (001 → 008).
 3. **Auth → Providers**: enable **Email** (magic link), optionally **Google** OAuth.
 4. **Auth → URL Configuration**: add your app URL(s) to *Site URL* and *Redirect URLs*  
    e.g. `http://localhost:3000`, `https://axial.axonenjin.com`; redirect URL must be `{base}/auth/callback`.

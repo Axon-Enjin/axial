@@ -32,7 +32,10 @@ Hackathon **L1 + L2** is largely complete:
 - Supabase auth + multi-tenancy
 - Reflector FX + PDAX mock UI
 - Freighter self-custody path (optional alongside custodial server signing)
-- Cloud Run deploy (`asia-southeast1`)
+- Funder Protection Center + `/app/funder-portal` (B-10)
+- Trust & Boundary ack gate · dispute workflow · calm notification center
+- Leakage freeze + recourse UX · per-org EIS TIN · KYB modes · statutory tables
+- EIS monitor cron seam · production gates tracker
 
 See [`Axial.md`](Axial.md) § "Implementation status" for the full table.
 
@@ -42,7 +45,7 @@ See [`Axial.md`](Axial.md) § "Implementation status" for the full table.
 
 ### 1. End-to-end demo reliability (S0-6)
 
-**Status:** `🔴 todo` in [`sprint.md`](sprint.md)
+**Status:** `🟡` checklist ready — [`s0-6-demo-dry-run.md`](s0-6-demo-dry-run.md); operator records video after ≥3 runs
 
 - Record a clean demo video + run ≥3 dry runs
 - Shot list: [`sprint.md`](sprint.md) § S0-6 (Landing → Overview → Liquidity upload/seed → confirm payer → tokenize & swap → Compliance EIS + payroll → Settings)
@@ -73,7 +76,7 @@ See [`Axial.md`](Axial.md) § "Implementation status" for the full table.
 
 ### 3. Docs sync — final verification pass
 
-**Status:** `⬜` noted in [`sprint.md`](sprint.md) S0-7
+**Status:** `✅` (2026-07-15)
 
 - Reconcile [`Axial.md`](Axial.md) implementation status with current `web/` behavior
 - Ensure [`flow.md`](flow.md) matrix matches Liquidity OCR, Freighter, and mainnet-only network cookie
@@ -144,9 +147,7 @@ Protect with `CRON_SECRET` (Bearer). Cloud Run has no built-in cron — use **GC
 
 ### 9. Funder Protection Center / Funder portal
 
-**Status:** ✅ embedded + portal shipped (see [`sprint.md`](sprint.md) B-10); residual doc sync ⬜
-
-PRD Should-Have (US-06): payer confirmed, NoA, reserve, recourse. API-first (`/api/funder/*`), embed in Liquidity, optional `/app/funder-portal`.
+**Status:** ✅ embedded + portal shipped (see [`sprint.md`](sprint.md) B-10 and [`alignment-plan-axial.md`](alignment-plan-axial.md) **B-10**)
 
 | Step | Status |
 |------|--------|

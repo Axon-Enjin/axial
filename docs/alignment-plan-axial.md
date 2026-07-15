@@ -70,8 +70,8 @@ flowchart LR
 |---------|--------|
 | MSME 4-tab app | ✅ |
 | Payer portal | ✅ |
-| Funder Protection Center | ✅ embedded in Liquidity |
-| Standalone funder portal | ✅ `/app/funder-portal` |
+| Funder Protection Center | ✅ embedded in Liquidity + `/app/funder-portal` |
+| Standalone funder portal | ✅ `/app/funder-portal` (token or session auth) |
 
 ---
 
@@ -84,7 +84,7 @@ flowchart LR
 | Chain signing (demo) | Custodial server (`GB6TMT…`) | Funder book shows server funder pubkey |
 | Chain signing (roadmap) | Freighter for MSME/payer; optional funder later | Portal v1 read-only; swap stays Liquidity |
 | Closed loop | Payer confirm + NoA before fund | Funder diligence reads same eligibility fields |
-| Settlement | `register_invoice` ✅ · `settle` ✅ S5 | Funder UI shows **expected vs collected**; Repaid after settle |
+| Settlement | `register_invoice` ✅ · `settle` ✅ S5 | Funder UI shows **expected vs collected**; Repaid / Partial / Leaked after settle |
 | IA | Four tabs for MSME | Funder center **embeds in Liquidity**, not a fifth tab |
 | Funder portal (external) | Optional second shell | Same API/components as embedded panel |
 

@@ -1,4 +1,5 @@
 import { getInvoice } from "@/lib/invoices/store";
+import { getOrgProfile, isOrgFrozen, isTrustBoundaryAcked } from "@/lib/org/store";
 import type { EligibilityBlocker, EligibilityResult } from "./types";
 import {
   getConfirmationByReceivable,
@@ -8,8 +9,9 @@ import {
 
 /**
  * CLS-05 — the single funding enforcement point.
- * No receivable may be swapped unless all three gates pass:
- * (1) payer KYB verified, (2) invoice confirmed by payer, (3) NoA acknowledged.
+ * No receivable may be swapped unless all gates pass:
+ * (1) trust boundary ack, (2) org not frozen, (3) payer KYB verified,
+ * (4) invoice confirmed by payer, (5) NoA acknowledged, (6) not disputed.
  *
  * Backward compat: if the invoice has payerConfirmed + noaAcknowledged set via
  * the demo single-click path, treat it as fundable without requiring the new
@@ -36,6 +38,20 @@ export async function checkFundingEligibility(
     return notFundable(["payer_not_found"]);
   }
 
+  const orgId = process.env.AXIAL_ORG_ID ?? "demo-org";
+  const [trustAcked, orgProfile] = await Promise.all([
+    isTrustBoundaryAcked(orgId),
+    getOrgProfile(orgId),
+  ]);
+
+  if (!trustAcked) {
+    return notFundable(["trust_boundary"]);
+  }
+
+  if (isOrgFrozen(orgProfile)) {
+    return notFundable(["org_frozen"]);
+  }
+
   // Demo fast-path: single-click confirm_payer set both flags directly on invoice
   if (invoice.payerConfirmed && invoice.noaAcknowledged) {
     return {
@@ -58,7 +74,11 @@ export async function checkFundingEligibility(
   let kybStatus: EligibilityResult["kybStatus"] = null;
 
   if (!confirmation || confirmation.status !== "confirmed") {
-    blockers.push("confirmation");
+    if (confirmation?.status === "disputed") {
+      blockers.push("disputed");
+    } else {
+      blockers.push("confirmation");
+    }
   } else {
     const payer = await getPayer(confirmation.payerId);
     kybStatus = payer?.kybStatus ?? null;

@@ -57,15 +57,8 @@ export function StatusBadge({
       {icon ? (
         <Icon
           name={icon}
-          size={12}
-          className={`sm:hidden ${animated ? "animate-spin" : ""}`}
-        />
-      ) : null}
-      {icon ? (
-        <Icon
-          name={icon}
           size={14}
-          className={`hidden sm:block ${animated ? "animate-spin" : ""}`}
+          className={animated ? "animate-spin" : undefined}
         />
       ) : null}
       {children}

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { triggerEisFromChain } from "@/lib/eis/trigger";
+import { emitFunded } from "@/lib/notifications/emit";
 import { checkFundingEligibility } from "@/lib/payers/eligibility";
 import { isSwapChainEnabled } from "@/lib/soroban/config";
 import { resolveSorobanConfig } from "@/lib/soroban/server-config";
@@ -121,6 +122,7 @@ export async function POST(request: Request) {
       cfg.network,
       quote.advance,
     );
+    emitFunded(process.env.AXIAL_ORG_ID, sourceInvoiceId ?? invoiceId, quote.advance);
     return NextResponse.json({
       mode: "on-chain",
       invoiceId,

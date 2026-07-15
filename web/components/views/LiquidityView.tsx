@@ -9,6 +9,7 @@ import {
   type AdvanceConfirmDraft,
 } from "@/components/liquidity/AdvanceConfirmPanel";
 import { TokenizationPipeline } from "@/components/liquidity/TokenizationPipeline";
+import { ConnectionJourneyMap } from "@/components/pipeline/ConnectionJourneyMap";
 import { useApp } from "@/components/providers/AppProvider";
 import { FreighterConnectGate } from "@/components/wallet/FreighterConnectGate";
 import { Button } from "@/components/ui/Button";
@@ -24,6 +25,7 @@ import {
   pipelineModalContent,
   type PipelineStage,
 } from "@/lib/liquidity/pipeline-stage";
+import { deriveInvoiceJourney } from "@/lib/pipeline/journey";
 
 type Invoice = FactoringInvoiceClient;
 
@@ -62,8 +64,7 @@ function ViewTxLinks({
           rel="noreferrer"
           className={linkClass}
         >
-          <Icon name="receipt_long" size={14} className="sm:hidden" />
-          <Icon name="receipt_long" size={16} className="hidden sm:block" />
+          <Icon name="receipt_long" size={14} />
           <span className="whitespace-nowrap">Mint TX</span>
         </a>
       ) : null}
@@ -74,8 +75,7 @@ function ViewTxLinks({
           rel="noreferrer"
           className={linkClass}
         >
-          <Icon name="swap_horiz" size={14} className="sm:hidden" />
-          <Icon name="swap_horiz" size={16} className="hidden sm:block" />
+          <Icon name="swap_horiz" size={14} />
           <span className="whitespace-nowrap">Swap TX</span>
         </a>
       ) : null}
@@ -145,13 +145,8 @@ function UploadZone({
         >
           <Icon
             name={parsing ? "document_scanner" : "upload_file"}
-            size={28}
-            className={`sm:hidden ${hover || parsing ? "text-primary" : "text-on-surface-variant"}`}
-          />
-          <Icon
-            name={parsing ? "document_scanner" : "upload_file"}
-            size={36}
-            className={`hidden sm:block ${hover || parsing ? "text-primary" : "text-on-surface-variant"}`}
+            size={32}
+            className={hover || parsing ? "text-primary" : "text-on-surface-variant"}
           />
         </div>
         <h3 className="mb-2 font-headline-md text-[18px] sm:text-headline-md tracking-tight text-on-surface">
@@ -174,41 +169,57 @@ function UploadZone({
         >
           {parsing ? "Reading invoice…" : "Browse Files"}
         </Button>
-        <div className="mt-3 sm:mt-4 space-y-2 px-2">
-          <p className="font-label-sm text-[10px] sm:text-label-sm text-on-surface-variant">
-            Quick import (no OCR):{" "}
+        <div className="mt-6 w-full max-w-md border-t border-outline-variant/15 pt-4">
+          <p className="mb-3 font-label-sm text-[10px] uppercase tracking-wider text-on-surface-variant/45">
+            Demo shortcuts
+          </p>
+          <div className="flex flex-wrap items-center justify-center gap-2">
             <button
               type="button"
               disabled={parsing || disabled}
               onClick={onTrySample}
-              className="text-[#2DD4BF] hover:underline disabled:opacity-50"
+              className="inline-flex items-center gap-1.5 rounded-full border border-outline-variant/30 bg-surface-container/60 px-3 py-1.5 font-label-sm text-[11px] text-on-surface-variant transition-colors hover:border-primary/35 hover:text-on-surface disabled:opacity-50"
             >
-              sample 8901
+              <Icon name="bolt" size={14} className="text-[#2DD4BF]" />
+              Import sample
             </button>
-            {" · "}
             <a
               href="/samples/invoices/invoice-inv-2023-8901.pdf"
               download="axial-demo-invoice.pdf"
-              className="text-[#2DD4BF] hover:underline"
+              className="inline-flex items-center gap-1.5 rounded-full border border-outline-variant/30 bg-surface-container/60 px-3 py-1.5 font-label-sm text-[11px] text-on-surface-variant transition-colors hover:border-primary/35 hover:text-on-surface"
             >
-              demo PDF
+              <Icon name="picture_as_pdf" size={14} className="text-on-surface-variant/70" />
+              Demo PDF
             </a>
-          </p>
-          <p className="font-label-sm text-[10px] sm:text-label-sm text-on-surface-variant">
-            OCR demos — download PNG, then Browse Files:
-          </p>
-          <div className="flex flex-wrap gap-x-2 gap-y-1">
-            {DEMO_INVOICE_PNGS.map(({ file, label }) => (
-              <a
-                key={file}
-                href={`/samples/invoices/${file}`}
-                download={file.replace("invoice-", "axial-")}
-                className="font-label-sm text-[10px] sm:text-label-sm text-[#2DD4BF] hover:underline"
-              >
-                {label}
-              </a>
-            ))}
           </div>
+          <details className="group mt-3">
+            <summary className="flex cursor-pointer list-none items-center justify-center gap-1 font-label-sm text-[11px] text-on-surface-variant/55 transition-colors hover:text-on-surface-variant [&::-webkit-details-marker]:hidden">
+              OCR practice files
+              <span className="text-on-surface-variant/35">({DEMO_INVOICE_PNGS.length})</span>
+              <Icon
+                name="expand_more"
+                size={16}
+                className="transition-transform duration-200 group-open:rotate-180"
+              />
+            </summary>
+            <p className="mt-2 font-body-md text-[11px] text-on-surface-variant/50">
+              Download a PNG, then use Browse Files to test OCR.
+            </p>
+            <ul className="mt-2 grid grid-cols-2 gap-1.5 sm:grid-cols-3">
+              {DEMO_INVOICE_PNGS.map(({ file, label }) => (
+                <li key={file}>
+                  <a
+                    href={`/samples/invoices/${file}`}
+                    download={file.replace("invoice-", "axial-")}
+                    className="flex items-center gap-1 rounded-md border border-outline-variant/20 bg-surface-container/40 px-2 py-1.5 font-label-sm text-[10px] leading-tight text-on-surface-variant transition-colors hover:border-primary/30 hover:text-on-surface"
+                  >
+                    <Icon name="download" size={12} className="shrink-0 opacity-60" />
+                    <span className="truncate">{label}</span>
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </details>
         </div>
       </div>
     </Card>
@@ -500,9 +511,30 @@ export function LiquidityView() {
     [replaceInvoiceInList],
   );
 
+  const [trustAcked, setTrustAcked] = useState(true);
+
+  useEffect(() => {
+    void fetch("/api/org/trust-boundary")
+      .then((r) => r.json())
+      .then((d: { acked?: boolean }) => {
+        if (typeof d.acked === "boolean") setTrustAcked(d.acked);
+        else setTrustAcked(Boolean(localStorage.getItem("axial_trust_boundary_acked")));
+      })
+      .catch(() => {
+        setTrustAcked(Boolean(localStorage.getItem("axial_trust_boundary_acked")));
+      });
+  }, []);
+
   const executeSwap = useCallback(
     async (id: string, face: number) => {
       if (!(await ensureWallet())) return;
+      if (!trustAcked) {
+        dispatch(
+          "swap-executed",
+          "Acknowledge Trust & Boundary in Settings before tokenizing.",
+        );
+        return;
+      }
       const row = invoices.find((r) => r.id === id);
       if (!row || !isFundable(row.trust)) {
         dispatch("swap-executed", "Confirm payer and NoA before funding.");
@@ -605,6 +637,7 @@ export function LiquidityView() {
       replaceInvoiceInList,
       freighterPublicKey,
       ensureWallet,
+      trustAcked,
     ],
   );
 
@@ -693,6 +726,31 @@ export function LiquidityView() {
               <Icon name="tune" size={20} className="text-on-surface-variant" />
             </div>
             <TokenizationPipeline stage={pipelineStage} />
+            {(() => {
+              const focus =
+                invoices.find((i) => i.id === expandedId) ??
+                invoices.find((i) => i.status !== "settled") ??
+                invoices[0];
+              if (!focus) return null;
+              return (
+                <div className="mt-5 border-t border-outline-variant/15 pt-4">
+                  <p className="mb-2 font-label-sm text-[10px] uppercase tracking-wider text-on-surface-variant/50">
+                    Loop · {focus.id}
+                  </p>
+                  <ConnectionJourneyMap
+                    compact
+                    stages={deriveInvoiceJourney({
+                      status: focus.status,
+                      payerConfirmed: focus.payerConfirmed,
+                      noaAcknowledged: focus.noaAcknowledged,
+                      collectionStatus: focus.collectionStatus,
+                      mintTxHash: focus.mintTxHash,
+                      swapTxHash: focus.swapTxHash,
+                    })}
+                  />
+                </div>
+              );
+            })()}
           </Card>
         </div>
       </div>

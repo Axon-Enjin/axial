@@ -8,6 +8,7 @@ import {
   newPayloadId,
   upsertSubmission,
 } from "./store";
+import { emitEisFailed } from "@/lib/notifications/emit";
 import type { ChainLedgerEvent, EisSubmission } from "./types";
 
 const ORG_ID = process.env.AXIAL_ORG_ID ?? "demo-msme";
@@ -28,7 +29,7 @@ export async function processLedgerEvent(
 
   const now = new Date().toISOString();
   const payloadId = existing?.payloadId ?? newPayloadId();
-  const payload = mapLedgerEventToEisPayload(event);
+  const payload = await mapLedgerEventToEisPayload(event, ORG_ID);
   // signEisPayload uses RS256 when BIR_EIS_LIVE=true+key present, HS256 mock otherwise
   const jwsCompact = signEisPayload(payload);
 
@@ -92,6 +93,7 @@ export async function processLedgerEvent(
     sub.status = "failed";
     sub.error = err instanceof Error ? err.message : "EIS submission failed";
     sub.updatedAt = new Date().toISOString();
+    emitEisFailed(ORG_ID, event.referenceId);
     return await upsertSubmission(sub);
   }
 }

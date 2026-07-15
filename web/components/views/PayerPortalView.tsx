@@ -103,6 +103,34 @@ export function PayerPortalView({ token, invoiceId }: Props) {
       });
   }, [token, invoiceId]);
 
+  const [disputeReason, setDisputeReason] = useState("");
+  const [showDispute, setShowDispute] = useState(false);
+
+  const handleDispute = async () => {
+    if (!token) return;
+    setBusy(true);
+    try {
+      const res = await fetch("/api/disputes", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token, reason: disputeReason }),
+      });
+      const result = (await res.json()) as { error?: string };
+      if (!res.ok) {
+        setErrorMsg(result.error ?? "Could not record dispute.");
+        setStep("error");
+        return;
+      }
+      setStep("error");
+      setErrorMsg("Dispute recorded. The MSME has been notified — funding is blocked.");
+    } catch {
+      setErrorMsg("Network error while recording dispute.");
+      setStep("error");
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const handleConfirm = async () => {
     if (!token || !invoiceId) return;
     setBusy(true);
@@ -333,6 +361,36 @@ export function PayerPortalView({ token, invoiceId }: Props) {
             <Button variant="teal" fullWidth onClick={() => void handleConfirm()} disabled={busy}>
               {busy ? "Confirming…" : "Confirm Invoice"}
             </Button>
+
+            <div className="mt-4 border-t border-outline-variant/10 pt-4">
+              {!showDispute ? (
+                <button
+                  type="button"
+                  onClick={() => setShowDispute(true)}
+                  className="w-full font-label-md text-label-md text-on-surface-variant hover:text-on-surface"
+                >
+                  Dispute this invoice
+                </button>
+              ) : (
+                <div className="space-y-3">
+                  <textarea
+                    value={disputeReason}
+                    onChange={(e) => setDisputeReason(e.target.value)}
+                    placeholder="Brief reason (amount, terms, or validity)"
+                    rows={3}
+                    className="w-full rounded-lg border border-outline-variant/40 bg-surface-container px-3 py-2 font-body-md text-sm text-on-surface outline-none focus:border-primary"
+                  />
+                  <Button
+                    variant="secondary"
+                    fullWidth
+                    onClick={() => void handleDispute()}
+                    disabled={busy}
+                  >
+                    {busy ? "Submitting…" : "Submit dispute"}
+                  </Button>
+                </div>
+              )}
+            </div>
           </Card>
         )}
 

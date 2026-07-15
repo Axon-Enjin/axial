@@ -171,6 +171,8 @@ export async function requestConfirmation(data: {
     status: "pending",
     authToken: generatePayerAuthToken(),
     confirmedAt: null,
+    disputeReason: null,
+    disputedAt: null,
     createdAt: now,
     updatedAt: now,
   };
@@ -213,6 +215,26 @@ export async function getConfirmationByToken(
     async () => {
       const store = await readStore();
       return store.confirmations.find((c) => c.authToken === token) ?? null;
+    },
+  );
+}
+
+export async function updateConfirmationStatus(
+  id: string,
+  patch: Partial<Pick<InvoiceConfirmation, "status" | "confirmedAt" | "disputeReason" | "disputedAt">>,
+): Promise<InvoiceConfirmation> {
+  const now = new Date().toISOString();
+  const fullPatch = { ...patch, updatedAt: now };
+
+  return withFileFallback(
+    () => supabaseUpdateConfirmation(id, fullPatch),
+    async () => {
+      const store = await readStore();
+      const idx = store.confirmations.findIndex((c) => c.id === id);
+      if (idx < 0) throw new Error("Confirmation record not found");
+      store.confirmations[idx] = { ...store.confirmations[idx]!, ...fullPatch };
+      await writeStore(store);
+      return store.confirmations[idx]!;
     },
   );
 }

@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { getInvoice, listInvoices } from "@/lib/invoices/store";
+import { freezeOrg } from "@/lib/org/store";
+import { emitLeaked, emitOrgFrozen } from "@/lib/notifications/emit";
 import { getReserveEntry, listOpenEntries, markEntryLeaked } from "@/lib/settlement/store";
 import { resolveSorobanConfig } from "@/lib/soroban/server-config";
 import { isSettlementChainEnabled, reportLeakageOnChain } from "@/lib/soroban/invoke-settlement";
@@ -29,7 +31,7 @@ function assertCronAuth(request: Request): NextResponse | null {
  * 2. If due_date + LEAKAGE_GRACE_DAYS has passed and no payment → mark leaked.
  *    - Transitions reserve_ledger.recourse_status = 'triggered'
  *    - Calls settlement::report_leakage on-chain if contract is configured
- *    - Does NOT automatically freeze the MSME (that requires auth UX — future B-6)
+ *    - Freezes org funding (MSME) and emits calm notifications
  *
  * The scanner never touches settled or already-leaked entries.
  */
@@ -96,6 +98,12 @@ export async function POST(request: Request) {
             }
 
             result.leaked.push(entry.receivableId);
+
+            const orgId = process.env.AXIAL_ORG_ID ?? "demo-org";
+            const reason = `Leakage on ${entry.receivableId.slice(0, 8)}… — new funding paused pending review.`;
+            await freezeOrg(orgId, reason);
+            emitLeaked(orgId, entry.receivableId, reserveEntry.shortfall);
+            emitOrgFrozen(orgId, reason);
           }
         } catch (entryErr) {
           result.errors.push(

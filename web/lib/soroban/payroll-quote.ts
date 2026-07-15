@@ -1,3 +1,5 @@
+import { getEffectiveStatutoryRates } from "@/lib/payroll/statutory-tables";
+
 const MAX_BPS = 10_000;
 
 export type PayrollQuoteResult = {
@@ -11,12 +13,15 @@ export type PayrollQuoteResult = {
   pagibigBps: number;
 };
 
-/** Demo statutory rates (must match contract `initialize` bps on Mainnet). */
-export const DEFAULT_PAYROLL_BPS = {
-  sss: 1_100,
-  philhealth: 500,
-  pagibig: 200,
-} as const;
+/** Demo statutory rates from versioned tables (must match contract initialize bps). */
+export const DEFAULT_PAYROLL_BPS = (() => {
+  const row = getEffectiveStatutoryRates();
+  return {
+    sss: row.sssBps,
+    philhealth: row.philhealthBps,
+    pagibig: row.pagibigBps,
+  } as const;
+})();
 
 export function quotePayrollSplit(
   grossAmount: number,

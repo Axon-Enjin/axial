@@ -27,6 +27,19 @@ export function FunderDealDrawer({ deal }: Props) {
             {deal.shortfall != null && deal.shortfall > 0 ? (
               <span className="text-amber-300">Shortfall ₱{deal.shortfall.toLocaleString()}</span>
             ) : null}
+            {deal.diligence.recourseStatus && deal.diligence.recourseStatus !== "none" ? (
+              <span
+                className={
+                  deal.diligence.recourseStatus === "recovered"
+                    ? "text-[#2DD4BF]"
+                    : deal.diligence.recourseStatus === "written_off"
+                      ? "text-on-surface-variant/50"
+                      : "text-amber-300"
+                }
+              >
+                Recourse {deal.diligence.recourseStatus.replace(/_/g, " ")}
+              </span>
+            ) : null}
             {deal.lockboxAddress ? (
               <span className="font-mono">
                 Lockbox {deal.lockboxAddress.slice(0, 18)}…
