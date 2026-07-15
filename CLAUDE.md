@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What Axial Is
 
-Axial is a liquidity and compliance engine for Philippine MSMEs. It solves two structural problems simultaneously: a $221B cash-flow gap caused by Net 60–90 B2B payment terms, and manual, error-prone BIR/statutory compliance. The value proposition is **"Instant Capital, Invisible Compliance"** — founders unlock cash from tokenized receivables via Stellar/Soroban atomic swaps while BIR EIS submissions and SSS/PhilHealth/Pag-IBIG payroll splits happen automatically in the background.
+Axial is a liquidity and compliance engine for Philippine MSMEs. It solves two structural problems simultaneously: a $221B cash-flow gap caused by Net 60–90 B2B payment terms, and manual, error-prone BIR/statutory compliance. The value proposition is **"Instant Capital, Effortless Compliance"** — founders unlock cash from tokenized receivables via Stellar/Soroban atomic swaps while BIR EIS filings and SSS/PhilHealth/Pag-IBIG payroll splits are **prepared for human review and one-click approval** (Compliance Co-Pilot). Auto-submit is a roadmap item gated on Permit to Transmit. *"Invisible Compliance"* is the north-star vision only.
 
 All regulatory and legal questions are **Philippines-jurisdiction-first**.
 
@@ -56,7 +56,7 @@ axial/
 
 The "backend" is **Next.js Route Handlers under `web/app/api/`** — there is no separate server. The SDD's modular-monolith / BullMQ-Temporal plan was not adopted; ignore it as a build target.
 
-`docs/flow.md` (built/mock/planned matrix) and the **"Implementation status" table in `docs/Axial.md`** are useful maps but **lag the code** — when they conflict with what's in `web/`, trust the code. As of this writing the following are built and wired: the 4 Soroban contracts (all deployed + initialized on **Stellar Mainnet** — the network the system runs on; see the table below), USDC atomic swap, payroll split, BIR EIS oracle, the T+3 retry worker + Horizon poll + reconciliation cron jobs, Supabase auth with org-scoped multi-tenancy, the payer portal, NoA issue/ack, and Reflector FX with a hardcoded fallback. **Built but not wired:** the on-chain `settle` path (B-2 phase S5) — `register_invoice` and payer lockbox funding (Freighter USDC transfer) are wired; remaining work is real `settle` + reconcile with contract-balance pre-check. **Still not built:** live BIR submission (mock by default — `BIR_EIS_LIVE` gates it) and real PDAX Connect calls.
+`docs/flow.md` (built/mock/planned matrix) and the **"Implementation status" table in `docs/Axial.md`** are useful maps but **lag the code** — when they conflict with what's in `web/`, trust the code. As of this writing the following are built and wired: the 4 Soroban contracts (all deployed + initialized on **Stellar Mainnet** — the network the system runs on; see the table below), USDC atomic swap, payroll split, BIR EIS oracle (Co-Pilot positioning — prepare → review → submit), the T+3 retry worker + Horizon poll + reconciliation cron jobs, Supabase auth with org-scoped multi-tenancy, the payer portal, NoA issue/ack, Reflector FX with a hardcoded fallback, and on-chain settlement (`register_invoice`, payer Freighter lockbox funding, `settle` on `mark_collected` with contract-balance pre-check — B-2 S5). **Still not built:** live BIR submission (mock by default — `BIR_EIS_LIVE` gates it; demo mock may still auto-ack until the UI review gate + PTT) and real PDAX Connect calls.
 
 **Stack:** Next.js 15.5 · React 19 · TypeScript 5 (strict) · Tailwind CSS 4 · `@stellar/stellar-sdk` · `@supabase/supabase-js` + `@supabase/ssr` (auth) · `tesseract.js` + `pdf-parse` + `sharp` (invoice OCR) · `stellar-hd-wallet` (key derivation). Path alias `@/*` → `web/*`.
 
@@ -80,13 +80,15 @@ Each page is a thin wrapper that renders a view from `components/views/` (`Overv
 
 The hosted Supabase project ref is `ifzyntqwymmgimnxtguz` — `SUPABASE_URL` must point at it (`https://ifzyntqwymmgimnxtguz.supabase.co`). Per `.cursor/README.md`, do not register this project's Supabase MCP server globally.
 
-### Compliance pipeline (the EIS oracle)
+### Compliance pipeline (the EIS Co-Pilot)
 
-The BIR EIS oracle runs **in-process**, not in an external queue. Flow (`lib/eis/`):
+The BIR EIS oracle runs **in-process**, not in an external queue. **Locked product model (2026-06-18):** prepare → human review → submit. Auto-submission is gated on EIS certification + Permit to Transmit (PTT). **Demo reality:** the mock path may still map → JWS-sign → mock-BIR-ack without a UI approval gate until that gate ships.
+
+Flow (`lib/eis/`):
 
 1. An on-chain API route (mint/swap/payroll) calls `triggerEisFromChain()` (`trigger.ts`).
 2. That calls `enqueueEisProcessing()` (`oracle.ts`) — a **fire-and-forget** `void processLedgerEvent().catch()`. It does not block the user response.
-3. `processLedgerEvent()`: maps the ledger event to the BIR EIS payload (`schema.ts` / `payload-fields.ts`), JWS-signs it (`jws.ts` — mock signature unless `BIR_EIS_LIVE`), submits to the BIR endpoint (`bir-mock.ts` mock, or `bir-client.ts` when live), then writes a reference memo back to Stellar (`memo.ts`).
+3. `processLedgerEvent()`: maps the ledger event to the BIR EIS payload (`schema.ts` / `payload-fields.ts`), JWS-signs it (`jws.ts` — mock signature unless `BIR_EIS_LIVE`), then (today) submits to the BIR endpoint (`bir-mock.ts` mock, or `bir-client.ts` when live) and writes a reference memo back to Stellar (`memo.ts`). Production Co-Pilot inserts an explicit human approval step before live BIR submit.
 4. State transitions `queued → submitted → acknowledged → memo_written` (or `failed`), persisted via `store.ts`. Idempotency key = `orgId:stellarTxHash:referenceId`.
 5. The `worker.ts` cron retries stale `queued`/`failed` submissions still inside their T+3 window and marks expired ones permanently failed; `horizon-poll.ts` ingests chain events the live API path may have missed.
 
@@ -99,7 +101,7 @@ Four Rust crates (`soroban-sdk` 25), each with `src/lib.rs` + `src/test.rs`:
 | `receivable_token` | `initialize`, `mint`, `is_minted`, `get_receivable` — one mint per invoice (SAC-style receivable) | Mainnet (+ Testnet sandbox) |
 | `axial_swap` | `initialize`, `quote`, `execute_advance` — USDC advance vs receivable at configurable `advance_bps` (85% default) | Mainnet (+ Testnet sandbox) |
 | `payroll_split` | `initialize`, `quote`, `route_payroll`, `get_payroll` — USDC split to SSS/PhilHealth/Pag-IBIG + net to employees | Mainnet (+ Testnet sandbox) |
-| `settlement` | Per-invoice lockbox: `settle` distributes collected USDC (advance → funder, remainder → MSME), records shortfalls as leakage | Mainnet + Testnet — `register_invoice` + lockbox funding wired; on-chain `settle` (B-2 S5) pending |
+| `settlement` | Per-invoice lockbox: `settle` distributes collected USDC (advance → funder, remainder → MSME), records shortfalls as leakage | Mainnet + Testnet — `register_invoice`, lockbox funding, and on-chain `settle` (B-2 S5) wired on `mark_collected` |
 
 Web talks to chain via `lib/soroban/`: `config.ts` resolves contract IDs and signing keys from `MAINNET_`-prefixed env vars (falling back to `soroban/deployments/mainnet.json`); the network is fixed to Mainnet (`network.ts`). `invoke-*.ts` builds and submits transactions; `isSwapChainEnabled` / `isReceivableChainEnabled` / `isPayrollChainEnabled` gate whether a route runs on-chain or returns a mocked result. Default signing is **custodial/server-side** (server holds funder/MSME/issuer secrets). `freighter.ts` + `build-tx.ts` + `tx/submit` provide an optional client-signed path (Freighter browser extension). Deployed contract IDs and signing-key publics are not committed — `mainnet.json` / `testnet.json` are gitignored; copy the matching `.example.json`.
 
@@ -115,6 +117,8 @@ Finalized 2026-05-14 — do not reopen without updating `docs/Axial.md` first.
 
 | Decision | Locked value |
 |---|---|
+| Primary tagline | **Instant Capital, Effortless Compliance** (locked 2026-06-18) — *"Invisible Compliance"* is north-star only |
+| Compliance model | **Compliance Co-Pilot** — prepare → review → submit; auto-submit gated on Permit to Transmit (PTT) |
 | Operating network | **Stellar Mainnet only** (locked 2026-05-22) — testnet is retired as an operating target; it remains a developer sandbox only |
 | Settlement asset | **USDC on Stellar** — Circle-issued |
 | USDC Mainnet issuer | `GA5ZSEJYB37JRC5AVCIA5MOP4RHTM335X2KGX3IHOJAPP5RE34K4KZVN` |
@@ -152,6 +156,7 @@ Defined in `docs/dsd-axial.md`, wired into `web/tailwind.config.ts`.
 | SAC | Stellar Asset Contract — on-chain representation of a verified receivable |
 | Atomic swap | USDC ↔ receivable token, executed by a denomination-agnostic Soroban contract |
 | BIR EIS | Bureau of Internal Revenue Electronic Invoicing System — JSON + JWS, T+3 window; Phase 1 taxpayers only |
+| Compliance Co-Pilot | Locked model: prepare → human review → submit; auto-submit gated on PTT |
 | T+3 window | Submission must reach BIR within 3 calendar days of the transaction date |
 | JWS | JSON Web Signature — required signing format for BIR EIS payloads (mock signature in this build) |
 | Statutory split | Automatic payroll deduction routing to SSS, PhilHealth, Pag-IBIG via Soroban contract |

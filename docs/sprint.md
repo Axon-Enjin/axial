@@ -78,8 +78,8 @@ This is the working task board for Axial, derived from the **CTO/auditor review 
 | D1 | **L3 dropped** | PDAX sandbox access not granted. Final scope = **L1 + L2** (L2 = our mocked PDAX UI). |
 | D2 | **Custodial signing (Q7)** | Server holds funder/MSME/issuer secrets and signs all Soroban txns. No Freighter in v1. |
 | D3 | **Mainnet-only** (revised 2026-05-22) | Axial runs on **Stellar Mainnet only**. Reverses the earlier "conditional Mainnet / testnet is the demo path" stance — testnet is retired as an operating target and kept only as a developer sandbox. |
-| D4 | **Closed loop partially live** | Payer portal, NoA issue/ack, `register_invoice`, and Freighter lockbox funding are wired (B-2 S3–S4). **On-chain `settle` (S5) not yet wired** — do not claim full closed-loop enforcement. |
-| D5 | **Post-submission re-scope (2026-05-22)** | Settlement (B-2) is the sole active workstream — S3–S4 delivered (`register_invoice`, Freighter lockbox funding); **S5–S6 remain** (`settle` + reconcile, hardening). BIR EIS stays mock-only (live path PTT-gated, seam dormant). Real-KYB integration deferred; PDAX (B-9) stays dropped. |
+| D4 | **Closed loop wired (verify on Mainnet)** | Payer portal, NoA issue/ack, `register_invoice`, Freighter lockbox funding, and on-chain `settle` (S5) are wired. Exercise via [`settle-dry-run-checklist.md`](settle-dry-run-checklist.md) before claiming production collection ops. |
+| D5 | **Post-submission re-scope (2026-05-22; S5 updated 2026-07)** | Settlement B-2 S3–S6 delivered in code (`register_invoice`, Freighter lockbox funding, `settle` + reconcile, trust doc). Remaining: Mainnet verify + residual hardening. BIR EIS stays mock-only (live path PTT-gated; Co-Pilot prepare → review → submit). Real-KYB integration deferred; PDAX (B-9) stays dropped. |
 
 ---
 
@@ -253,11 +253,13 @@ Closed-loop payer verification is fully implemented (CLS-01 through CLS-05).
 - `PayerPanel` component: collapsible payer registry in LiquidityView — add payers, see KYB status
 - **References:** `web/lib/payers/`, `web/app/api/payers/`, `web/app/api/noa/`, `web/app/api/invoices/[id]/confirm/`, `web/app/app/payer-portal/`
 
-### B-2 · On-chain lockbox / settlement contract + reconciliation worker · `P0` · 🟡 in progress
-**Status (2026-05-22):** the `settlement` contract is **deployed + initialized on Stellar
-Mainnet** (`CDMHMQNP…`). **S3–S4 are delivered** — `register_invoice` fires after swap;
-payer Freighter lockbox funding is wired via `/api/lockbox/fund/build`. **S5–S6 remain:**
-on-chain `settle` + reconcile with contract-balance pre-check, then hardening.
+### B-2 · On-chain lockbox / settlement contract + reconciliation worker · `P0` · ✅ done (verify on Mainnet)
+**Status (2026-07):** the `settlement` contract is **deployed + initialized on Stellar
+Mainnet** (`CDMHMQNP…`). **S3–S6 are delivered in code** — `register_invoice` fires after swap;
+payer Freighter lockbox funding via `/api/lockbox/fund/build`; on-chain `settle` with
+contract-balance pre-check on `mark_collected`; trust model in
+`rfc-axial-closed-loop-settlement.md`. **Remaining:** exercise/verify on Mainnet
+([`settle-dry-run-checklist.md`](settle-dry-run-checklist.md)) + residual hardening.
 
 **Code already in place:** `soroban/contracts/settlement/` (contract + 7-test suite, all
 passing), `web/lib/settlement/` (reserve-ledger store), `web/lib/soroban/invoke-settlement.ts`,
@@ -280,10 +282,12 @@ signs, and submits via `/api/tx/submit`. NoA `lockboxAddress` now resolves to
   - **Delivered:** (4a) Freighter connect + Pay invoice CTA in `PayerPortalView`; (4b)
 `buildLockboxFundXdr` + `/api/lockbox/fund/build`; (4c) real lockbox address in NoA issue
 paths; (4d) paid substate with stellar.expert tx link + Mainnet caution badge.
-**S5 · Real settle + reconcile** — `settleOnChain` with a contract-balance pre-check;
-verify full + partial paths and `report_leakage` end-to-end on Mainnet (small amounts).
-**S6 · Hardening** — ✅ the misleading "keyed by invoice_id memo" comment in `lib.rs` is
-fixed. Remaining: decide the per-invoice attribution / trust model and record it in
+**S5 · Real settle + reconcile — ✅ done.** `settleOnChain` with a contract-balance pre-check;
+awaited on `mark_collected`; returns `settlement.txHash`. Verify full + partial paths and
+`report_leakage` end-to-end on Mainnet (small amounts) via
+[`settle-dry-run-checklist.md`](settle-dry-run-checklist.md).
+**S6 · Hardening — ✅ done.** Misleading "keyed by invoice_id memo" comment in `lib.rs`
+fixed; per-invoice attribution / trust model recorded in
 `rfc-axial-closed-loop-settlement.md`.
 
 - **References:** `soroban/contracts/settlement/`, `web/lib/settlement/`, `web/lib/soroban/invoke-settlement.ts`, `web/app/api/reconciliation/scan/`, `rfc-axial-closed-loop-settlement.md`
@@ -397,7 +401,7 @@ Revisit only if PDAX grants access post-hackathon.
 | B-10.7 | `/app/funder-portal` + token auth | ✅ |
 | B-10.8 | Doc sync (flow, Axial, remaining-work) | ⬜ |
 
-**Blocked for “Repaid” column:** B-2 S5 on-chain `settle`.
+**Blocked for “Repaid” column:** none — B-2 S5 on-chain `settle` is wired; verify on Mainnet.
 
 - **References:** [`alignment-plan-axial.md`](alignment-plan-axial.md), [`prd-axial.md`](prd-axial.md) US-06, `web/lib/settlement/store.ts`, `web/components/views/PayerPortalView.tsx` (portal pattern)
 

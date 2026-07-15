@@ -48,7 +48,7 @@ See [`Axial.md`](Axial.md) § "Implementation status" for the full table.
 - Shot list: [`sprint.md`](sprint.md) § S0-6 (Landing → Overview → Liquidity upload/seed → confirm payer → tokenize & swap → Compliance EIS + payroll → Settings)
 - **Website blockers to verify:** Freighter on Public network, USDC trustline, fundable row before Tokenize, toast shows real `Mint … · Swap …` hashes (not invoice id only)
 
-**References:** [`flow.md`](flow.md) §3 sequence, [`pitch-script.md`](pitch-script.md)
+**References:** [`flow.md`](flow.md) §3 sequence, [`product-walkthrough.md`](product-walkthrough.md), [`pbw-script.md`](pbw-script.md) (use these — not the superseded [`pitch-script.md`](pitch-script.md))
 
 ---
 
@@ -65,7 +65,7 @@ See [`Axial.md`](Axial.md) § "Implementation status" for the full table.
 
 **UX (Pink Raft adaptations, 2026-07-15):** Liquidity pipeline shows Trigger→Logic→Action; clear-signing confirm panel before mint/swap.
 
-**Do not claim** full closed-loop enforcement in pitch until S5 lands ([`Axial.md`](Axial.md) build audit).
+**Claim carefully:** wiring is in code; exercise/verify on Mainnet via [`settle-dry-run-checklist.md`](settle-dry-run-checklist.md) before pitching production collection ops ([`Axial.md`](Axial.md) build audit).
 
 **Code:** `soroban/contracts/settlement/`, `web/lib/soroban/invoke-settlement.ts`, `web/app/api/reconciliation/scan/`
 
@@ -144,15 +144,15 @@ Protect with `CRON_SECRET` (Bearer). Cloud Run has no built-in cron — use **GC
 
 ### 9. Funder Protection Center / Funder portal
 
-**Status:** `⬜` planned — **not** v1 skip long-term; see [`alignment-plan-axial.md`](alignment-plan-axial.md) **B-10**
+**Status:** ✅ embedded + portal shipped (see [`sprint.md`](sprint.md) B-10); residual doc sync ⬜
 
-PRD Should-Have (US-06): payer confirmed, NoA, reserve, recourse. **Build API-first** (`/api/funder/*`), embed in Liquidity, then optional `/app/funder-portal`.
+PRD Should-Have (US-06): payer confirmed, NoA, reserve, recourse. API-first (`/api/funder/*`), embed in Liquidity, optional `/app/funder-portal`.
 
 | Step | Status |
 |------|--------|
-| B-10.1–6 Domain + API + Liquidity embed | ⬜ |
+| B-10.1–6 Domain + API + Liquidity embed | ✅ |
 | B-10.7 Standalone funder portal | ✅ |
-| Deal “Repaid” state in book | ⬜ blocked on B-2 S5 |
+| Deal “Repaid” state in book | ✅ — S5 settle wired; verify on Mainnet |
 
 ---
 
@@ -183,15 +183,14 @@ Do not reopen without updating [`Axial.md`](Axial.md) first:
 
 ```mermaid
 flowchart TD
-  A[P0: Demo dry runs + recording] --> B[P0: B-2 S5 settle wiring]
-  B --> C[P0: Docs verification pass]
+  A[P0: Demo dry runs + recording] --> C[P0: Docs verification pass]
   C --> D[P1: Cloud Scheduler crons]
   D --> E[P1: Real KYB vendor]
   E --> F[P1: BIR PTT when granted]
   F --> G[P1: Legal review + prod hardening]
 ```
 
-**If time is tight:** ship P0 items 1 and 3 only; call settlement “partially live” (S3–S4) in the pitch and point judges to receivable + swap contract history on Stellar Expert.
+**Note:** B-2 S5 settle wiring is ✅ in code — remaining P0 for settlement is Mainnet verify via [`settle-dry-run-checklist.md`](settle-dry-run-checklist.md).
 
 ---
 
@@ -213,5 +212,6 @@ flowchart TD
 
 | Date | Change |
 |------|--------|
+| 2026-07-15 | Doc reconcile: Effortless Compliance + Co-Pilot; S5 settle status aligned with code |
 | 2026-07-15 | S5 balance pre-check + onChainInvoiceId; Pink Raft UX (TLA + clear-sign); feasibility / unit economics / canvas docs; investor landing (no competition framing) |
 | 2026-06-14 | Initial backlog from implementation audit vs `Axial.md`, `flow.md`, `sprint.md` |

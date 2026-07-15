@@ -152,9 +152,9 @@ The four-tab IA is locked. The closed-loop additions fit it as follows — they 
 
 ### Key Flows
 
-**Closed-loop happy path:** Payer onboarded → invoice confirmed → NoA acknowledged → (receivable now fundable) → Liquidity request → swap confirmation (advance + reserve shown) → (funds available) → Compliance: payroll preview + approval → EIS auto-submitted → on due date payer pays lockbox → settlement repays funder, releases reserve, returns margin → Overview all green.
+**Closed-loop happy path:** Payer onboarded → invoice confirmed → NoA acknowledged → (receivable now fundable) → Liquidity request → swap confirmation (advance + reserve shown) → (funds available) → Compliance: payroll preview + approval → EIS prepared → human review → submit → on due date payer pays lockbox → settlement repays funder, releases reserve, returns margin → Overview all green.
 
-**Pre-closed-loop happy path (legacy reference):** Liquidity request → swap confirmation → (funds available) → Compliance: payroll preview + approval → EIS event auto-submitted → Overview shows all green. Target: ≤5 steps.
+**Pre-closed-loop happy path (legacy reference):** Liquidity request → swap confirmation → (funds available) → Compliance: payroll preview + approval → EIS prepared → human review → submit → Overview shows all green. Target: ≤5 steps.
 
 **Monitor without panic:** Overview opens with passive indicators as the default state. Alarmist is never the default.
 

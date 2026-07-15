@@ -2,9 +2,9 @@
 
 <div align="center">
 
-**Instant Capital, Invisible Compliance.**
+**Instant Capital, Effortless Compliance.**
 
-A Stellar/Soroban-powered liquidity and compliance engine for Philippine MSMEs — tokenize receivables, fund payroll instantly, and automate BIR EIS tax reporting on a single pipeline.
+A Stellar/Soroban-powered liquidity and compliance engine for Philippine MSMEs — tokenize receivables, fund payroll instantly, and prepare BIR EIS filings plus statutory splits for one-click human approval on a single pipeline.
 
 <p>
   <img src="https://img.shields.io/badge/Soroban-Rust%20%7C%20WASM-blue" alt="Soroban Badge" />
@@ -43,9 +43,9 @@ Existing accounting tools record the absence of cash — they do not generate it
 
 ## 🌟 Vision
 
-A Philippines where every MSME founder runs their business from a single calm dashboard — payroll is always funded on time, statutory deductions are correct and routed automatically, and BIR compliance happens invisibly in the background. The founder never opens a spreadsheet, a government portal, or a tax calculator again.
+A Philippines where every MSME founder runs their business from a single calm dashboard — payroll is always funded on time, statutory deductions are correct and routed automatically, and BIR filings are prepared for a one-click review rather than hours of portal work. The **north-star** (post-certification) is full automation — *"Invisible Compliance"* — once Axial holds a Permit to Transmit.
 
-Axial is the **central axis** where liquidity and compliance become a single, autonomous machine — so founders step out of the execution trench and focus on growth.
+Axial is the **central axis** where liquidity and compliance become a single pipeline — so founders step out of the execution trench and focus on growth.
 
 ---
 
@@ -53,7 +53,7 @@ Axial is the **central axis** where liquidity and compliance become a single, au
 
 Built for the **Build on Stellar Philippines Hackathon 2026** (May 18–24), Axial was born from a structured research pass on the Philippine MSME sector. We found that the liquidity trap and the compliance burden are **not independent problems** — they are two faces of the same structural failure. Every liquidity event (invoice settlement, payroll run) triggers a compliance obligation (statutory deductions, BIR EIS reporting). You cannot solve one without solving the other.
 
-We merged tokenized invoice factoring with automated EIS reporting and statutory payroll splitting into a **single Stellar/Soroban pipeline** — because the integration is architecturally inseparable, not two products glued together.
+We merged tokenized invoice factoring with EIS Co-Pilot reporting and statutory payroll splitting into a **single Stellar/Soroban pipeline** — because the integration is architecturally inseparable, not two products glued together.
 
 ---
 
@@ -70,8 +70,8 @@ We merged tokenized invoice factoring with automated EIS reporting and statutory
 - **Tokenized Invoice Factoring** — Mint verified receivables as Stellar Asset Contracts (SAC) on Soroban. Only real, confirmed invoices are fundable.
 - **Instant Liquidity via Atomic Swap** — Soroban contract advances ~80–90% of face value in USDC instantly, with holdback reserve and MSME recourse. Denomination-agnostic.
 - **Programmable Statutory Payroll Splitting** — Soroban contract calculates and routes exact SSS, PhilHealth, and Pag-IBIG deductions to government wallets in real-time.
-- **On-chain Lockbox Settlement** — Smart contracts autonomously manage payer settlements, releasing reserves back to MSMEs and reconciling state automatically.
-- **BIR EIS Compliance Oracle** — Off-chain service maps transaction metadata to the 20-field BIR EIS schema, JWS-signs the payload, and submits within T+3. Immutable proof written to Stellar memo.
+- **On-chain Lockbox Settlement** — Per-invoice lockbox: `register_invoice`, payer Freighter funding, and on-chain `settle` (balance pre-check) on `mark_collected`; reconciliation cron scans for leakage.
+- **BIR EIS Compliance Co-Pilot** — Off-chain oracle maps transaction metadata to the 20-field BIR EIS schema, JWS-signs the payload, and surfaces it for **human review and approval** before submit (mock BIR today; live path gated on Permit to Transmit). Immutable proof written to Stellar memo.
 - **Freighter Wallet Integration** — Full support for self-custody non-custodial signing via Freighter, alongside embedded custodial paths.
 - **Auth & Multi-tenancy** — Organization-scoped authentication, Magic Links, and role-based access control powered by Supabase.
 - **Event-driven Cron Workers** — Automated T+3 compliance scheduling and Horizon event polling for autonomous system state reconciliation.
@@ -181,7 +181,7 @@ graph LR
 | `receivable_token` | SAC mint — `initialize`, `mint`, `is_minted`, `get_receivable`. One mint per confirmed invoice. | ✅ Testnet + Mainnet |
 | `axial_swap` | USDC atomic swap — advance vs receivable token. Denomination-agnostic asset param, configurable advance bps, reserve + discount. | ✅ Testnet + Mainnet |
 | `payroll_split` | Statutory payroll router — `initialize`, `quote`, `route_payroll`, `get_payroll`. USDC split to SSS / PhilHealth / Pag-IBIG + net to employees. | ✅ Testnet + Mainnet |
-| `settlement` | Lockbox & Reconciliation — `initialize`, `register_invoice`, `settle`, `report_leakage`, `get_lockbox`. Receives payer funds, repays funder, routes reserve to MSME. | 🟡 Testnet + Mainnet — app wiring (B-2 S3–S6) pending |
+| `settlement` | Lockbox & Reconciliation — `initialize`, `register_invoice`, `settle`, `report_leakage`, `get_lockbox`. Receives payer funds, repays funder, routes reserve to MSME. | ✅ Testnet + Mainnet — S3–S5 wired (`register_invoice`, Freighter fund, `settle` on `mark_collected`); verify on Mainnet |
 
 **Happy-path call order:**
 
@@ -189,7 +189,7 @@ graph LR
 Payer Portal (off-chain) → receivable_token::mint
   → axial_swap::execute_advance
   → payroll_split::route_payroll
-  → oracle submits EIS + memo (off-chain)
+  → oracle prepares EIS for review + memo (off-chain)
   → settlement::register_invoice (after advance) → settlement::settle (on payer payment)
 ```
 
@@ -326,7 +326,7 @@ The demo follows this order to showcase the full pipeline:
 
 1. **Overview** — Treasury wallet balances, liquidity metrics, regulatory pulse (BIR EIS sync status, statutory splitting)
 2. **Liquidity** — Upload or seed an invoice → confirm payer (via portal) → tokenize receivable (SAC mint) → execute atomic swap (USDC advance to MSME)
-3. **Compliance** — Run payroll split (SSS + PhilHealth + Pag-IBIG routing) → trigger BIR EIS oracle → verify JWS-signed submission → success reference written to Stellar memo
+3. **Compliance** — Run payroll split (SSS + PhilHealth + Pag-IBIG routing) → EIS Co-Pilot prepares JWS-signed filing → review payload → mock BIR ack (live submit PTT-gated) → success reference written to Stellar memo
 4. **Settings** — Wallet integrations (Freighter), environment configuration
 
 ---
@@ -375,7 +375,7 @@ The demo follows this order to showcase the full pipeline:
 | **USDC on Stellar** | Circle-issued production settlement asset. No external stablecoin dependencies. |
 | **AUTH_REQUIRED / AUTH_REVOCABLE** | Statutory routing contracts enforce that funds flow only to whitelisted government agency addresses. |
 | **SEP-24** | Standard anchor interface for PHP fiat on/off-ramp. PDAX as primary driver; architecture supports any anchor. |
-| **3–5 Second Finality** | Settlement speed triggers compliance oracle within T+3 window — compliance becomes a background process. |
+| **3–5 Second Finality** | Settlement speed triggers the compliance Co-Pilot within the T+3 window — filings are prepared for review, not left to spreadsheet panic. |
 
 ---
 

@@ -53,7 +53,7 @@ Axial's pipelines already *are* this shape — you just don't show it:
 - **Payroll:** Trigger `payroll run` → Logic `statutory split rules` → Action `route SSS/PhilHealth/Pag-IBIG + net`.
 - **Settlement:** Trigger `payer funds lockbox` → Logic `contract-balance pre-check` → Action `settle: advance→funder, remainder→MSME`.
 
-Build this as a **read-only visual pipeline view** in `web/components/views/` — not an editor. It reuses existing state; it's a rendering layer over flows that already exist. This makes the "Invisible Compliance" claim *visible* without adding a single contract. *Skip the drag-drop editor; add when a user actually needs to author custom splits.*
+Build this as a **read-only visual pipeline view** in `web/components/views/` — not an editor. It reuses existing state; it's a rendering layer over flows that already exist. This makes the **Effortless Compliance / Co-Pilot** claim *visible* (prepare → review → submit) without adding a single contract. *"Invisible Compliance"* remains the north-star only. *Skip the drag-drop editor; add when a user actually needs to author custom splits.*
 
 ### B. Adopt clear-signing / legible confirmations (verified best practice, 3-0)
 
@@ -97,7 +97,7 @@ Pink Raft: no signup wall. Axial's analog is the **local file-fallback dev mode*
 
 Verification **killed** two claims worth avoiding:
 
-- *"Tokenized receivables enable near-instant T+0 settlement vs. days-to-weeks"* — **refuted 0-3.** Don't claim instant settlement; Axial's own `settle` path is still pending (B-2 S5) and real-world payer funding is not instant.
+- *"Tokenized receivables enable near-instant T+0 settlement vs. days-to-weeks"* — **refuted 0-3.** Don't claim instant collection settlement; Axial's advance swap is fast, but payer lockbox funding + `settle` still depends on the payer paying — and Mainnet dry-run verification remains ([`settle-dry-run-checklist.md`](settle-dry-run-checklist.md)).
 - *"On-chain ledger creates an immutable golden record preventing double-financing"* — **refuted 0-2.** Tokenization alone doesn't prevent double-financing (the *legal* claim, NoA, and payer ack do — which Axial has). Frame anti-double-financing around the **NoA acknowledgement flow**, not "the blockchain prevents it."
 
 ## 5. Recommended next moves (ranked)

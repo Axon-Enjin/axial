@@ -79,9 +79,10 @@ flowchart LR
   subgraph phaseD [D — Effortless compliance: review and submit]
     D1["✅ Oracle → 20 BIR fields"]
     D2["✅ JWS mock sign"]
-    D3["✅ Mock BIR accept"]
-    D4["✅ Memo write-back Stellar"]
-    D5["✅ Supabase audit log"]
+    D3["🟡 Human review → approve — Co-Pilot; mock may auto-ack"]
+    D4["✅ Mock BIR accept"]
+    D5["✅ Memo write-back Stellar"]
+    D6["✅ Supabase audit log"]
   end
 
   subgraph phaseE [E — Collection]
@@ -97,7 +98,7 @@ flowchart LR
   end
 
   A1 --> A2 --> A3 --> A4 --> A5 --> B1 --> B2 --> C1
-  B2 --> D1 --> D2 --> D3 --> D4 --> D5
+  B2 --> D1 --> D2 --> D3 --> D4 --> D5 --> D6
   C1 --> D1
   B2 --> E1 --> E2 --> E3 --> E4
   B2 -.-> F1
@@ -144,15 +145,16 @@ sequenceDiagram
   API->>OR: triggerEis swap_executed
   API-->>UI: settled row + toast
 
-  par Oracle async
+  par Co-Pilot prepare async
     OR->>OR: map 20 BIR fields
     OR->>OR: JWS sign
-    OR->>BIR: acknowledge
+    OR->>DB: upsert eis_submissions prepared
+    Note over MSME,OR: Locked UX: human reviews before live BIR submit.<br/>Demo mock may still auto-ack until UI gate + PTT.
+    OR->>BIR: mock acknowledge
     OR->>SC: memo payment + BIR ref
-    OR->>DB: upsert eis_submissions
   end
 
-  MSME->>UI: Compliance → expand payload
+  MSME->>UI: Compliance → review payload → approve
   UI->>API: GET /api/eis/submissions
   API->>DB: list rows
   API-->>UI: payload + BIR ref + memo link
@@ -182,8 +184,8 @@ flowchart TD
   NOA --> OK["✅ Fundable — Tokenize & Swap enabled"]
   OK --> M["✅ Mint on Soroban"]
   M --> S["✅ Swap USDC"]
-  S --> EIS["✅ EIS oracle auto-run"]
-  EIS --> UI2["✅ Compliance + Overview update"]
+  S --> EIS["✅ EIS Co-Pilot prepare / enqueue"]
+  EIS --> UI2["✅ Compliance review + Overview update"]
 ```
 
 **Not built:** real payer KYB onboarding; live BIR PTT submission. **S5 settle** shipped in code — verify on Mainnet via [`settle-dry-run-checklist.md`](settle-dry-run-checklist.md).

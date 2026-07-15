@@ -52,7 +52,7 @@
 
 **Key trade-offs:**
 
-- **Off-chain oracle for BIR EIS.** The Stellar chain cannot call the BIR HTTP API directly. An attested off-chain oracle service reads ledger events, maps them to JSON, signs with JWS, and submits to BIR. Trade-off: trust and ops burden. Mitigated by: immutable memo write-backs, audit logs, retry discipline, and monitoring.
+- **Off-chain oracle for BIR EIS.** The Stellar chain cannot call the BIR HTTP API directly. An attested off-chain Co-Pilot reads ledger events, maps them to JSON, signs with JWS, surfaces filings for human review, and submits to BIR on approval (auto-submit gated on PTT). Trade-off: trust and ops burden. Mitigated by: human checkpoint, immutable memo write-backs, audit logs, retry discipline, and monitoring.
 - **Single compliance queue in v1.** Simplifies T+3 scheduling and eliminates distributed coordination complexity at pilot scale. Documented debt: will need sharded workers at volume (design the queue interface to allow this without breaking consumers).
 - **DB authoritative for UX state.** Stellar is the source of financial truth; PostgreSQL holds projections, job state, and user-facing entities for fast queries. Reading state from chain for every UI request is too slow and brittle.
 - **Modular monolith over microservices.** Reduces operational complexity and deployment surface during the pilot phase. Module boundaries are enforced by code; extraction to services is a deployment change, not a rewrite.
@@ -161,7 +161,7 @@ graph LR
 |---|---|---|
 | Client | Next.js 15 RSC + React 19 client components | Four-tab app UX; Freighter wallet connect (optional); no long-lived secrets in browser |
 | API + BFF | **Next.js Route Handlers** `web/app/api/` | Session via Supabase Auth middleware; org-scoped queries; command validation |
-| In-process oracle | **`lib/eis/`** (same serverless function) | Fire-and-forget EIS pipeline; map ledger events → BIR schema; JWS sign; submit; memo write-back |
+| In-process oracle | **`lib/eis/`** (same serverless function) | Fire-and-forget EIS Co-Pilot pipeline; map ledger events → BIR schema; JWS sign; surface for review; submit on approval (mock may auto-ack); memo write-back |
 | BIR EIS client | **`lib/eis/bir-client.ts`** | Mock (HS256) today; live (RS256, real endpoint) via `BIR_EIS_LIVE=true` env var |
 | FX oracle | **`lib/fx/reflector.ts`** | Reflector on-chain PHP/USDC rate; 5-min in-process cache; fallback 56.5 |
 | Scheduled jobs | **GCP Cloud Scheduler** | Worker (6h), Horizon-poll (10min), reconciliation/scan (nightly) — HTTP calls to the Cloud Run service, protected by `CRON_SECRET` |
@@ -264,13 +264,13 @@ AuditLog
 | Settlement | On payer payment **into the per-invoice lockbox**, repays the liquidity provider (principal + discount), releases the holdback reserve, and returns the residual margin to the MSME |
 | Reconciliation (off-chain worker) | Scans open lockboxes; a due invoice with an empty lockbox by T+X flips Invoice→`leaked`, freezes the MSME, notifies the funder, and triggers recourse + blacklist |
 
-**Ledger event flow:**
+**Ledger event flow (Compliance Co-Pilot):**
 1. Transaction achieves consensus on Stellar (3–5 seconds)
 2. Off-chain oracle service polls Horizon or Stellar RPC for events matching org's account/contract addresses
 3. Oracle maps event metadata to BIR EIS 20-field schema
-4. Oracle enqueues EIS submission job with idempotency key = `{org_id}:{stellar_tx_hash}:{invoice_id}`
-5. EIS client job picks up, signs payload with JWS, submits to BIR
-6. On BIR acknowledgement: writes `bir_reference_id` to `EisSubmission`, then writes a memo back to Stellar (or records memo reference TBD)
+4. Oracle enqueues EIS preparation with idempotency key = `{org_id}:{stellar_tx_hash}:{invoice_id}`
+5. Payload is JWS-signed and **surfaced for human review/approval** (locked 2026-06-18). Auto-submit to live BIR is a roadmap item gated on Permit to Transmit. Demo mock may still auto-ack today.
+6. On approval (or mock ack): writes `bir_reference_id` to `EisSubmission`, then writes a memo back to Stellar
 7. Failure: job retries with exponential backoff; after max retries, escalates to dead-letter queue and ops alert
 
 **Stellar RPC / Horizon:** Use a provider with failover. Implement circuit breaker pattern. Never block user-facing request on chain confirmation; use async job + websocket or polling for state updates.
@@ -279,7 +279,7 @@ AuditLog
 
 ## 5. Compliance Architecture
 
-> **v1 build reality:** The compliance oracle is **in-process** — it runs inside the same Next.js serverless function that handles the on-chain API routes. There is no separate oracle service or external job queue. The oracle fires-and-forgets via `void processLedgerEvent().catch()` so it does not block the user-facing response. Scheduled retry, horizon polling, and reconciliation run as GCP Cloud Scheduler jobs. The BIR EIS client is env-var switchable between mock and live (see `lib/eis/bir-client.ts`). JWS uses HS256 mock by default; switches to RS256 production key when `BIR_EIS_LIVE=true`. See `docs/rfc-axial-eis-oracle.md` for the detailed design.
+> **v1 build reality:** The compliance oracle is **in-process** — it runs inside the same Next.js serverless function that handles the on-chain API routes. There is no separate oracle service or external job queue. The oracle fires-and-forgets via `void processLedgerEvent().catch()` so it does not block the user-facing response. Scheduled retry, horizon polling, and reconciliation run as GCP Cloud Scheduler jobs. The BIR EIS client is env-var switchable between mock and live (see `lib/eis/bir-client.ts`). JWS uses HS256 mock by default; switches to RS256 production key when `BIR_EIS_LIVE=true`. **Product model:** Compliance Co-Pilot (prepare → review → submit); auto-submit gated on PTT. See `docs/rfc-axial-eis-oracle.md` for the detailed design.
 
 ### BIR EIS Oracle
 
@@ -292,7 +292,7 @@ Invoice number, invoice date, seller TIN, seller name, seller address, buyer TIN
 
 **T+3 scheduling:** The job worker must guarantee submission within 3 calendar days of transaction date. Job enqueued immediately on ledger event; T+3 deadline stored as `due_by` on the EisSubmission record. Worker monitors `due_by` and escalates if approaching without a successful submission.
 
-**PTT requirement:** BIR requires a Permit to Transmit before production submission. Staging/mock path needed for development and hackathon MVP. PTT certification process: TBD — track as open decision in [Axial.md §11](../Axial.md).
+**PTT requirement:** BIR requires a Permit to Transmit before production submission. Staging/mock path needed for development and hackathon MVP. **Auto-submission to live BIR is gated on PTT** — until then Axial prepares filings for human review (Co-Pilot). PTT certification process: TBD — track as open decision in [Axial.md §11](../Axial.md).
 
 ### Statutory Engine
 

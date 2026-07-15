@@ -70,8 +70,8 @@ flowchart LR
 |---------|--------|
 | MSME 4-tab app | ✅ |
 | Payer portal | ✅ |
-| Funder Protection Center | ⬜ **This plan** |
-| Standalone funder portal | ⬜ Phase 2 of B-10 |
+| Funder Protection Center | ✅ embedded in Liquidity |
+| Standalone funder portal | ✅ `/app/funder-portal` |
 
 ---
 
@@ -84,7 +84,7 @@ flowchart LR
 | Chain signing (demo) | Custodial server (`GB6TMT…`) | Funder book shows server funder pubkey |
 | Chain signing (roadmap) | Freighter for MSME/payer; optional funder later | Portal v1 read-only; swap stays Liquidity |
 | Closed loop | Payer confirm + NoA before fund | Funder diligence reads same eligibility fields |
-| Settlement | `register_invoice` ✅ · `settle` ⬜ S5 | Funder UI shows **expected vs collected** until S5 |
+| Settlement | `register_invoice` ✅ · `settle` ✅ S5 | Funder UI shows **expected vs collected**; Repaid after settle |
 | IA | Four tabs for MSME | Funder center **embeds in Liquidity**, not a fifth tab |
 | Funder portal (external) | Optional second shell | Same API/components as embedded panel |
 
@@ -170,18 +170,18 @@ Create `web/lib/funder/book.ts`:
 
 ---
 
-### Phase 3 — Closed loop completion (B-2 S5–S6)
+### Phase 3 — Closed loop completion (B-2 S5–S6) · ✅ done (verify on Mainnet)
 
 **Goal:** Funder book shows **repaid**, not just **advanced**.
 
 | Task | ID | Funder UI impact |
 |------|-----|------------------|
-| Wire `settleOnChain` | S5 | Deal status → **Repaid** / **Partial** / **Leaked** |
-| Reconcile with contract balance | S5 | `collectedAmount` on deal row |
-| Attribution / trust model doc | S6 | Update [`rfc-axial-closed-loop-settlement.md`](rfc-axial-closed-loop-settlement.md) |
-| Overview leakage chip | — | “N deals at risk” from book API |
+| Wire `settleOnChain` | S5 ✅ | Deal status → **Repaid** / **Partial** / **Leaked** |
+| Reconcile with contract balance | S5 ✅ | `collectedAmount` on deal row |
+| Attribution / trust model doc | S6 ✅ | Update [`rfc-axial-closed-loop-settlement.md`](rfc-axial-closed-loop-settlement.md) |
+| Overview leakage chip | — ✅ | “N deals at risk” from book API |
 
-**Exit criteria:** Payer pays lockbox → admin/cron settle → funder book shows repayment + reserve release.
+**Exit criteria:** Payer pays lockbox → admin/cron settle → funder book shows repayment + reserve release. **Remaining:** Mainnet dry-run via [`settle-dry-run-checklist.md`](settle-dry-run-checklist.md).
 
 ---
 
@@ -204,16 +204,16 @@ Add to [`sprint.md`](sprint.md) as **B-10 · Funder Protection Center**.
 
 | Step | Task | Est. | Status |
 |------|------|------|--------|
-| B-10.1 | `lib/funder/book.ts` + types | 0.5d | ⬜ |
-| B-10.2 | `GET /api/funder/book` | 0.5d | ⬜ |
-| B-10.3 | `GET /api/funder/deals/[id]` | 0.25d | ⬜ |
-| B-10.4 | `FunderProtectionCenter` components | 1d | ⬜ |
-| B-10.5 | Embed in `LiquidityView` | 0.5d | ⬜ |
-| B-10.6 | Overview “at risk” chip | 0.25d | ⬜ |
-| B-10.7 | `/app/funder-portal` + token auth | 1d | ⬜ |
+| B-10.1 | `lib/funder/book.ts` + types | 0.5d | ✅ |
+| B-10.2 | `GET /api/funder/book` | 0.5d | ✅ |
+| B-10.3 | `GET /api/funder/deals/[id]` | 0.25d | ✅ |
+| B-10.4 | `FunderProtectionCenter` components | 1d | ✅ |
+| B-10.5 | Embed in `LiquidityView` | 0.5d | ✅ |
+| B-10.6 | Overview “at risk” chip | 0.25d | ✅ |
+| B-10.7 | `/app/funder-portal` + token auth | 1d | ✅ |
 | B-10.8 | Update docs matrix (flow, Axial, remaining-work) | 0.25d | ⬜ |
 
-**Dependencies:** None for B-10.1–6. B-10 deal **repaid** state blocked on **B-2 S5**.
+**Dependencies:** None remaining for B-10.1–7. B-10 deal **repaid** state unblocked — **B-2 S5** settle is wired (verify on Mainnet).
 
 ---
 
@@ -226,14 +226,14 @@ When B-10 or S5 lands, update in order:
 3. [`remaining-work-axial.md`](remaining-work-axial.md) — Mark B-10 done; remove “v1 skip”  
 4. [`sprint.md`](sprint.md) — B-10 status  
 5. [`prd-axial.md`](prd-axial.md) — US-06 traceability (optional footnote)  
-6. Demo script [`pitch-script.md`](pitch-script.md) — Add 30s “Funder Protection Center” beat  
+6. Demo script [`pbw-script.md`](pbw-script.md) / [`product-walkthrough.md`](product-walkthrough.md) — Add 30s “Funder Protection Center” beat (not the superseded [`pitch-script.md`](pitch-script.md))  
 
 **flow.md row change (target):**
 
 | Feature | Was | Target |
 |---------|-----|--------|
-| Funder Protection Center | Could · ❌ v1 skip | Should · 🟡 embedded · ✅ + portal |
-| Funder repaid + reserve release | ⬜ E3 | 🟡 until S5 · ✅ after S5 |
+| Funder Protection Center | Could · ❌ v1 skip | Should · ✅ embedded · ✅ + portal |
+| Funder repaid + reserve release | ⬜ E3 | ✅ after S5 (verify on Mainnet) |
 
 ---
 
@@ -271,19 +271,21 @@ Funder book API stays country-agnostic; add `jurisdiction` column on org/deal wh
 ```mermaid
 flowchart TD
   P0[Phase 0 Demo reliability]
-  B10[Phase 1 B-10 Funder API + UI embed]
-  B10b[Phase 2 Funder portal shell]
-  S5[Phase 3 B-2 S5 settle]
+  B10[Phase 1 B-10 Funder API + UI embed done]
+  B10b[Phase 2 Funder portal shell done]
+  S5[Phase 3 B-2 S5 settle done]
   P1[Phase 4 Production hardening]
+  Verify[Mainnet settle dry-run]
 
   P0 --> B10
   B10 --> B10b
   B10 --> S5
-  S5 --> P1
+  S5 --> Verify
+  Verify --> P1
   B10b --> P1
 ```
 
-**Parallel OK:** B-10.1–6 while S5 is in progress; funder “Repaid” column waits for S5.
+**Status:** B-10.1–7 and S5 are ✅ in code; funder “Repaid” column is unblocked. Remaining: Mainnet verify + Phase 4 production hardening.
 
 ---
 
