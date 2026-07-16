@@ -121,9 +121,11 @@ function SplitTile({
 
 type EisRow = {
   id: string;
+  payloadId?: string;
   date: string;
   ref: string;
-  status: "Synchronized" | "Bridging" | "Failed";
+  status: "Synchronized" | "Bridging" | "Awaiting review" | "Failed";
+  pipelineStatus?: string;
   memoTxHash?: string | null;
   memoText?: string | null;
   stellarTxHash?: string;
@@ -476,7 +478,7 @@ export function ComplianceView() {
                               ) : null}
                             </td>
                             <td className="py-3.5 font-mono text-sm font-medium text-on-surface">
-                              {r.id}
+                              {r.payloadId ?? r.id}
                             </td>
                             <td className="py-3.5 font-body-md text-body-md text-on-surface-variant">
                               {r.date}
@@ -504,7 +506,9 @@ export function ComplianceView() {
                                   ? "text-[#2DD4BF]"
                                   : r.status === "Failed"
                                     ? "text-red-400"
-                                    : "text-on-surface-variant",
+                                    : r.status === "Awaiting review"
+                                      ? "text-amber-300/90"
+                                      : "text-on-surface-variant",
                               ].join(" ")}
                             >
                               {r.status}
@@ -520,7 +524,9 @@ export function ComplianceView() {
                               <td colSpan={5} className="pb-4 pt-1">
                                 <EisPayloadPanel
                                   payload={r.payload}
-                                  payloadId={r.id}
+                                  payloadId={r.payloadId ?? r.id}
+                                  submissionId={r.id}
+                                  pipelineStatus={r.pipelineStatus}
                                   eventKind={r.eventKind}
                                   stellarTxHash={r.stellarTxHash}
                                   memoTxHash={r.memoTxHash}
@@ -528,6 +534,7 @@ export function ComplianceView() {
                                   jwsPreview={r.jwsPreview}
                                   explorerTxBase={explorerTx}
                                   onClose={() => setExpandedPayloadId(null)}
+                                  onApproved={loadEis}
                                 />
                                 {r.error ? (
                                   <p className="mt-2 font-body-md text-body-md text-red-400/90">

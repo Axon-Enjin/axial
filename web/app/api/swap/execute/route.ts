@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 import { triggerEisFromChain } from "@/lib/eis/trigger";
+import { resolveFaceUsdc } from "@/lib/fx/convert";
+import { getInvoice, setInvoiceFaceUsdc } from "@/lib/invoices/store";
 import { emitFunded } from "@/lib/notifications/emit";
+import { resolveOrgId } from "@/lib/org/store";
 import { checkFundingEligibility } from "@/lib/payers/eligibility";
 import { isSwapChainEnabled } from "@/lib/soroban/config";
 import { resolveSorobanConfig } from "@/lib/soroban/server-config";
@@ -14,8 +17,9 @@ import { assertSwapPreflight } from "@/lib/soroban/usdc-preflight";
 
 type Body = {
   invoiceId?: string;
+  /** PHP face from client; ignored when source invoice has face / faceUsdc. */
   faceAmount?: number;
-  /** Stored invoice ID (without timestamp suffix) for eligibility check. */
+  /** Stored invoice ID for eligibility + double-advance guards. */
   sourceInvoiceId?: string;
   /**
    * Optional Freighter wallet public key. When present, the USDC advance
@@ -34,27 +38,43 @@ export async function POST(request: Request) {
   }
 
   const invoiceId = body.invoiceId?.trim();
-  const faceAmount = body.faceAmount;
-  // sourceInvoiceId is the stored invoice ID; invoiceId is the chain-scoped one
-  // (may carry a timestamp suffix). Fall back to stripping the suffix heuristically.
+  const explicitSourceId = body.sourceInvoiceId?.trim() || undefined;
   const sourceInvoiceId =
-    body.sourceInvoiceId?.trim() ??
+    explicitSourceId ??
     (invoiceId ? invoiceId.replace(/-\d{10,}$/, "") : undefined);
-  // Freighter self-custody: override the MSME recipient with the user's own wallet
   const msmePublicOverride = body.msmePublic?.trim() || undefined;
+  const seedAllowed = process.env.AXIAL_ALLOW_SEED === "true";
 
   if (!invoiceId) {
     return NextResponse.json({ error: "invoiceId is required" }, { status: 400 });
   }
-  if (!Number.isFinite(faceAmount) || (faceAmount ?? 0) <= 0) {
-    return NextResponse.json(
-      { error: "faceAmount must be a positive number" },
-      { status: 400 },
-    );
-  }
 
-  // CLS-05 — funding eligibility gate (payer KYB + confirmation + NoA ack)
-  if (sourceInvoiceId) {
+  if (!seedAllowed) {
+    if (!explicitSourceId) {
+      return NextResponse.json(
+        { error: "sourceInvoiceId is required" },
+        { status: 400 },
+      );
+    }
+    try {
+      const eligibility = await checkFundingEligibility(sourceInvoiceId);
+      if (!eligibility.fundable) {
+        return NextResponse.json(
+          {
+            error: "NOT_FUNDABLE",
+            blockers: eligibility.blockers,
+            message:
+              "Invoice is not eligible for funding. Complete payer KYB, invoice confirmation, and NoA acknowledgement.",
+          },
+          { status: 409 },
+        );
+      }
+    } catch (err) {
+      const message =
+        err instanceof Error ? err.message : "Eligibility check failed";
+      return NextResponse.json({ error: message }, { status: 502 });
+    }
+  } else if (sourceInvoiceId) {
     try {
       const eligibility = await checkFundingEligibility(sourceInvoiceId);
       if (!eligibility.fundable) {
@@ -69,19 +89,74 @@ export async function POST(request: Request) {
         );
       }
     } catch {
-      // Non-fatal: if the eligibility check itself errors, allow the swap through
-      // (e.g. invoice not yet in the store in pure on-chain mode)
+      // Non-fatal in seed mode (e.g. invoice not yet in store)
+    }
+  }
+
+  let facePhp = body.faceAmount;
+  let faceUsdc: number | null = null;
+  let sourceInvoice = null as Awaited<ReturnType<typeof getInvoice>>;
+
+  if (sourceInvoiceId) {
+    try {
+      sourceInvoice = await getInvoice(sourceInvoiceId);
+      if (sourceInvoice) {
+        if (sourceInvoice.swapTxHash || sourceInvoice.status === "settled") {
+          return NextResponse.json(
+            { error: "Invoice already funded", code: "ALREADY_FUNDED" },
+            { status: 409 },
+          );
+        }
+        facePhp = sourceInvoice.face;
+        faceUsdc = sourceInvoice.faceUsdc;
+      }
+    } catch {
+      // Keep client faceAmount if store lookup fails
+    }
+  }
+
+  if (!Number.isFinite(facePhp) || (facePhp ?? 0) <= 0) {
+    return NextResponse.json(
+      { error: "faceAmount must be a positive number" },
+      { status: 400 },
+    );
+  }
+
+  let phpPerUsdc: number | null = null;
+  let fxSource: string | null = null;
+  if (faceUsdc == null || faceUsdc <= 0) {
+    const fx = await resolveFaceUsdc(facePhp!);
+    faceUsdc = fx.faceUsdc;
+    phpPerUsdc = fx.phpPerUsdc;
+    fxSource = fx.source;
+  }
+  if (faceUsdc <= 0) {
+    return NextResponse.json(
+      { error: "Converted USDC face must be positive" },
+      { status: 400 },
+    );
+  }
+
+  if (sourceInvoiceId && sourceInvoice && sourceInvoice.faceUsdc == null) {
+    try {
+      await setInvoiceFaceUsdc(sourceInvoiceId, faceUsdc);
+    } catch {
+      // Non-fatal — swap can proceed; settle path may persist later
     }
   }
 
   const cfg = await resolveSorobanConfig();
-  const quote = quoteAdvance(faceAmount!);
+  const quote = quoteAdvance(faceUsdc);
 
   if (!isSwapChainEnabled(cfg)) {
     return NextResponse.json({
       mode: "demo",
       invoiceId,
-      faceAmount,
+      faceAmount: faceUsdc,
+      facePhp,
+      faceUsdc,
+      phpPerUsdc,
+      fxSource,
       advanceAmount: quote.advance,
       reserveAmount: quote.reserve,
       message:
@@ -91,7 +166,7 @@ export async function POST(request: Request) {
 
   const msmeRecipient = msmePublicOverride ?? cfg.msmePublic;
   if (msmeRecipient) {
-    const preflight = await assertSwapPreflight(cfg, msmeRecipient, faceAmount!);
+    const preflight = await assertSwapPreflight(cfg, msmeRecipient, faceUsdc);
     if (!preflight.ok) {
       return NextResponse.json(
         { error: preflight.message, code: preflight.code },
@@ -101,32 +176,44 @@ export async function POST(request: Request) {
   }
 
   try {
-    const onChain = await executeAdvanceOnChain(cfg, invoiceId, faceAmount!, msmePublicOverride);
+    const onChain = await executeAdvanceOnChain(cfg, invoiceId, faceUsdc, msmePublicOverride);
 
     if (isSettlementChainEnabled(cfg)) {
-      void registerInvoiceOnChain(cfg, invoiceId, faceAmount!, quote.advance)
-        .then((r) => console.info("[swap/execute] register_invoice tx", r.txHash))
-        .catch((err) =>
-          console.warn(
-            "[swap/execute] register_invoice failed:",
-            err instanceof Error ? err.message : err,
-          ),
+      try {
+        const reg = await registerInvoiceOnChain(cfg, invoiceId, faceUsdc, quote.advance);
+        console.info("[swap/execute] register_invoice tx", reg.txHash);
+      } catch (regErr) {
+        const regMsg =
+          regErr instanceof Error ? regErr.message : "register_invoice failed";
+        console.error("[swap/execute] register_invoice failed:", regMsg);
+        return NextResponse.json(
+          {
+            error: regMsg,
+            swapTxHash: onChain.txHash,
+            code: "REGISTER_INVOICE_FAILED",
+          },
+          { status: 502 },
         );
+      }
     }
 
     triggerEisFromChain(
       "swap_executed",
       invoiceId,
       onChain.txHash,
-      faceAmount!,
+      faceUsdc,
       cfg.network,
       quote.advance,
     );
-    emitFunded(process.env.AXIAL_ORG_ID, sourceInvoiceId ?? invoiceId, quote.advance);
+    emitFunded(resolveOrgId(), sourceInvoiceId ?? invoiceId, quote.advance);
     return NextResponse.json({
       mode: "on-chain",
       invoiceId,
-      faceAmount,
+      faceAmount: faceUsdc,
+      facePhp,
+      faceUsdc,
+      phpPerUsdc,
+      fxSource,
       advanceAmount: quote.advance,
       reserveAmount: quote.reserve,
       txHash: onChain.txHash,

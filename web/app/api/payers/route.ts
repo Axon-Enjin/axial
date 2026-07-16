@@ -1,12 +1,11 @@
 import { NextResponse } from "next/server";
+import { resolveOrgId } from "@/lib/org/store";
 import { createPayer, listPayersByOrg } from "@/lib/payers/store";
 import { createKybProvider } from "@/lib/payers/kyb";
 
-const DEFAULT_ORG_ID = "demo-org";
-
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
-  const orgId = searchParams.get("orgId") ?? DEFAULT_ORG_ID;
+  const orgId = resolveOrgId(searchParams.get("orgId"));
 
   try {
     const payers = await listPayersByOrg(orgId);
@@ -35,7 +34,7 @@ export async function POST(request: Request) {
   const legalName = body.legalName?.trim();
   const tin = body.tin?.trim();
   const contactEmail = body.contactEmail?.trim();
-  const orgId = (body.orgId ?? DEFAULT_ORG_ID).trim();
+  const orgId = resolveOrgId(body.orgId);
 
   if (!legalName) {
     return NextResponse.json({ error: "legalName is required" }, { status: 400 });

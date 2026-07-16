@@ -15,16 +15,10 @@
  * Security: requires Authorization: Bearer {CRON_SECRET} header.
  */
 import { NextResponse } from "next/server";
+import { assertCronAuthorized } from "@/lib/cron/auth";
 import { getSorobanConfig } from "@/lib/soroban/config";
 import { pollHorizonEvents } from "@/lib/eis/horizon-poll";
 import type { StellarNetworkId } from "@/lib/soroban/network";
-
-function isAuthorized(request: Request): boolean {
-  const secret = process.env.CRON_SECRET;
-  if (!secret) return true;
-  const auth = request.headers.get("authorization");
-  return auth === `Bearer ${secret}`;
-}
 
 function contractIdsForNetwork(network: StellarNetworkId): string[] {
   const cfg = getSorobanConfig(network);
@@ -37,9 +31,8 @@ function contractIdsForNetwork(network: StellarNetworkId): string[] {
 }
 
 export async function POST(request: Request) {
-  if (!isAuthorized(request)) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const denied = assertCronAuthorized(request);
+  if (denied) return denied;
 
   const networks: StellarNetworkId[] = ["mainnet"];
   const polled: StellarNetworkId[] = [];

@@ -41,6 +41,7 @@ function eisToAuditRow(s: {
     memo_written: "memo written to Stellar",
     acknowledged: "BIR acknowledged",
     submitted: "submitted to BIR",
+    prepared: "awaiting review",
     queued: "queued",
     failed: "pipeline failed",
   };

@@ -6,6 +6,8 @@ type InvoiceRow = {
   party: string;
   terms: string;
   face: number;
+  face_usdc: number | null;
+  attributed_inflow_usdc: number | null;
   immediate: number | null;
   status: InvoiceStatus;
   payer_confirmed: boolean;
@@ -26,6 +28,9 @@ function rowToInvoice(row: InvoiceRow): FactoringInvoice {
     party: row.party,
     terms: row.terms,
     face: Number(row.face),
+    faceUsdc: row.face_usdc != null ? Number(row.face_usdc) : null,
+    attributedInflowUsdc:
+      row.attributed_inflow_usdc != null ? Number(row.attributed_inflow_usdc) : null,
     immediate: row.immediate != null ? Number(row.immediate) : null,
     status: row.status,
     payerConfirmed: row.payer_confirmed,
@@ -47,6 +52,8 @@ function invoiceToRow(inv: FactoringInvoice): InvoiceRow {
     party: inv.party,
     terms: inv.terms,
     face: inv.face,
+    face_usdc: inv.faceUsdc,
+    attributed_inflow_usdc: inv.attributedInflowUsdc,
     immediate: inv.immediate,
     status: inv.status,
     payer_confirmed: inv.payerConfirmed,

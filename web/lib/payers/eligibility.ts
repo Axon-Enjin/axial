@@ -1,5 +1,10 @@
 import { getInvoice } from "@/lib/invoices/store";
-import { getOrgProfile, isOrgFrozen, isTrustBoundaryAcked } from "@/lib/org/store";
+import {
+  getOrgProfile,
+  isOrgFrozen,
+  isTrustBoundaryAcked,
+  resolveOrgId,
+} from "@/lib/org/store";
 import type { EligibilityBlocker, EligibilityResult } from "./types";
 import {
   getConfirmationByReceivable,
@@ -38,7 +43,7 @@ export async function checkFundingEligibility(
     return notFundable(["payer_not_found"]);
   }
 
-  const orgId = process.env.AXIAL_ORG_ID ?? "demo-org";
+  const orgId = resolveOrgId();
   const [trustAcked, orgProfile] = await Promise.all([
     isTrustBoundaryAcked(orgId),
     getOrgProfile(orgId),
@@ -52,8 +57,13 @@ export async function checkFundingEligibility(
     return notFundable(["org_frozen"]);
   }
 
-  // Demo fast-path: single-click confirm_payer set both flags directly on invoice
-  if (invoice.payerConfirmed && invoice.noaAcknowledged) {
+  // Seed/demo fast-path only: invoice flags from confirm_payer. Production must
+  // prove confirmation + NoA store rows below (and never invent KYB verified).
+  if (
+    process.env.AXIAL_ALLOW_SEED === "true" &&
+    invoice.payerConfirmed &&
+    invoice.noaAcknowledged
+  ) {
     return {
       fundable: true,
       blockers: [],

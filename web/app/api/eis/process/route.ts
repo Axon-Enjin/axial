@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { processLedgerEvent } from "@/lib/eis/oracle";
+import { assertEisOperatorAccess } from "@/lib/eis/route-auth";
 import type { ChainLedgerEvent, LedgerEventKind } from "@/lib/eis/types";
 
 type Body = {
@@ -10,6 +11,9 @@ type Body = {
 };
 
 export async function POST(request: Request) {
+  const denied = await assertEisOperatorAccess("operator");
+  if (denied) return denied;
+
   let body: Body;
   try {
     body = (await request.json()) as Body;
@@ -35,6 +39,7 @@ export async function POST(request: Request) {
     };
     const sub = await processLedgerEvent(event);
     return NextResponse.json({
+      id: sub.id,
       payloadId: sub.payloadId,
       status: sub.status,
       birReferenceId: sub.birReferenceId,

@@ -107,12 +107,12 @@ Snapshot of what ships in **`web/`** today vs locked product vision. Visual tab 
 | Area | Status | Notes |
 |------|--------|-------|
 | Soroban L1 (mint, swap, payroll) | ✅ Mainnet | Happy path wired from Liquidity + Compliance |
-| BIR EIS oracle / Co-Pilot (20 fields, JWS mock, memo) | ✅ | Supabase `eis_submissions`; API-triggered on chain events; **prepares filings for human review/approval** — auto-submit gated on PTT (2026-06-18 pivot) |
-| T+3 submission worker | ✅ | `eis/worker` cron — retries stale submissions inside the T+3 window, expires the rest |
-| Horizon event poll | ✅ | `eis/horizon-poll` cron — ingests chain events the live API path missed |
-| Reconciliation / leakage scan | ✅ | `reconciliation/scan` cron — daily leakage scan |
-| Factoring book | ✅ | `factoring_invoices` + `/api/invoices` pagination; OCR parse persists rows |
-| Payer portal + NoA | ✅ | `/app/payer-portal` (token auth), `/api/payers`, eligibility check, NoA issue/ack |
+| BIR EIS oracle / Co-Pilot (20 fields, JWS mock, memo) | ✅ | Chain events prepare JWS payloads (`prepared`); Compliance **Approve** → BIR submit (`POST /api/eis/[id]/approve`). Demo auto-ack only when `AXIAL_ALLOW_SEED` or `EIS_DEMO_AUTO_ACK` (never when `BIR_EIS_LIVE`). Migrations `007` (`prepared` status), T+3 columns mapped in Supabase store |
+| T+3 submission worker | ✅ | `eis/worker` cron — retries `failed` inside T+3; expires `prepared`/`failed` past `dueBy`; does **not** auto-submit awaiting-review rows. Production fails closed if `CRON_SECRET` unset |
+| Horizon event poll | ✅ | `eis/horizon-poll` cron — skips `prepared`/`submitted`/`acknowledged`/`memo_written`; production fails closed if `CRON_SECRET` unset |
+| Reconciliation / leakage scan | ✅ | `reconciliation/scan` cron — daily leakage scan; production fails closed if `CRON_SECRET` unset |
+| Factoring book | ✅ | `factoring_invoices` + `/api/invoices` pagination; OCR parse persists rows; face rewrite blocked once payer-confirmed/fundable; `face_usdc` / `attributed_inflow_usdc` (migration `009`) |
+| Payer portal + NoA | ✅ | `/app/payer-portal` (token auth); NoA ack **requires** confirmation token; confirm GET redacts `authToken`; eligibility fail-closed on swap (unless seed) |
 | Auth / multi-tenancy | ✅ | Supabase SSR auth, org-scoped data, invites (`api/auth/*`, migration `006`) |
 | Overview / Liquidity metrics | ✅ | `GET /api/dashboard/summary` — book face PHP, treasury USDC, contract count |
 | Treasury card | ✅ | `GET /api/wallets/balances` on Overview — Mainnet balances |
@@ -120,7 +120,7 @@ Snapshot of what ships in **`web/`** today vs locked product vision. Visual tab 
 | Public landing page | ✅ | Marketing landing at `/`; `/app` is the authenticated Overview |
 | PDAX ramp (L2) | ✅ UI | Settings demo card; **L3 Connect API not pursued — sandbox access not granted (2026-05-22)** |
 | Wallet signing | ✅ Custodial | Server-side signing with funder/MSME/issuer secrets; optional Freighter client-sign path (Q7 locked custodial 2026-05-22) |
-| On-chain lockbox enforcement | ✅ | `settlement` on Mainnet; S3–S6 wired (`register_invoice`, payer Freighter fund, **S5** balance pre-check + awaited settle on `mark_collected`; **S6** trust model in [`rfc-axial-closed-loop-settlement.md`](rfc-axial-closed-loop-settlement.md)) |
+| On-chain lockbox enforcement | ✅ | `settlement` on Mainnet; `register_invoice` **awaited** after swap; Freighter lockbox fund converts **PHP→USDC** (Reflector); `mark_collected` uses `settling` then collected (reverts on chain fail); attributed inflow cap; stable on-chain invoice id (= business id). **S6** trust model in [`rfc-axial-closed-loop-settlement.md`](rfc-axial-closed-loop-settlement.md) |
 | Funder Protection Center + portal | ✅ | `/api/funder/*`, embedded in Liquidity, `/app/funder-portal` (token or session) |
 | Trust & Boundary ack gate | ✅ | Settings card + tokenize blocked until acknowledged (draft counsel copy) |
 | Payer dispute workflow | ✅ | `/api/disputes`, payer portal, eligibility `disputed` blocker |

@@ -49,10 +49,19 @@ type StoreFile = {
   invoices: FactoringInvoice[];
 };
 
+function normalizeInvoice(inv: FactoringInvoice): FactoringInvoice {
+  return {
+    ...inv,
+    faceUsdc: inv.faceUsdc ?? null,
+    attributedInflowUsdc: inv.attributedInflowUsdc ?? null,
+  };
+}
+
 async function readFileStore(): Promise<StoreFile> {
   try {
     const raw = await readFile(STORE_PATH, "utf8");
-    return JSON.parse(raw) as StoreFile;
+    const parsed = JSON.parse(raw) as StoreFile;
+    return { invoices: (parsed.invoices ?? []).map(normalizeInvoice) };
   } catch {
     return { invoices: [] };
   }
@@ -110,19 +119,29 @@ export async function countInvoices(): Promise<number> {
 }
 
 export async function upsertInvoice(inv: FactoringInvoice): Promise<FactoringInvoice> {
+  const normalized = normalizeInvoice(inv);
   return withFileFallback(
-    () => supabaseUpsertInvoice(inv),
+    () => supabaseUpsertInvoice(normalized),
     async () => {
       const store = await readFileStore();
-      const idx = store.invoices.findIndex((i) => i.id === inv.id);
+      const idx = store.invoices.findIndex((i) => i.id === normalized.id);
       if (idx >= 0) {
-        store.invoices[idx] = inv;
+        store.invoices[idx] = normalized;
       } else {
-        store.invoices.unshift(inv);
+        store.invoices.unshift(normalized);
       }
       await writeFileStore(store);
-      return inv;
+      return normalized;
     },
+  );
+}
+
+function faceRewriteBlocked(existing: FactoringInvoice): boolean {
+  return (
+    existing.status === "fundable" ||
+    existing.status === "settled" ||
+    existing.payerConfirmed ||
+    existing.noaAcknowledged
   );
 }
 
@@ -136,7 +155,7 @@ export async function upsertFromParse(fields: {
   const now = new Date().toISOString();
   const existing = await getInvoice(fields.invoiceId);
 
-  if (existing?.status === "settled") {
+  if (existing && faceRewriteBlocked(existing)) {
     return existing;
   }
 
@@ -145,6 +164,8 @@ export async function upsertFromParse(fields: {
     party: fields.party,
     terms: fields.terms,
     face: fields.face,
+    faceUsdc: null,
+    attributedInflowUsdc: null,
     immediate: advance,
     status: "awaiting_payer",
     payerConfirmed: false,
@@ -188,6 +209,7 @@ export async function settleInvoice(
     mintTxHash?: string | null;
     swapTxHash?: string | null;
     onChainInvoiceId?: string | null;
+    faceUsdc?: number | null;
   },
 ): Promise<FactoringInvoice> {
   const existing = await getInvoice(id);
@@ -202,8 +224,78 @@ export async function settleInvoice(
     mintTxHash: patch.mintTxHash ?? null,
     swapTxHash: patch.swapTxHash ?? null,
     onChainInvoiceId: patch.onChainInvoiceId ?? existing.onChainInvoiceId ?? null,
+    faceUsdc: patch.faceUsdc ?? existing.faceUsdc,
     collectionStatus: "open",
     updatedAt: now,
+  });
+}
+
+export async function attributeLockboxInflow(
+  id: string,
+  usdc: number,
+): Promise<FactoringInvoice> {
+  const existing = await getInvoice(id);
+  if (!existing) {
+    throw new Error("Invoice not found");
+  }
+  const amount = Math.max(0, Math.trunc(usdc));
+  const now = new Date().toISOString();
+  return upsertInvoice({
+    ...existing,
+    faceUsdc: existing.faceUsdc ?? amount,
+    attributedInflowUsdc: (existing.attributedInflowUsdc ?? 0) + amount,
+    updatedAt: now,
+  });
+}
+
+export async function setInvoiceFaceUsdc(
+  id: string,
+  faceUsdc: number,
+): Promise<FactoringInvoice> {
+  const existing = await getInvoice(id);
+  if (!existing) {
+    throw new Error("Invoice not found");
+  }
+  if (existing.faceUsdc != null) {
+    return existing;
+  }
+  return upsertInvoice({
+    ...existing,
+    faceUsdc: Math.max(0, Math.trunc(faceUsdc)),
+    updatedAt: new Date().toISOString(),
+  });
+}
+
+export async function beginCollectingInvoice(id: string): Promise<FactoringInvoice> {
+  const existing = await getInvoice(id);
+  if (!existing) {
+    throw new Error("Invoice not found");
+  }
+  if (existing.collectionStatus === "collected") {
+    throw new Error("Invoice already collected");
+  }
+  if (existing.collectionStatus === "settling") {
+    return existing;
+  }
+  return upsertInvoice({
+    ...existing,
+    collectionStatus: "settling",
+    updatedAt: new Date().toISOString(),
+  });
+}
+
+export async function revertCollectingInvoice(
+  id: string,
+  to: CollectionStatus = "open",
+): Promise<FactoringInvoice> {
+  const existing = await getInvoice(id);
+  if (!existing) {
+    throw new Error("Invoice not found");
+  }
+  return upsertInvoice({
+    ...existing,
+    collectionStatus: to,
+    updatedAt: new Date().toISOString(),
   });
 }
 
@@ -232,6 +324,8 @@ export function buildSeedInvoice(
     collectionStatus?: CollectionStatus;
     mintTxHash?: string | null;
     swapTxHash?: string | null;
+    faceUsdc?: number | null;
+    attributedInflowUsdc?: number | null;
   },
   offsetMinutes: number,
 ): FactoringInvoice {
@@ -245,6 +339,8 @@ export function buildSeedInvoice(
     party: seed.party,
     terms: seed.terms,
     face: seed.face,
+    faceUsdc: seed.faceUsdc ?? null,
+    attributedInflowUsdc: seed.attributedInflowUsdc ?? null,
     immediate: seed.status === "settled" ? advance : seed.status === "fundable" ? advance : advance,
     status: seed.status,
     payerConfirmed: confirmed,

@@ -1,11 +1,16 @@
 import { NextResponse } from "next/server";
+import { assertEisOperatorAccess } from "@/lib/eis/route-auth";
 import { getEisStoreBackend, listSubmissions } from "@/lib/eis/store";
 
 export async function GET() {
+  const denied = await assertEisOperatorAccess("read");
+  if (denied) return denied;
+
   const submissions = await listSubmissions(50);
 
   const rows = submissions.map((s) => ({
-    id: s.payloadId,
+    id: s.id,
+    payloadId: s.payloadId,
     date: new Date(s.createdAt).toLocaleString("en-PH", {
       month: "short",
       day: "numeric",
@@ -43,9 +48,10 @@ export async function GET() {
 
 function uiStatus(
   status: string,
-): "Synchronized" | "Bridging" | "Failed" {
+): "Synchronized" | "Bridging" | "Awaiting review" | "Failed" {
   if (status === "memo_written") return "Synchronized";
   if (status === "failed") return "Failed";
+  if (status === "prepared") return "Awaiting review";
   return "Bridging";
 }
 

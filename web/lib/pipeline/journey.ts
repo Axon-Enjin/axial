@@ -49,7 +49,7 @@ export type InvoiceJourneyInput = {
   status: "awaiting_payer" | "fundable" | "settled";
   payerConfirmed: boolean;
   noaAcknowledged: boolean;
-  collectionStatus: "awaiting_payer" | "open" | "collected";
+  collectionStatus: "awaiting_payer" | "open" | "settling" | "collected";
   mintTxHash?: string | null;
   swapTxHash?: string | null;
   disputed?: boolean;
@@ -266,7 +266,8 @@ export function deriveInvoiceJourney(
   const advanced =
     inv.status === "settled" || Boolean(inv.swapTxHash ?? inv.mintTxHash);
   const collected = inv.collectionStatus === "collected";
-  const lockboxOpen = inv.collectionStatus === "open";
+  const lockboxOpen =
+    inv.collectionStatus === "open" || inv.collectionStatus === "settling";
 
   const statuses: Record<JourneyStageId, JourneyStageStatus> = {
     intake: "done",

@@ -24,7 +24,7 @@ type ConfirmData = {
     confirmedAmount: number;
     dueDate: string;
     status: string;
-    authToken: string;
+    authToken?: string | null;
   };
   noa?: NoticeOfAssignment;
 };
@@ -162,13 +162,13 @@ export function PayerPortalView({ token, invoiceId }: Props) {
   };
 
   const handleAckNoa = async () => {
-    if (!invoiceId) return;
+    if (!token || !invoiceId) return;
     setBusy(true);
     try {
       const res = await fetch(`/api/noa/${encodeURIComponent(invoiceId)}/ack`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ackMethod: "in_app" }),
+        body: JSON.stringify({ token, ackMethod: "in_app" }),
       });
       const result = (await res.json()) as {
         noa?: NoticeOfAssignment;
@@ -222,6 +222,8 @@ export function PayerPortalView({ token, invoiceId }: Props) {
         xdr?: string;
         networkPassphrase?: string;
         error?: string;
+        amountUsdc?: number;
+        amountPhp?: number;
       };
       if (!buildRes.ok || !build.xdr) {
         setPayError(build.error ?? "Could not build payment transaction.");
@@ -254,7 +256,7 @@ export function PayerPortalView({ token, invoiceId }: Props) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           action: "mark_collected",
-          collectedAmount: amount,
+          collectedAmount: build.amountUsdc ?? amount,
         }),
       });
       const collect = (await collectRes.json()) as {
@@ -515,7 +517,7 @@ export function PayerPortalView({ token, invoiceId }: Props) {
                     >
                       {paying
                         ? "Processing…"
-                        : `Pay invoice now (${amount?.toLocaleString() ?? "—"} USDC units)`}
+                        : `Pay invoice now (₱${amount?.toLocaleString() ?? "—"})`}
                     </Button>
                   </>
                 )}

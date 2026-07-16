@@ -1,12 +1,16 @@
 export type InvoiceStatus = "awaiting_payer" | "fundable" | "settled";
 
-export type CollectionStatus = "awaiting_payer" | "open" | "collected";
+export type CollectionStatus = "awaiting_payer" | "open" | "settling" | "collected";
 
 export type FactoringInvoice = {
   id: string;
   party: string;
   terms: string;
   face: number;
+  /** USDC whole units for chain (PHP face converted); null until first FX resolve. */
+  faceUsdc: number | null;
+  /** Sum of lockbox fund builds attributed to this invoice (whole USDC). */
+  attributedInflowUsdc: number | null;
   immediate: number | null;
   status: InvoiceStatus;
   payerConfirmed: boolean;

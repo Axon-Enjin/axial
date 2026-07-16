@@ -17,6 +17,8 @@ type EisRow = {
   error: string | null;
   created_at: string;
   updated_at: string;
+  due_by: string | null;
+  submitted_at: string | null;
 };
 
 function rowToSubmission(row: EisRow): EisSubmission {
@@ -36,6 +38,8 @@ function rowToSubmission(row: EisRow): EisSubmission {
     createdAt: row.created_at,
     updatedAt: row.updated_at,
     error: row.error ?? undefined,
+    dueBy: row.due_by ?? undefined,
+    submittedAt: row.submitted_at ?? undefined,
   };
 }
 
@@ -57,6 +61,8 @@ function submissionToRow(sub: EisSubmission): Omit<EisRow, "created_at" | "updat
     payload: sub.payload,
     error: sub.error ?? null,
     updated_at: sub.updatedAt,
+    due_by: sub.dueBy ?? null,
+    submitted_at: sub.submittedAt ?? null,
   };
 }
 
@@ -71,6 +77,36 @@ export async function supabaseFindByIdempotencyKey(
 
   if (error) {
     throw new Error(`Supabase find failed: ${error.message}`);
+  }
+  return data ? rowToSubmission(data as EisRow) : null;
+}
+
+export async function supabaseFindById(
+  id: string,
+): Promise<EisSubmission | null> {
+  const { data, error } = await getSupabaseAdmin()
+    .from("eis_submissions")
+    .select("*")
+    .eq("id", id)
+    .maybeSingle();
+
+  if (error) {
+    throw new Error(`Supabase find by id failed: ${error.message}`);
+  }
+  return data ? rowToSubmission(data as EisRow) : null;
+}
+
+export async function supabaseFindByPayloadId(
+  payloadId: string,
+): Promise<EisSubmission | null> {
+  const { data, error } = await getSupabaseAdmin()
+    .from("eis_submissions")
+    .select("*")
+    .eq("payload_id", payloadId)
+    .maybeSingle();
+
+  if (error) {
+    throw new Error(`Supabase find by payloadId failed: ${error.message}`);
   }
   return data ? rowToSubmission(data as EisRow) : null;
 }

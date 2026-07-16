@@ -1,11 +1,17 @@
 import { NextResponse } from "next/server";
-import { acknowledgeNoa, getNoaByReceivable } from "@/lib/payers/store";
+import {
+  acknowledgeNoa,
+  getConfirmationByToken,
+  getNoaByReceivable,
+} from "@/lib/payers/store";
 import { confirmPayerInvoice } from "@/lib/invoices/store";
 import type { AckMethod } from "@/lib/payers/types";
 
 type RouteContext = { params: Promise<{ receivableId: string }> };
 
 type PostBody = {
+  /** Payer confirmation authToken — required for ack. */
+  token?: string;
   ackMethod?: AckMethod;
   /** Optional artifact reference for signed-PDF path */
   artifactRef?: string;
@@ -30,6 +36,7 @@ export async function GET(_req: Request, context: RouteContext) {
 /**
  * POST /api/noa/:receivableId/ack
  * Payer e-acknowledges the NoA. This is the final gate before funding.
+ * Requires the payer confirmation authToken matching this receivable.
  * On success: also updates the parent invoice to payerConfirmed + noaAcknowledged
  * so the existing eligibility fast-path works too.
  */
@@ -41,12 +48,39 @@ export async function POST(request: Request, context: RouteContext) {
   try {
     body = (await request.json()) as PostBody;
   } catch {
-    // body is optional — default to in_app
+    // body may be empty
   }
 
-  const method: AckMethod = body.ackMethod ?? "in_app";
+  const token = body.token?.trim();
+  if (!token) {
+    return NextResponse.json(
+      { error: "token is required" },
+      { status: 401 },
+    );
+  }
 
   try {
+    const confirmation = await getConfirmationByToken(token);
+    if (!confirmation) {
+      return NextResponse.json(
+        { error: "Invalid or expired confirmation token" },
+        { status: 401 },
+      );
+    }
+    if (confirmation.receivableId !== decoded) {
+      return NextResponse.json(
+        { error: "Token does not match this receivable" },
+        { status: 403 },
+      );
+    }
+    if (confirmation.status !== "confirmed") {
+      return NextResponse.json(
+        { error: "Invoice must be confirmed before NoA acknowledgement" },
+        { status: 409 },
+      );
+    }
+
+    const method: AckMethod = body.ackMethod ?? "in_app";
     const noa = await acknowledgeNoa(decoded, method);
 
     // Mirror the ack onto the parent invoice so legacy eligibility fast-path works

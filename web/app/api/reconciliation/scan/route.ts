@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
+import { assertCronAuthorized } from "@/lib/cron/auth";
 import { getInvoice, listInvoices } from "@/lib/invoices/store";
-import { freezeOrg } from "@/lib/org/store";
+import { freezeOrg, resolveOrgId } from "@/lib/org/store";
 import { emitLeaked, emitOrgFrozen } from "@/lib/notifications/emit";
 import { getReserveEntry, listOpenEntries, markEntryLeaked } from "@/lib/settlement/store";
 import { resolveSorobanConfig } from "@/lib/soroban/server-config";
@@ -9,16 +10,6 @@ import type { ReconciliationResult } from "@/lib/settlement/types";
 
 // T+X = 7 calendar days after due date before leakage is reported
 const LEAKAGE_GRACE_DAYS = 7;
-
-function assertCronAuth(request: Request): NextResponse | null {
-  const secret = process.env.CRON_SECRET;
-  if (!secret) return null;
-  const auth = request.headers.get("authorization");
-  if (auth !== `Bearer ${secret}`) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-  return null;
-}
 
 /**
  * POST /api/reconciliation/scan
@@ -36,7 +27,7 @@ function assertCronAuth(request: Request): NextResponse | null {
  * The scanner never touches settled or already-leaked entries.
  */
 export async function POST(request: Request) {
-  const denied = assertCronAuth(request);
+  const denied = assertCronAuthorized(request);
   if (denied) return denied;
 
   const result: ReconciliationResult = {
@@ -99,7 +90,7 @@ export async function POST(request: Request) {
 
             result.leaked.push(entry.receivableId);
 
-            const orgId = process.env.AXIAL_ORG_ID ?? "demo-org";
+            const orgId = resolveOrgId();
             const reason = `Leakage on ${entry.receivableId.slice(0, 8)}… — new funding paused pending review.`;
             await freezeOrg(orgId, reason);
             emitLeaked(orgId, entry.receivableId, reserveEntry.shortfall);

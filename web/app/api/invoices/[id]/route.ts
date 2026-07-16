@@ -1,10 +1,13 @@
 import { NextResponse } from "next/server";
 import {
+  beginCollectingInvoice,
   confirmPayerInvoice,
   getInvoice,
   markCollectedInvoice,
+  revertCollectingInvoice,
   settleInvoice,
 } from "@/lib/invoices/store";
+import { resolveFaceUsdc } from "@/lib/fx/convert";
 import { deriveDemoLockbox, parseNetDays } from "@/lib/msme/invoice-trust";
 import { markEntrySettled, upsertReserveEntry } from "@/lib/settlement/store";
 import { resolveSorobanConfig } from "@/lib/soroban/server-config";
@@ -21,9 +24,45 @@ type PatchBody = {
   swapTxHash?: string | null;
   /** Chain-scoped id passed to settlement::register_invoice */
   onChainInvoiceId?: string | null;
-  /** Gross collected amount (for mark_collected settlement path) */
+  /** Gross collected amount (PHP face or USDC whole units) */
   collectedAmount?: number;
+  faceUsdc?: number | null;
 };
+
+const COLLECT_EPSILON = 1;
+
+async function resolveMaxCollectableUsdc(inv: {
+  face: number;
+  faceUsdc: number | null;
+  attributedInflowUsdc: number | null;
+}): Promise<number> {
+  if (inv.attributedInflowUsdc != null && inv.attributedInflowUsdc > 0) {
+    return Math.trunc(inv.attributedInflowUsdc);
+  }
+  if (inv.faceUsdc != null && inv.faceUsdc > 0) {
+    return Math.trunc(inv.faceUsdc);
+  }
+  const fx = await resolveFaceUsdc(inv.face);
+  return fx.faceUsdc;
+}
+
+async function resolveCollectedUsdc(
+  inv: { face: number; faceUsdc: number | null },
+  collectedAmount: number | undefined,
+): Promise<number> {
+  if (collectedAmount == null || !Number.isFinite(collectedAmount)) {
+    if (inv.faceUsdc != null && inv.faceUsdc > 0) return Math.trunc(inv.faceUsdc);
+    const fx = await resolveFaceUsdc(inv.face);
+    return fx.faceUsdc;
+  }
+  // Client still sends PHP face when amount === invoice.face
+  if (collectedAmount === inv.face) {
+    if (inv.faceUsdc != null && inv.faceUsdc > 0) return Math.trunc(inv.faceUsdc);
+    const fx = await resolveFaceUsdc(inv.face);
+    return fx.faceUsdc;
+  }
+  return Math.trunc(collectedAmount);
+}
 
 export async function GET(_request: Request, context: RouteContext) {
   const { id } = await context.params;
@@ -56,13 +95,44 @@ export async function PATCH(request: Request, context: RouteContext) {
     let inv;
     switch (body.action) {
       case "confirm_payer":
+        if (process.env.AXIAL_ALLOW_SEED !== "true") {
+          return NextResponse.json(
+            {
+              error:
+                "Demo confirm_payer is seed-only. Set AXIAL_ALLOW_SEED=true, or use the payer confirmation + NoA flow.",
+            },
+            { status: 403 },
+          );
+        }
         inv = await confirmPayerInvoice(decoded);
         break;
       case "mark_collected": {
-        inv = await markCollectedInvoice(decoded);
+        const existing = await getInvoice(decoded);
+        if (!existing) {
+          return NextResponse.json({ error: "Invoice not found" }, { status: 404 });
+        }
+        if (existing.collectionStatus === "collected") {
+          return NextResponse.json({ invoice: toClientInvoice(existing) });
+        }
+
+        const maxCollectable = await resolveMaxCollectableUsdc(existing);
+        const collectedUsdc = await resolveCollectedUsdc(existing, body.collectedAmount);
+        if (collectedUsdc > maxCollectable + COLLECT_EPSILON) {
+          return NextResponse.json(
+            {
+              error: "Collected amount exceeds attributed lockbox inflow",
+              code: "INFLOW_CAP",
+              collectedUsdc,
+              maxCollectable,
+            },
+            { status: 409 },
+          );
+        }
+        const effectiveCollected = Math.min(collectedUsdc, maxCollectable);
+
+        await beginCollectingInvoice(decoded);
         const cfg = await resolveSorobanConfig();
-        const collected = body.collectedAmount ?? inv.face;
-        const settleId = inv.onChainInvoiceId ?? decoded;
+        const settleId = existing.onChainInvoiceId ?? decoded;
 
         let settlement:
           | {
@@ -74,24 +144,27 @@ export async function PATCH(request: Request, context: RouteContext) {
             }
           | undefined;
 
-        try {
-          await markEntrySettled(decoded, { collectedAmount: collected });
-        } catch (ledgerErr) {
-          const msg =
-            ledgerErr instanceof Error ? ledgerErr.message : "Reserve ledger update failed";
-          return NextResponse.json(
-            { error: msg, invoice: toClientInvoice(inv) },
-            { status: 409 },
-          );
-        }
-
         if (isSettlementChainEnabled(cfg)) {
           try {
-            const result = await settleOnChain(cfg, settleId, collected);
-            await markEntrySettled(decoded, {
-              collectedAmount: result.effectiveCollected,
-              settlementTxHash: result.txHash,
-            });
+            const result = await settleOnChain(cfg, settleId, effectiveCollected);
+            inv = await markCollectedInvoice(decoded);
+            try {
+              await markEntrySettled(decoded, {
+                collectedAmount: result.effectiveCollected,
+                settlementTxHash: result.txHash,
+              });
+            } catch (ledgerErr) {
+              const msg =
+                ledgerErr instanceof Error ? ledgerErr.message : "Reserve ledger update failed";
+              return NextResponse.json(
+                { error: msg, invoice: toClientInvoice(inv), settlement: {
+                  txHash: result.txHash,
+                  effectiveCollected: result.effectiveCollected,
+                  lockboxBalance: result.lockboxBalance,
+                } },
+                { status: 409 },
+              );
+            }
             settlement = {
               txHash: result.txHash,
               effectiveCollected: result.effectiveCollected,
@@ -100,20 +173,37 @@ export async function PATCH(request: Request, context: RouteContext) {
           } catch (settleErr) {
             const msg =
               settleErr instanceof Error ? settleErr.message : "On-chain settle failed";
-            settlement = { txHash: "", effectiveCollected: 0, lockboxBalance: 0, error: msg };
+            inv = await revertCollectingInvoice(decoded, "open");
+            settlement = {
+              txHash: "",
+              effectiveCollected: 0,
+              lockboxBalance: 0,
+              error: msg,
+            };
             return NextResponse.json(
               {
                 invoice: toClientInvoice(inv),
                 settlement,
-                warning: msg,
+                error: msg,
               },
               { status: 502 },
             );
           }
         } else {
+          inv = await markCollectedInvoice(decoded);
+          try {
+            await markEntrySettled(decoded, { collectedAmount: effectiveCollected });
+          } catch (ledgerErr) {
+            const msg =
+              ledgerErr instanceof Error ? ledgerErr.message : "Reserve ledger update failed";
+            return NextResponse.json(
+              { error: msg, invoice: toClientInvoice(inv) },
+              { status: 409 },
+            );
+          }
           settlement = {
             txHash: "",
-            effectiveCollected: collected,
+            effectiveCollected,
             lockboxBalance: 0,
             skipped: true,
           };
@@ -137,14 +227,14 @@ export async function PATCH(request: Request, context: RouteContext) {
           mintTxHash: body.mintTxHash,
           swapTxHash: body.swapTxHash,
           onChainInvoiceId: body.onChainInvoiceId,
+          faceUsdc: body.faceUsdc,
         });
-        // Create reserve ledger entry (fire-and-forget)
-        void (async () => {
-          try {
-            const invoice = await getInvoice(decoded);
-            if (!invoice) return;
+        try {
+          const invoice = await getInvoice(decoded);
+          if (invoice) {
             const cfg = await resolveSorobanConfig();
-            const { advance, reserve } = quoteAdvance(invoice.face);
+            const faceForLedger = invoice.faceUsdc ?? invoice.face;
+            const { advance, reserve } = quoteAdvance(faceForLedger);
             const { address: lockboxAddress } = deriveDemoLockbox(decoded);
             const netDays = parseNetDays(invoice.terms);
             const dueDate = new Date(Date.now() + netDays * 24 * 60 * 60 * 1000)
@@ -152,7 +242,7 @@ export async function PATCH(request: Request, context: RouteContext) {
               .slice(0, 10);
             await upsertReserveEntry({
               receivableId: decoded,
-              faceAmount: invoice.face,
+              faceAmount: faceForLedger,
               advanceAmount: advance,
               reserveHeld: reserve,
               funderAddress: cfg.funderPublic ?? "DEMO_FUNDER",
@@ -166,10 +256,10 @@ export async function PATCH(request: Request, context: RouteContext) {
               leakageDetectedAt: null,
               releasedAt: null,
             });
-          } catch {
-            // Non-fatal — reserve ledger is advisory
           }
-        })();
+        } catch {
+          // Non-fatal — reserve ledger is advisory, but awaited so mark_collected can find it
+        }
         break;
       }
       default:
@@ -184,6 +274,9 @@ export async function PATCH(request: Request, context: RouteContext) {
     const message = err instanceof Error ? err.message : "Update failed";
     if (message.includes("not found")) {
       return NextResponse.json({ error: message }, { status: 404 });
+    }
+    if (message.includes("already collected")) {
+      return NextResponse.json({ error: message }, { status: 409 });
     }
     return NextResponse.json({ error: message }, { status: 502 });
   }

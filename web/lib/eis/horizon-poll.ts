@@ -20,11 +20,11 @@ import { rpc, scValToNative } from "@stellar/stellar-sdk";
 import type { xdr } from "@stellar/stellar-sdk";
 import { enqueueEisProcessing } from "./oracle";
 import { buildIdempotencyKey, findByIdempotencyKey } from "./store";
+import { resolveOrgId } from "@/lib/org/store";
 import type { StellarNetworkId } from "@/lib/soroban/network";
 import type { ChainLedgerEvent, LedgerEventKind } from "./types";
 
 const LOOKBACK_LEDGERS = 1000;
-const ORG_ID = process.env.AXIAL_ORG_ID ?? "demo-msme";
 
 export type PollResult = {
   contractsPolled: string[];
@@ -145,10 +145,16 @@ export async function pollHorizonEvents(
           const txHash = e.txHash;
           if (!txHash) return;
 
-          // Check idempotency — skip if already processed
-          const idempotencyKey = buildIdempotencyKey(ORG_ID, txHash, referenceId);
+          // Skip enqueue when already prepared or past the human gate
+          const idempotencyKey = buildIdempotencyKey(resolveOrgId(), txHash, referenceId);
           const existing = await findByIdempotencyKey(idempotencyKey);
-          if (existing?.status === "memo_written") {
+          if (
+            existing &&
+            (existing.status === "prepared" ||
+              existing.status === "submitted" ||
+              existing.status === "acknowledged" ||
+              existing.status === "memo_written")
+          ) {
             result.alreadyProcessed++;
             return;
           }

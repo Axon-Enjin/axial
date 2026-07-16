@@ -1,6 +1,8 @@
 /** Demo closed-loop trust layer — payer confirm, NoA, per-invoice lockbox. */
 
-export type CollectionStatus = "awaiting_payer" | "open" | "collected";
+import type { CollectionStatus } from "@/lib/invoices/types";
+
+export type { CollectionStatus };
 
 export type InvoiceTrustState = {
   payerConfirmed: boolean;
@@ -29,6 +31,7 @@ export function trustHint(trust: InvoiceTrustState): string {
   if (!trust.payerConfirmed) return "Needs payer confirmation";
   if (!trust.noaAcknowledged) return "Needs notice of assignment";
   if (trust.collectionStatus === "open") return "Lockbox ready — payer pays at maturity";
+  if (trust.collectionStatus === "settling") return "Settlement in progress";
   if (trust.collectionStatus === "collected") return "Payer paid lockbox";
   return "Ready to tokenize";
 }

@@ -540,11 +540,15 @@ export function LiquidityView() {
         dispatch("swap-executed", "Confirm payer and NoA before funding.");
         return;
       }
+      if (row.swapTxHash || row.status === "settled") {
+        dispatch("swap-executed", "Invoice already funded.");
+        return;
+      }
 
       setSwappingId(id);
       setSwapStep("mint");
       setPipelineStage("minting");
-      const chainInvoiceId = `${id}-${Date.now()}`;
+      const chainInvoiceId = id;
       // If Freighter is connected, route assets to the user's self-custodied wallet
       const msmePublic = freighterPublicKey ?? undefined;
 
@@ -552,12 +556,18 @@ export function LiquidityView() {
         const mintRes = await fetch("/api/receivable/mint", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ invoiceId: chainInvoiceId, faceAmount: face, msmePublic }),
+          body: JSON.stringify({
+            invoiceId: chainInvoiceId,
+            faceAmount: face,
+            sourceInvoiceId: id,
+            msmePublic,
+          }),
         });
         const mintData = (await mintRes.json()) as {
           mode?: string;
           txHash?: string;
           error?: string;
+          faceUsdc?: number;
         };
 
         if (!mintRes.ok) {
@@ -571,17 +581,28 @@ export function LiquidityView() {
         const res = await fetch("/api/swap/execute", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ invoiceId: chainInvoiceId, faceAmount: face, sourceInvoiceId: id, msmePublic }),
+          body: JSON.stringify({
+            invoiceId: chainInvoiceId,
+            faceAmount: face,
+            sourceInvoiceId: id,
+            msmePublic,
+          }),
         });
         const data = (await res.json()) as {
           mode?: string;
           advanceAmount?: number;
           txHash?: string;
           error?: string;
+          faceUsdc?: number;
+          swapTxHash?: string;
         };
 
         if (!res.ok) {
-          dispatch("swap-executed", data.error ?? `Swap failed (${res.status})`);
+          const detail =
+            data.swapTxHash != null
+              ? `${data.error ?? "Swap failed"} (swap ${data.swapTxHash})`
+              : (data.error ?? `Swap failed (${res.status})`);
+          dispatch("swap-executed", detail);
           setPipelineStage("parsed");
           return;
         }
@@ -590,9 +611,9 @@ export function LiquidityView() {
         const swapTx = data.mode === "on-chain" && data.txHash ? data.txHash : "";
         const mintTx =
           mintData.mode === "on-chain" && mintData.txHash ? mintData.txHash : "";
-        const advancePhp = data.advanceAmount ?? row.immediate ?? 0;
-        if (advancePhp > 0) {
-          setLastSwapAdvancePhp(advancePhp);
+        const advanceUsdc = data.advanceAmount ?? row.immediate ?? 0;
+        if (advanceUsdc > 0) {
+          setLastSwapAdvancePhp(advanceUsdc);
         }
 
         const settleRes = await fetch(`/api/invoices/${encodeURIComponent(id)}`, {
@@ -600,10 +621,11 @@ export function LiquidityView() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             action: "settle",
-            immediate: advancePhp || row.immediate || 0,
+            immediate: advanceUsdc || row.immediate || 0,
             mintTxHash: mintTx || null,
             swapTxHash: swapTx || null,
             onChainInvoiceId: chainInvoiceId,
+            faceUsdc: data.faceUsdc ?? mintData.faceUsdc ?? null,
           }),
         });
         const settleData = (await settleRes.json()) as { invoice?: Invoice };

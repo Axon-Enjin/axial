@@ -7,6 +7,7 @@ import {
   issueNoa,
   requestConfirmation,
 } from "@/lib/payers/store";
+import type { InvoiceConfirmation } from "@/lib/payers/types";
 import { resolveSorobanConfig } from "@/lib/soroban/server-config";
 
 type RouteContext = { params: Promise<{ id: string }> };
@@ -20,12 +21,20 @@ type PostBody = {
   dueDate?: string;
 };
 
+function redactAuthToken(
+  confirmation: InvoiceConfirmation | null,
+): Omit<InvoiceConfirmation, "authToken"> & { authToken: null } | null {
+  if (!confirmation) return null;
+  const { authToken: _token, ...rest } = confirmation;
+  return { ...rest, authToken: null };
+}
+
 export async function GET(_req: Request, context: RouteContext) {
   const { id } = await context.params;
   const decoded = decodeURIComponent(id);
   try {
     const confirmation = await getConfirmationByReceivable(decoded);
-    return NextResponse.json({ confirmation });
+    return NextResponse.json({ confirmation: redactAuthToken(confirmation) });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Get failed";
     return NextResponse.json({ error: message }, { status: 502 });
@@ -62,7 +71,10 @@ export async function POST(request: Request, context: RouteContext) {
         payerId: confirmation.payerId,
         lockboxAddress,
       });
-      return NextResponse.json({ confirmation, noa });
+      return NextResponse.json({
+        confirmation: redactAuthToken(confirmation),
+        noa,
+      });
     }
 
     // Path B: MSME requests payer confirmation (sends link to payer)
@@ -81,7 +93,7 @@ export async function POST(request: Request, context: RouteContext) {
         dueDate,
       });
       return NextResponse.json({
-        confirmation,
+        confirmation: redactAuthToken(confirmation),
         authLink: `/app/payer-portal?token=${confirmation.authToken}&invoice=${decoded}`,
       });
     }

@@ -14,20 +14,12 @@
  * CRON_SECRET environment variable. For manual calls, set the same header.
  */
 import { NextResponse } from "next/server";
+import { assertCronAuthorized } from "@/lib/cron/auth";
 import { runEisWorker } from "@/lib/eis/worker";
 
-function isAuthorized(request: Request): boolean {
-  const secret = process.env.CRON_SECRET;
-  // If no secret is configured, allow all (dev/demo mode)
-  if (!secret) return true;
-  const auth = request.headers.get("authorization");
-  return auth === `Bearer ${secret}`;
-}
-
 export async function POST(request: Request) {
-  if (!isAuthorized(request)) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const denied = assertCronAuthorized(request);
+  if (denied) return denied;
 
   try {
     const result = await runEisWorker();

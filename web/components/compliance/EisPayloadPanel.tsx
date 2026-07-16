@@ -1,11 +1,15 @@
 "use client";
 
+import { useState } from "react";
 import { EIS_PAYLOAD_FIELDS, formatPayloadValue } from "@/lib/eis/payload-fields";
 import type { BirEisPayload } from "@/lib/eis/types";
 
 type Props = {
   payload: BirEisPayload;
   payloadId: string;
+  /** Store uuid — used for Approve POST. */
+  submissionId?: string;
+  pipelineStatus?: string;
   eventKind?: string;
   stellarTxHash?: string;
   memoTxHash?: string | null;
@@ -13,11 +17,14 @@ type Props = {
   jwsPreview?: string;
   explorerTxBase: string;
   onClose: () => void;
+  onApproved?: () => void;
 };
 
 export function EisPayloadPanel({
   payload,
   payloadId,
+  submissionId,
+  pipelineStatus,
   eventKind,
   stellarTxHash,
   memoTxHash,
@@ -25,8 +32,31 @@ export function EisPayloadPanel({
   jwsPreview,
   explorerTxBase,
   onClose,
+  onApproved,
 }: Props) {
   const groups = [...new Set(EIS_PAYLOAD_FIELDS.map((f) => f.group))];
+  const canApprove = pipelineStatus === "prepared" && Boolean(submissionId);
+  const [approving, setApproving] = useState(false);
+  const [approveError, setApproveError] = useState<string | null>(null);
+
+  async function handleApprove() {
+    if (!submissionId || approving) return;
+    setApproving(true);
+    setApproveError(null);
+    try {
+      const res = await fetch(`/api/eis/${submissionId}/approve`, { method: "POST" });
+      const data = (await res.json()) as { error?: string };
+      if (!res.ok) {
+        setApproveError(data.error ?? "Approve failed");
+        return;
+      }
+      onApproved?.();
+    } catch {
+      setApproveError("Approve request failed");
+    } finally {
+      setApproving(false);
+    }
+  }
 
   return (
     <div className="rounded-xl border border-[#2DD4BF]/20 bg-surface-container-low/80 p-4">
@@ -42,14 +72,33 @@ export function EisPayloadPanel({
             </div>
           ) : null}
         </div>
-        <button
-          type="button"
-          onClick={onClose}
-          className="rounded-lg border border-outline-variant/20 px-3 py-1.5 font-label-sm text-label-sm text-on-surface-variant transition hover:border-outline-variant/40 hover:text-on-surface"
-        >
-          Collapse
-        </button>
+        <div className="flex flex-wrap items-center gap-2">
+          {canApprove ? (
+            <button
+              type="button"
+              disabled={approving}
+              onClick={(e) => {
+                e.stopPropagation();
+                void handleApprove();
+              }}
+              className="rounded-lg bg-[#2DD4BF] px-3 py-1.5 font-label-sm text-label-sm font-medium text-surface transition hover:bg-[#2DD4BF]/90 disabled:opacity-60"
+            >
+              {approving ? "Submitting…" : "Approve"}
+            </button>
+          ) : null}
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-lg border border-outline-variant/20 px-3 py-1.5 font-label-sm text-label-sm text-on-surface-variant transition hover:border-outline-variant/40 hover:text-on-surface"
+          >
+            Collapse
+          </button>
+        </div>
       </div>
+
+      {approveError ? (
+        <p className="mb-3 font-body-md text-body-md text-red-400/90">{approveError}</p>
+      ) : null}
 
       <div className="space-y-4">
         {groups.map((group) => (

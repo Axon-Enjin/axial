@@ -8,6 +8,10 @@
     "build": "next build --turbopack",
     "start": "next start",
     "lint": "eslint",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:e2e": "playwright test",
+    "verify:guardrails": "node scripts/verify-edge-guardrails.mjs",
     "generate:demo-pdf": "node scripts/generate-demo-invoice-pdf.mjs",
     "generate:demo-png": "node scripts/generate-demo-invoice-png.mjs"
   },
@@ -26,13 +30,17 @@
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
+    "@playwright/test": "^1.61.1",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@vitejs/plugin-react": "^4.7.0",
     "eslint": "^9",
     "eslint-config-next": "15.5.18",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vite-tsconfig-paths": "^6.1.1",
+    "vitest": "^4.1.10"
   }
 }

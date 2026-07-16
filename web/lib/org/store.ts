@@ -6,8 +6,6 @@ import type { OrgProfile, OrgTaxProfile } from "./types";
 const DATA_DIR = join(process.cwd(), "data");
 const STORE_PATH = join(DATA_DIR, "org-profile.json");
 
-const DEFAULT_ORG_ID = "demo-org";
-
 type FileStore = {
   orgs: Record<
     string,
@@ -47,7 +45,7 @@ function mapRow(row: Record<string, unknown>): OrgProfile {
 }
 
 export function resolveOrgId(orgId?: string | null): string {
-  return orgId?.trim() || DEFAULT_ORG_ID;
+  return orgId?.trim() || process.env.AXIAL_ORG_ID?.trim() || "demo-org";
 }
 
 export async function getOrgProfile(orgId?: string | null): Promise<OrgProfile | null> {

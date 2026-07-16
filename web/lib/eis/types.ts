@@ -3,8 +3,19 @@ export type LedgerEventKind =
   | "swap_executed"
   | "payroll_routed";
 
+/**
+ * EisSubmissionStatus state machine:
+ *   queued (legacy) | prepared (awaiting human review)
+ *     → on approve: submitted → acknowledged → memo_written
+ *     | failed
+ *
+ * Terminal / in-flight (never re-submit BIR): prepared (until approve),
+ * submitted, acknowledged, memo_written.
+ * Retryable: failed only (legacy queued re-enters via prepare).
+ */
 export type EisSubmissionStatus =
   | "queued"
+  | "prepared"
   | "submitted"
   | "acknowledged"
   | "memo_written"
