@@ -1,6 +1,7 @@
 "use client";
 
-import { Fragment, useCallback, useEffect, useState } from "react";
+import { Fragment, useCallback, useEffect, useRef, useState } from "react";
+import { ContractorPayPanel } from "@/components/compliance/ContractorPayPanel";
 import { EisPayloadPanel } from "@/components/compliance/EisPayloadPanel";
 import { PayrollConfirmPanel } from "@/components/compliance/PayrollConfirmPanel";
 import { FlowPipeline } from "@/components/pipeline/FlowPipeline";
@@ -154,6 +155,7 @@ type ChainStatus = {
   network: string;
   payrollReady: boolean;
   payrollContractId: string | null;
+  contractorPayrollReady?: boolean;
   explorerContractBase: string;
   explorerTxBase: string;
 };
@@ -181,6 +183,8 @@ export function ComplianceView() {
   });
   const [payrollStage, setPayrollStage] = useState<PayrollPipelineStage>("idle");
   const [pendingPayrollConfirm, setPendingPayrollConfirm] = useState(false);
+  /** Stable across Freighter retries until success or cancel. */
+  const payrollIdRef = useRef<string | null>(null);
 
   const gross = lastSwapAdvancePhp ?? FALLBACK_GROSS;
   const explorerTx =
@@ -245,7 +249,13 @@ export function ComplianceView() {
 
     setRouting(true);
     setPayrollStage("quoting");
-    const payrollId = `PAY-${Date.now()}`;
+    if (!payrollIdRef.current) {
+      payrollIdRef.current =
+        typeof crypto !== "undefined" && "randomUUID" in crypto
+          ? `PAY-${crypto.randomUUID()}`
+          : `PAY-${Date.now()}`;
+    }
+    const payrollId = payrollIdRef.current;
 
     try {
       if (signer) {
@@ -290,7 +300,12 @@ export function ComplianceView() {
         const submitRes = await fetch("/api/tx/submit", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ xdr: signedXdr, context: "payroll" }),
+          body: JSON.stringify({
+            xdr: signedXdr,
+            context: "payroll",
+            payrollId,
+            grossAmount: gross,
+          }),
         });
         const submitData = (await submitRes.json()) as { txHash?: string; error?: string };
         if (!submitRes.ok) {
@@ -304,6 +319,7 @@ export function ComplianceView() {
         }
         setRouted(true);
         setPayrollStage("complete");
+        payrollIdRef.current = null;
         const hash = submitData.txHash ?? "";
         if (hash) {
           setTxHash(hash);
@@ -669,6 +685,8 @@ export function ComplianceView() {
           </div>
         </div>
       </Card>
+
+      <ContractorPayPanel contractReady={Boolean(chain?.contractorPayrollReady)} />
 
       {pendingPayrollConfirm && quote ? (
         <PayrollConfirmPanel

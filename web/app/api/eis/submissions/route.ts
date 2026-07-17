@@ -34,6 +34,7 @@ export async function GET() {
     (s) => s.status !== "memo_written" && s.status !== "failed",
   ).length;
   const synchronized = submissions.filter((s) => s.status === "memo_written").length;
+  const failed = submissions.filter((s) => s.status === "failed").length;
 
   return NextResponse.json({
     store: getEisStoreBackend(),
@@ -41,6 +42,7 @@ export async function GET() {
     stats: {
       pending,
       synchronized,
+      failed,
       total: submissions.length,
     },
   });

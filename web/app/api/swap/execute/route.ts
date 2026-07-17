@@ -12,6 +12,7 @@ import {
   isSettlementChainEnabled,
   registerInvoiceOnChain,
 } from "@/lib/soroban/invoke-settlement";
+import { enqueuePendingRegistration } from "@/lib/settlement/pending-registration";
 import { quoteAdvance } from "@/lib/soroban/quote";
 import { assertSwapPreflight } from "@/lib/soroban/usdc-preflight";
 
@@ -178,6 +179,8 @@ export async function POST(request: Request) {
   try {
     const onChain = await executeAdvanceOnChain(cfg, invoiceId, faceUsdc, msmePublicOverride);
 
+    let registrationPending = false;
+    let registrationError: string | undefined;
     if (isSettlementChainEnabled(cfg)) {
       try {
         const reg = await registerInvoiceOnChain(cfg, invoiceId, faceUsdc, quote.advance);
@@ -186,14 +189,15 @@ export async function POST(request: Request) {
         const regMsg =
           regErr instanceof Error ? regErr.message : "register_invoice failed";
         console.error("[swap/execute] register_invoice failed:", regMsg);
-        return NextResponse.json(
-          {
-            error: regMsg,
-            swapTxHash: onChain.txHash,
-            code: "REGISTER_INVOICE_FAILED",
-          },
-          { status: 502 },
-        );
+        await enqueuePendingRegistration({
+          invoiceId,
+          swapTxHash: onChain.txHash,
+          faceUsdc,
+          advance: quote.advance,
+          lastError: regMsg,
+        });
+        registrationPending = true;
+        registrationError = regMsg;
       }
     }
 
@@ -217,6 +221,9 @@ export async function POST(request: Request) {
       advanceAmount: quote.advance,
       reserveAmount: quote.reserve,
       txHash: onChain.txHash,
+      registrationPending,
+      registrationError,
+      code: registrationPending ? "REGISTER_INVOICE_PENDING" : undefined,
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Swap failed";

@@ -91,7 +91,9 @@ export async function upsertSubmission(sub: EisSubmission): Promise<EisSubmissio
     return supabaseUpsertSubmission(sub);
   }
   const store = await readFileStore();
-  const idx = store.submissions.findIndex((s) => s.id === sub.id);
+  const idx = store.submissions.findIndex(
+    (s) => s.id === sub.id || s.idempotencyKey === sub.idempotencyKey,
+  );
   if (idx >= 0) {
     store.submissions[idx] = sub;
   } else {

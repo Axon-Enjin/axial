@@ -58,6 +58,37 @@ export function emitEisFailed(orgId: string | null | undefined, referenceId: str
   });
 }
 
+export function emitEisDueSoon(orgId: string | null | undefined, referenceId: string) {
+  emitNotification({
+    orgId,
+    kind: "eis_due_soon",
+    title: "Filing window closing",
+    body: `${referenceId} needs review within 24 hours to stay inside T+3.`,
+    href: "/app/compliance",
+  });
+}
+
+export function emitEisExpired(orgId: string | null | undefined, referenceId: string) {
+  emitNotification({
+    orgId,
+    kind: "eis_failed",
+    title: "T+3 window closed",
+    body: `${referenceId} expired without BIR submission. Open Compliance to assess next steps.`,
+    href: "/app/compliance",
+  });
+}
+
+/** Ghost-ship escalate: prepared filing unattended ≥24h. */
+export function emitEisEscalate(orgId: string | null | undefined, referenceId: string) {
+  emitNotification({
+    orgId,
+    kind: "eis_due_soon",
+    title: "Founder review needed",
+    body: `${referenceId} is still awaiting approval after 24 hours. Open Compliance to keep the T+3 window.`,
+    href: "/app/compliance",
+  });
+}
+
 export function emitDisputed(orgId: string | null | undefined, receivableId: string) {
   emitNotification({
     orgId,

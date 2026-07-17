@@ -595,6 +595,7 @@ export function LiquidityView() {
           error?: string;
           faceUsdc?: number;
           swapTxHash?: string;
+          registrationPending?: boolean;
         };
 
         if (!res.ok) {
@@ -614,6 +615,12 @@ export function LiquidityView() {
         const advanceUsdc = data.advanceAmount ?? row.immediate ?? 0;
         if (advanceUsdc > 0) {
           setLastSwapAdvancePhp(advanceUsdc);
+        }
+        if (data.registrationPending) {
+          dispatch(
+            "swap-executed",
+            "Settlement registration pending — retrying in the background.",
+          );
         }
 
         const settleRes = await fetch(`/api/invoices/${encodeURIComponent(id)}`, {
@@ -643,8 +650,11 @@ export function LiquidityView() {
               ? `tx:${id}|${swapTx}`
               : id;
         dispatch("swap-executed", payload);
-      } catch {
+      } catch (err) {
         setPipelineStage("parsed");
+        const msg =
+          err instanceof Error ? err.message : "Network error during tokenize and swap";
+        dispatch("swap-executed", `failed:${msg}`);
       } finally {
         setSwappingId(null);
         setSwapStep("idle");

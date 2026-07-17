@@ -1,3 +1,4 @@
+import { usdcWholeToStroops } from "@/lib/fx/convert";
 import type { SorobanConfig } from "./config";
 import { quoteAdvance } from "./quote";
 
@@ -86,7 +87,7 @@ export async function assertSwapPreflight(
   faceAmount: number,
 ): Promise<SwapPreflightResult> {
   const { advance } = quoteAdvance(faceAmount);
-  const advanceStroops = advance;
+  const advanceStroops = usdcWholeToStroops(advance);
 
   const [funder, msme] = await Promise.all([
     cfg.funderPublic
@@ -126,6 +127,44 @@ export async function assertSwapPreflight(
       message:
         `Treasury USDC balance is too low for this advance (needs ≥ ${advanceStroops} stroops). ` +
         "Send USDC to the funder wallet on mainnet.",
+    };
+  }
+
+  return { ok: true };
+}
+
+export type PayrollPreflightResult =
+  | { ok: true }
+  | { ok: false; message: string; code: "PAYER_NO_TRUSTLINE" | "PAYER_LOW_USDC" };
+
+/**
+ * Checks the Freighter/payer wallet can fund a payroll route (whole USDC units).
+ */
+export async function assertPayrollPreflight(
+  cfg: SorobanConfig,
+  payerPublic: string,
+  grossUsdcWhole: number,
+): Promise<PayrollPreflightResult> {
+  const needStroops = usdcWholeToStroops(grossUsdcWhole);
+  const payer = await fetchUsdcTrustlineStatus(cfg, payerPublic);
+
+  if (!payer.hasTrustline) {
+    return {
+      ok: false,
+      code: "PAYER_NO_TRUSTLINE",
+      message:
+        "Your Freighter wallet needs a USDC trustline before routing payroll. " +
+        "In Freighter → Assets → add USDC, then retry.",
+    };
+  }
+
+  if (payer.balanceStroops < needStroops) {
+    return {
+      ok: false,
+      code: "PAYER_LOW_USDC",
+      message:
+        `Wallet USDC is too low for this payroll run (needs ≥ ${needStroops} stroops). ` +
+        "Fund the wallet, then retry.",
     };
   }
 

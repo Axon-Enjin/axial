@@ -16,6 +16,7 @@ export type TestnetDeployment = {
     receivable_token?: string | null;
     payroll_split?: string | null;
     settlement?: string | null;
+    contractor_payroll?: string | null;
     usdc_token?: string | null;
   };
 };

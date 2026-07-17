@@ -24,10 +24,14 @@ export async function POST(_request: Request, context: RouteContext) {
     return NextResponse.json({ error: "Submission not found" }, { status: 404 });
   }
 
-  if (sub.status !== "prepared" && sub.status !== "failed") {
+  if (
+    sub.status !== "prepared" &&
+    sub.status !== "failed" &&
+    sub.status !== "submitted"
+  ) {
     return NextResponse.json(
       {
-        error: `Submission is "${sub.status}" — approve only for prepared or failed`,
+        error: `Submission is "${sub.status}" — approve only for prepared, failed, or stuck submitted`,
         id: sub.id,
         payloadId: sub.payloadId,
         status: sub.status,

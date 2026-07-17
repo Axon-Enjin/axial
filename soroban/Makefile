@@ -14,7 +14,7 @@ ifeq ($(NETWORK),)
 endif
 
 WASM_DIR := target/wasm32v1-none/release
-CRATES := receivable_token axial_swap payroll_split settlement
+CRATES := receivable_token axial_swap payroll_split settlement contractor_payroll
 DEPLOY_JSON := deployments/testnet.json
 
 .PHONY: build test fmt clean setup check-testnet testnet-demo deploy-testnet deploy-all $(addprefix deploy-,$(CRATES))

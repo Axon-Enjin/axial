@@ -51,7 +51,7 @@ See [`Axial.md`](Axial.md) § "Implementation status" for the full table.
 - Shot list: [`sprint.md`](sprint.md) § S0-6 (Landing → Overview → Liquidity upload/seed → confirm payer → tokenize & swap → Compliance EIS + payroll → Settings)
 - **Website blockers to verify:** Freighter on Public network, USDC trustline, fundable row before Tokenize, toast shows real `Mint … · Swap …` hashes (not invoice id only)
 
-**References:** [`flow.md`](flow.md) §3 sequence, [`product-walkthrough.md`](product-walkthrough.md), [`pbw-script.md`](pbw-script.md) (use these — not the superseded [`pitch-script.md`](pitch-script.md))
+**References:** [`flow.md`](flow.md) §3 sequence, [`product-walkthrough.md`](product-walkthrough.md), [`pbw-script.md`](pbw-script.md)
 
 ---
 
@@ -86,6 +86,27 @@ See [`Axial.md`](Axial.md) § "Implementation status" for the full table.
 
 ## P1 — Production credibility (post-hackathon core)
 
+### 3b. Chaos resilience + stablecoin payroll roadmap
+
+**Status:** `✅` — Phases 1–8 folded into plan overview; Track A on Testnet (set local env). Open: live VASP Track B, external escalate channels  
+**Plan:** [`plans/resilience-stablecoin-payroll/overview.md`](plans/resilience-stablecoin-payroll/overview.md)
+
+| Item | Status | Notes |
+|------|--------|-------|
+| USDC stroops preflight | ✅ | `usdcWholeToStroops` |
+| Lockbox pin `faceUsdc` + attribute after submit | ✅ | No Mainnet contract change |
+| EIS expire / due-soon notify; live no auto-retry | ✅ | Co-Pilot preserved when `BIR_EIS_LIVE` |
+| Overview punch-list + hold-to-confirm + chain error map | ✅ | PRD US-04 |
+| Swap `register_invoice` recovery queue | ✅ | Phase 4 — file store + `/api/settlement/register-retry` |
+| Payroll stable id + Freighter EIS hook + preflight | ✅ | Phase 5 |
+| Off-system reversal + 24h founder escalate | ✅ | Phase 6 — Funder book + `emitEisEscalate` |
+| Track A contractor USDC crate | ✅ Testnet | crate + web + deploy; local `TESTNET_CONTRACTOR_PAYROLL_CONTRACT_ID` |
+| Track B `FiatOfframp` mock | ✅ | `lib/payroll/fiat-offramp.ts` + `GET /api/payroll/offramp/quote` |
+
+**Constraint:** Mainnet-deployed Soroban crates are immutable. New crates deploy on Testnet; sync `CONTRACTS.md` + deployment examples before any Mainnet promotion talk.
+
+---
+
 ### 4. GCP Cloud Scheduler for cron jobs
 
 **Status:** `⬜` — HTTP endpoints exist; scheduler jobs may not be wired
@@ -95,6 +116,7 @@ See [`Axial.md`](Axial.md) § "Implementation status" for the full table.
 | EIS T+3 worker | `POST /api/eis/worker` | Every 6h |
 | Horizon event poll | `POST /api/eis/horizon-poll` | Every 10 min |
 | Reconciliation scan | `POST /api/reconciliation/scan` | Daily |
+| Settlement register retry | `POST /api/settlement/register-retry` | Every 15–30 min |
 
 Protect with `CRON_SECRET` (Bearer). Cloud Run has no built-in cron — use **GCP Cloud Scheduler** ([`sprint.md`](sprint.md) B-4).
 

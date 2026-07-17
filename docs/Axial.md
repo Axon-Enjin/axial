@@ -108,7 +108,12 @@ Snapshot of what ships in **`web/`** today vs locked product vision. Visual tab 
 |------|--------|-------|
 | Soroban L1 (mint, swap, payroll) | ✅ Mainnet | Happy path wired from Liquidity + Compliance |
 | BIR EIS oracle / Co-Pilot (20 fields, JWS mock, memo) | ✅ | Chain events prepare JWS payloads (`prepared`); Compliance **Approve** → BIR submit (`POST /api/eis/[id]/approve`). Demo auto-ack only when `AXIAL_ALLOW_SEED` or `EIS_DEMO_AUTO_ACK` (never when `BIR_EIS_LIVE`). Migrations `007` (`prepared` status), T+3 columns mapped in Supabase store |
-| T+3 submission worker | ✅ | `eis/worker` cron — retries `failed` inside T+3; expires `prepared`/`failed` past `dueBy`; does **not** auto-submit awaiting-review rows. Production fails closed if `CRON_SECRET` unset |
+| T+3 submission worker | ✅ | `eis/worker` cron — expires past `dueBy` with in-app notify; nudges `prepared` within 24h of `dueBy`; requeues stuck `submitted`; retries `failed` only when `BIR_EIS_LIVE` is off (preserves Co-Pilot). Does **not** auto-submit `prepared`. Production fails closed if `CRON_SECRET` unset |
+| Chaos resilience plan | ✅ | Web hardening + Track A/B in repo; Track A on Testnet. Mainnet crates immutable. See [`plans/resilience-stablecoin-payroll/overview.md`](plans/resilience-stablecoin-payroll/overview.md) |
+| Settlement register recovery | ✅ | Pending queue + cron `/api/settlement/register-retry`; swap continues after enqueue |
+| Off-system payment reversal | ✅ | Funder book “Re-route to lockbox” → Freighter deposit + mark_collected |
+| EIS founder escalate (24h) | ✅ | Worker `emitEisEscalate` for aged `prepared` rows |
+| Stablecoin payroll (Track A/B) | 🟡 | Track A Testnet live (`contractor_payroll` + env); Track B `FiatOfframp` mock until partner. Art. 102: employees PHP only |
 | Horizon event poll | ✅ | `eis/horizon-poll` cron — skips `prepared`/`submitted`/`acknowledged`/`memo_written`; production fails closed if `CRON_SECRET` unset |
 | Reconciliation / leakage scan | ✅ | `reconciliation/scan` cron — daily leakage scan; production fails closed if `CRON_SECRET` unset |
 | Factoring book | ✅ | `factoring_invoices` + `/api/invoices` pagination; OCR parse persists rows; face rewrite blocked once payer-confirmed/fundable; `face_usdc` / `attributed_inflow_usdc` (migration `009`) |
@@ -120,7 +125,8 @@ Snapshot of what ships in **`web/`** today vs locked product vision. Visual tab 
 | Public landing page | ✅ | Marketing landing at `/`; `/app` is the authenticated Overview |
 | PDAX ramp (L2) | ✅ UI | Settings demo card; **L3 Connect API not pursued — sandbox access not granted (2026-05-22)** |
 | Wallet signing | ✅ Custodial | Server-side signing with funder/MSME/issuer secrets; optional Freighter client-sign path (Q7 locked custodial 2026-05-22) |
-| On-chain lockbox enforcement | ✅ | `settlement` on Mainnet; `register_invoice` **awaited** after swap; Freighter lockbox fund converts **PHP→USDC** (Reflector); `mark_collected` uses `settling` then collected (reverts on chain fail); attributed inflow cap; stable on-chain invoice id (= business id). **S6** trust model in [`rfc-axial-closed-loop-settlement.md`](rfc-axial-closed-loop-settlement.md) |
+| On-chain lockbox enforcement | ✅ | `settlement` on Mainnet (**do not edit wasm**); `register_invoice` awaited after swap; lockbox fund pins `faceUsdc` when set; inflow attributed **after** Freighter submit; `mark_collected` requires attributed inflow on chain; settle capped to attributed/lockbox. **S6** trust model in [`rfc-axial-closed-loop-settlement.md`](rfc-axial-closed-loop-settlement.md) |
+| Overview exception punch-list | ✅ | Ranks one calm action strip when exceptions exist (PRD US-04); journey `pickActive` unchanged |
 | Funder Protection Center + portal | ✅ | `/api/funder/*`, embedded in Liquidity, `/app/funder-portal` (token or session) |
 | Trust & Boundary ack gate | ✅ | Settings card + tokenize blocked until acknowledged (draft counsel copy) |
 | Payer dispute workflow | ✅ | `/api/disputes`, payer portal, eligibility `disputed` blocker |
@@ -545,6 +551,8 @@ Three tabs would force bias (Overview becomes either Liquidity or Compliance's h
 **What they need to see to convert:** Proof of an end-to-end flow — capital in, payroll out, BIR/EIS status visible — with pilot-friendly, white-glove onboarding.
 
 ### 8.2 Secondary ICP — Institutional F&B Suppliers and B2B Distributors
+
+> **ICP order (2026-07):** Active secondary wedges are foreign founders + Web3 startups — see [gtm-axial.md](gtm-axial.md). F&B remains tertiary (Phase 3 scale).
 
 **Who:** Medium enterprises scaling production. Bulk volume sales, recurring institutional purchase orders to supermarket chains, hotel groups, or restaurant franchises holding payments 90–120 days.
 

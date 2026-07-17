@@ -2,20 +2,28 @@
  * POST /api/tx/submit
  *
  * Submits a Freighter-signed Stellar transaction XDR to the network.
- * Used by all Freighter self-custody flows (payroll, and future mint/swap).
+ * Used by all Freighter self-custody flows (payroll, lockbox fund, mint/swap).
  *
  * The client signs the unsigned XDR returned from /api/[type]/build with the
  * Freighter extension, then POSTs the signed envelope here.
  */
 import { NextResponse } from "next/server";
 import { rpc, TransactionBuilder } from "@stellar/stellar-sdk";
+import { triggerEisFromChain } from "@/lib/eis/trigger";
+import { attributeLockboxInflow } from "@/lib/invoices/store";
 import { resolveSorobanConfig } from "@/lib/soroban/server-config";
 
 type Body = {
   /** Base64 signed transaction envelope XDR (from Freighter signTransaction). */
   xdr?: string;
-  /** Optional: context label for logging ("payroll", "mint", "swap"). */
+  /** Optional: context label for logging ("payroll", "lockbox_fund", "mint", "swap"). */
   context?: string;
+  /** Required when context is lockbox_fund — attributes inflow only after broadcast. */
+  invoiceId?: string;
+  amountUsdc?: number;
+  /** Payroll Freighter path — EIS enqueue after broadcast. */
+  payrollId?: string;
+  grossAmount?: number;
 };
 
 export async function POST(request: Request) {
@@ -55,6 +63,45 @@ export async function POST(request: Request) {
 
     const context = body.context ?? "unknown";
     console.info(`[tx/submit] context=${context} hash=${result.hash} status=${result.status}`);
+
+    if (
+      context === "lockbox_fund" &&
+      body.invoiceId?.trim() &&
+      Number.isFinite(body.amountUsdc) &&
+      (body.amountUsdc ?? 0) > 0
+    ) {
+      try {
+        await attributeLockboxInflow(body.invoiceId.trim(), body.amountUsdc!);
+      } catch (attrErr) {
+        const msg =
+          attrErr instanceof Error ? attrErr.message : "Lockbox inflow attribution failed";
+        console.error("[tx/submit] attributeLockboxInflow", msg);
+        return NextResponse.json(
+          {
+            txHash: result.hash,
+            status: result.status,
+            warning: msg,
+            code: "INFLOW_ATTRIBUTE_FAILED",
+          },
+          { status: 200 },
+        );
+      }
+    }
+
+    if (
+      context === "payroll" &&
+      body.payrollId?.trim() &&
+      Number.isFinite(body.grossAmount) &&
+      (body.grossAmount ?? 0) > 0
+    ) {
+      triggerEisFromChain(
+        "payroll_routed",
+        body.payrollId.trim(),
+        result.hash,
+        body.grossAmount!,
+        cfg.network,
+      );
+    }
 
     return NextResponse.json({
       txHash: result.hash,

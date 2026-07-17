@@ -226,7 +226,7 @@ When B-10 or S5 lands, update in order:
 3. [`remaining-work-axial.md`](remaining-work-axial.md) — Mark B-10 done; remove “v1 skip”  
 4. [`sprint.md`](sprint.md) — B-10 status  
 5. [`prd-axial.md`](prd-axial.md) — US-06 traceability (optional footnote)  
-6. Demo script [`pbw-script.md`](pbw-script.md) / [`product-walkthrough.md`](product-walkthrough.md) — Add 30s “Funder Protection Center” beat (not the superseded [`pitch-script.md`](pitch-script.md))  
+6. Demo script [`pbw-script.md`](pbw-script.md) / [`product-walkthrough.md`](product-walkthrough.md) — Add 30s “Funder Protection Center” beat  
 
 **flow.md row change (target):**
 

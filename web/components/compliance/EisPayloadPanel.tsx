@@ -35,7 +35,11 @@ export function EisPayloadPanel({
   onApproved,
 }: Props) {
   const groups = [...new Set(EIS_PAYLOAD_FIELDS.map((f) => f.group))];
-  const canApprove = pipelineStatus === "prepared" && Boolean(submissionId);
+  const canApprove =
+    Boolean(submissionId) &&
+    (pipelineStatus === "prepared" ||
+      pipelineStatus === "failed" ||
+      pipelineStatus === "submitted");
   const [approving, setApproving] = useState(false);
   const [approveError, setApproveError] = useState<string | null>(null);
 

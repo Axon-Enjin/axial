@@ -4,6 +4,7 @@ export type NotificationKind =
   | "pre_due"
   | "leaked"
   | "eis_failed"
+  | "eis_due_soon"
   | "org_frozen"
   | "disputed";
 

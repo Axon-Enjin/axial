@@ -239,7 +239,12 @@ export function PayerPortalView({ token, invoiceId }: Props) {
       const submitRes = await fetch("/api/tx/submit", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ xdr: signedXdr, context: "lockbox_fund" }),
+        body: JSON.stringify({
+          xdr: signedXdr,
+          context: "lockbox_fund",
+          invoiceId: rid,
+          amountUsdc: build.amountUsdc,
+        }),
       });
       const submit = (await submitRes.json()) as { txHash?: string; error?: string };
       if (!submitRes.ok || !submit.txHash) {

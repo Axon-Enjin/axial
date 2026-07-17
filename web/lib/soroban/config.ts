@@ -15,6 +15,8 @@ export type SorobanConfig = {
   receivableContractId: string | null;
   payrollContractId: string | null;
   settlementContractId: string | null;
+  /** Track A contractor USDC pay — Testnet-only crate. */
+  contractorPayrollContractId: string | null;
   usdcTokenId: string | null;
   funderSecret: string | null;
   funderPublic: string | null;
@@ -76,6 +78,12 @@ export function getSorobanConfig(
   const settlementContractId =
     envForNetwork(network, "SETTLEMENT_CONTRACT_ID") ??
     cleanEnvString(deployment?.contracts?.settlement ?? null);
+  const contractorPayrollContractId =
+    envForNetwork(network, "CONTRACTOR_PAYROLL_CONTRACT_ID") ??
+    cleanEnvString(
+      (deployment?.contracts as { contractor_payroll?: string | null } | undefined)
+        ?.contractor_payroll ?? null,
+    );
   const usdcTokenId =
     envForNetwork(network, "SOROBAN_USDC_TOKEN_ID") ??
     cleanEnvString(deployment?.contracts?.usdc_token ?? null) ??
@@ -122,6 +130,7 @@ export function getSorobanConfig(
     receivableContractId,
     payrollContractId,
     settlementContractId,
+    contractorPayrollContractId,
     usdcTokenId,
     funderSecret: envForNetwork(network, "STELLAR_FUNDER_SECRET"),
     funderPublic,
@@ -172,6 +181,22 @@ export function isLockboxFundingEnabled(cfg: SorobanConfig): boolean {
   return Boolean(cfg.settlementContractId && cfg.usdcTokenId);
 }
 
+/** Track A is Testnet-only — never enable against Mainnet operating config. */
+export function isContractorPayrollBuildEnabled(cfg: SorobanConfig): boolean {
+  return (
+    cfg.network === "testnet" &&
+    Boolean(cfg.contractorPayrollContractId && cfg.usdcTokenId)
+  );
+}
+
+/**
+ * Resolve config for Track A contractor pay. Always Testnet, independent of
+ * the app's Mainnet operating network.
+ */
+export function getContractorPayrollTestnetConfig(): SorobanConfig {
+  return getSorobanConfig("testnet");
+}
+
 /** Public-only snapshot for UI (no secrets). */
 export function getPublicChainStatus(cfg: SorobanConfig) {
   return {
@@ -188,10 +213,15 @@ export function getPublicChainStatus(cfg: SorobanConfig) {
     payrollReady: isPayrollChainEnabled(cfg),
     payrollBuildReady: isPayrollBuildEnabled(cfg),
     lockboxFundingReady: isLockboxFundingEnabled(cfg),
+    contractorPayrollReady: isContractorPayrollBuildEnabled(
+      getContractorPayrollTestnetConfig(),
+    ),
     swapContractId: cfg.swapContractId,
     receivableContractId: cfg.receivableContractId,
     payrollContractId: cfg.payrollContractId,
     settlementContractId: cfg.settlementContractId,
+    contractorPayrollContractId: getContractorPayrollTestnetConfig()
+      .contractorPayrollContractId,
     usdcTokenId: cfg.usdcTokenId,
     funderPublic: cfg.funderPublic,
     msmePublic: cfg.msmePublic,

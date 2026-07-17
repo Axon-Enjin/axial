@@ -7,6 +7,7 @@ import { Icon } from "@/components/ui/Icon";
 import { StatTile } from "@/components/ui/StatTile";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import type { FunderBookPage, FunderDealRow, FunderDealStatus } from "@/lib/funder/types";
+import { OffSystemReversalPanel } from "@/components/liquidity/OffSystemReversalPanel";
 import { FunderDealDrawer } from "./FunderDealDrawer";
 import { FunderTxLinks } from "./FunderTxLinks";
 
@@ -68,6 +69,7 @@ export function FunderProtectionCenter({
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [portalLink, setPortalLink] = useState<string | null>(null);
   const [linkCopied, setLinkCopied] = useState(false);
+  const [reversalDeal, setReversalDeal] = useState<FunderDealRow | null>(null);
   const hasLoadedRef = useRef(false);
 
   const loadBook = useCallback(async (targetPage: number, silent?: boolean) => {
@@ -276,7 +278,18 @@ export function FunderProtectionCenter({
                           : "—"}
                       </td>
                       <td className="px-3 py-3 sm:px-4 md:px-6 text-center">
-                        {dealStatusBadge(row.dealStatus)}
+                        <div className="flex flex-col items-center gap-1">
+                          {dealStatusBadge(row.dealStatus)}
+                          {row.dealStatus === "leaked" || row.dealStatus === "partial" ? (
+                            <button
+                              type="button"
+                              className="font-label-sm text-[10px] text-[#2DD4BF] hover:underline"
+                              onClick={() => setReversalDeal(row)}
+                            >
+                              Re-route to lockbox
+                            </button>
+                          ) : null}
+                        </div>
                       </td>
                       <td className="px-3 py-3 sm:px-4 md:px-6 text-right">
                         <FunderTxLinks
@@ -341,6 +354,19 @@ export function FunderProtectionCenter({
         </div>
       ) : null}
     </Card>
+
+      {reversalDeal ? (
+        <OffSystemReversalPanel
+          invoiceId={reversalDeal.receivableId}
+          party={reversalDeal.party}
+          facePhp={reversalDeal.faceAmount}
+          onCancel={() => setReversalDeal(null)}
+          onDone={() => {
+            setReversalDeal(null);
+            void loadBook(page, true);
+          }}
+        />
+      ) : null}
     </div>
   );
 }

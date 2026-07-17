@@ -19,10 +19,12 @@ npm install
 npm run dev     # Dev server with Turbopack (http://localhost:3000)
 npm run build   # Production build (next build --turbopack)
 npm run lint    # ESLint
+npm test        # Vitest unit/guardrail tests
+npm run test:e2e # Playwright (dev server required)
 npm start       # Production server
 ```
 
-There is no test runner in `web/` — verify changes by running the dev server.
+Roadmap for chaos resilience + stablecoin payroll (Testnet-first new crates): [`docs/plans/resilience-stablecoin-payroll/overview.md`](docs/plans/resilience-stablecoin-payroll/overview.md). **Do not edit Mainnet-deployed Soroban crates**; new contracts deploy on Testnet first.
 
 Soroban — build/deploy from **WSL** (Stellar CLI + Rust live there; repo is on the Windows drive). The repo is at `D:\PROJECTS\axial`, i.e. `/mnt/d/PROJECTS/axial` in WSL. See `soroban/README.md`, `soroban/CONTRIBUTING.md`, `soroban/CONTRACTS.md`.
 
@@ -44,12 +46,11 @@ A single contract's tests: `cd soroban/contracts/<crate> && cargo test`, or `car
 
 ```
 axial/
-├── soroban/      # Rust/Soroban workspace — 4 contract crates (build/deploy from WSL)
-├── web/          # Next.js 15 App Router — UI + API routes + backend logic
-├── supabase/     # SQL migrations for the hosted Supabase project
-├── docs/         # Product docs: Axial.md (canonical), flow.md, pitch-deck.html, brd/prd/sdd/dsd/gtm, rfc-*
-├── scripts/      # Tooling (pitch-deck PDF generation)
-└── claude-design/ # Design scratch — design system + UI-kit exports, not wired into the app
+├── soroban/   # Rust/Soroban workspace (Mainnet L1 + Testnet contractor_payroll)
+├── web/       # Next.js 15 — UI + API routes
+├── supabase/  # SQL migrations
+├── docs/      # Axial.md (canonical), flow.md, plans/, rfc-*
+└── scripts/   # Tooling (pitch-deck PDF)
 ```
 
 ### Frontend + Backend live together in `web/`
@@ -66,7 +67,7 @@ The "backend" is **Next.js Route Handlers under `web/app/api/`** — there is no
 - `(auth)/` route group — `login` and `invite` pages with their own minimal layout; `auth/callback/route.ts` handles the Supabase OAuth code exchange.
 - `app/app/layout.tsx` — the authenticated **AppShell** layout (renders `AppShell`, resolves chain status + auth user server-side). Tabs under `/app/*`: `app/page.tsx` (Overview), `liquidity/`, `compliance/`, `settings/`, plus `payer-portal/` (token-authenticated, outside the org session).
 
-Each page is a thin wrapper that renders a view from `components/views/` (`OverviewView`, `LiquidityView`, `PayerPortalView`, etc.). `components/stitch/` holds older design-export versions of those views — `components/views/` is the live set. Shared shell in `components/layout/`, primitives in `components/ui/`, client state via `components/providers/AppProvider.tsx`.
+Each page is a thin wrapper that renders a view from `components/views/` (`OverviewView`, `LiquidityView`, `PayerPortalView`, etc.). Shared shell in `components/layout/`, primitives in `components/ui/`, client state via `components/providers/AppProvider.tsx`.
 
 **Auth (`web/middleware.ts`):** Supabase SSR session refresh + route protection. `/app/*` redirects to `/login` when no session; `/app/payer-portal` is exempt (token-based). **If Supabase env vars are unset the middleware is a no-op** and `/app/*` is open — this is the local file-fallback dev mode. Org-scoped multi-tenancy and invites: `api/auth/*`, migration `006`.
 
@@ -129,7 +130,7 @@ Finalized 2026-05-14 — do not reopen without updating `docs/Axial.md` first.
 | PHPC | ❌ Retired — on Polygon/Ronin not Stellar; exited BSP sandbox July 2025 |
 | BIR EIS mandate scope | Phase 1 taxpayers only (Large Taxpayers, e-commerce, exporters, ≥₱1B gross sales, CAS/CBA users) |
 
-**Current deploy reality:** Axial runs on **Stellar Mainnet** — all 4 contracts deployed and initialized (`soroban/deployments/mainnet.json`), settled in Circle USDC (SAC `CCW67TSZV3SSS2HXMBQ5JFGCKJNXKZM7UQUWUZPUTHXSTZLEO7SJMI75`). Testnet remains a developer sandbox only — not an operating target.
+**Current deploy reality:** Axial runs on **Stellar Mainnet** — 4 L1 contracts deployed (`soroban/deployments/mainnet.json`), Circle USDC. Testnet is sandbox only; Track A `contractor_payroll` is Testnet-deployed (see plan overview).
 
 ## Build Scope (L1 → L3)
 

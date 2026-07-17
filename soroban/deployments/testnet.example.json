@@ -9,6 +9,7 @@
     "receivable_token": null,
     "axial_swap": null,
     "payroll_split": null,
-    "settlement": null
+    "settlement": null,
+    "contractor_payroll": null
   }
 }

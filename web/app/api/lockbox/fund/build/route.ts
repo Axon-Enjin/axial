@@ -2,13 +2,13 @@
  * POST /api/lockbox/fund/build
  *
  * Builds an unsigned USDC SAC transfer XDR for the payer Freighter path.
- * Body `amount` is PHP face (or omit to use invoice.face). Server converts to
- * whole USDC units for the on-chain transfer. Response `amount` is USDC
- * (backward-compat field for the on-chain amount).
+ * Body `amount` is PHP face (or omit to use invoice.face). Uses write-once
+ * `invoice.faceUsdc` when set so collection FX matches the advance leg.
+ * Does **not** attribute inflow — that happens after confirmed `/api/tx/submit`.
  */
 import { NextResponse } from "next/server";
 import { resolveFaceUsdc } from "@/lib/fx/convert";
-import { attributeLockboxInflow, getInvoice } from "@/lib/invoices/store";
+import { getInvoice, setInvoiceFaceUsdc } from "@/lib/invoices/store";
 import { buildLockboxFundXdr } from "@/lib/soroban/build-tx";
 import { isLockboxFundingEnabled } from "@/lib/soroban/config";
 import { resolveSorobanConfig } from "@/lib/soroban/server-config";
@@ -74,8 +74,25 @@ export async function POST(request: Request) {
   }
 
   try {
-    const fx = await resolveFaceUsdc(amountPhp);
-    const amountUsdc = fx.faceUsdc;
+    let amountUsdc: number;
+    let phpPerUsdc: number;
+    let fxSource: string;
+
+    if (invoice.faceUsdc != null && invoice.faceUsdc > 0) {
+      amountUsdc = Math.trunc(invoice.faceUsdc);
+      const fx = await resolveFaceUsdc(amountPhp);
+      phpPerUsdc = fx.phpPerUsdc;
+      fxSource = "invoice.faceUsdc";
+    } else {
+      const fx = await resolveFaceUsdc(amountPhp);
+      amountUsdc = fx.faceUsdc;
+      phpPerUsdc = fx.phpPerUsdc;
+      fxSource = fx.source;
+      if (amountUsdc > 0) {
+        await setInvoiceFaceUsdc(invoiceId, amountUsdc);
+      }
+    }
+
     if (amountUsdc <= 0) {
       return NextResponse.json(
         { error: "Converted USDC amount must be positive" },
@@ -84,7 +101,6 @@ export async function POST(request: Request) {
     }
 
     const xdr = await buildLockboxFundXdr(cfg, payerPublic, amountUsdc);
-    await attributeLockboxInflow(invoiceId, amountUsdc);
 
     return NextResponse.json({
       xdr,
@@ -93,8 +109,8 @@ export async function POST(request: Request) {
       amount: amountUsdc,
       amountPhp,
       amountUsdc,
-      phpPerUsdc: fx.phpPerUsdc,
-      fxSource: fx.source,
+      phpPerUsdc,
+      fxSource,
       lockboxAddress: cfg.settlementContractId,
       usdcAsset: cfg.usdcTokenId,
       network: cfg.network,

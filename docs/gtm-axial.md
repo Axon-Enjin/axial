@@ -1,12 +1,13 @@
 # Go-To-Market Strategy (GTM)
 
 **Project:** Axial  
-**Date:** 2026-05-14  
-**Version:** 0.2  
+**Date:** 2026-07-17  
+**Version:** 0.3  
 **Owner:** Axial Product Lead  
 **Status:** Draft  
 **Foundation:** [Axial.md](../Axial.md)  
-**PRD:** [prd-axial.md](prd-axial.md)
+**PRD:** [prd-axial.md](prd-axial.md)  
+**Resilience / payroll plan:** [plans/resilience-stablecoin-payroll/overview.md](plans/resilience-stablecoin-payroll/overview.md)
 
 **Related:** [BRD](brd-axial.md) · [DSD](dsd-axial.md) · [SDD](sdd-axial.md)
 
@@ -16,7 +17,7 @@
 
 **What it does (one sentence):** Axial gives Philippine B2B MSMEs instant working capital from tokenized receivables and effortless compliance — statutory payroll routing and review-and-submit BIR EIS filing — on Stellar/Soroban, with a calm, architect-grade UI.
 
-**Who it's for:** Digitally fluent B2B service MSMEs (10–50 people) — software, creative, specialized manpower agencies — whose enterprise buyers enforce Net 60–90 while payroll and government obligations run on shorter, non-negotiable cycles.
+**Who it's for:** Export-facing B2B service MSMEs first (software, creative, BPO/manpower agencies) whose foreign clients pay Net 60–90 while local payroll and BIR run on shorter cycles. Secondary: foreign founders with PH teams who hold USDC and need compliant last-mile PHP wages; Web3-native startups that need a regulatory bridge.
 
 **Core value proposition:** "Instant capital, effortless compliance." Liquidity when you need it. Statutory and BIR filings prepared for you and submitted on your approval — verified outcomes, not spreadsheet panic.
 
@@ -28,27 +29,39 @@
 
 ## 2. Target Audience
 
-### Primary ICP — B2B Tech, Creative, and Specialized Manpower Agencies
+### Primary ICP — Local export-facing agencies (tech, creative, BPO / specialized manpower)
 
-- *Who:* Founders and finance leads at lean B2B service agencies; comfortable with APIs and modern UX; personally feel the payroll vs. receivables timing squeeze because their primary cost is human talent
-- *Size:* 10–50 employees
-- *Revenue model:* Project-based retainers, milestone billing, custom software or digital infrastructure contracts
-- *Client profile:* Larger, established corporate clients enforcing Net 60–90 payment terms
-- *Where they are:* Agency founder networks, Philippine tech community events (third-wave coffee shops, co-working spaces, PH startup Slack/Discord), LinkedIn (qualified segments, not spray-and-pray)
-- *What they already believe:* Compliance and liquidity are cost centers they are forced to deal with; they will pay for reliability and time returned
-- *What they need to convert:* Proof of the end-to-end flow — capital in, payroll out, BIR/EIS status visible — with pilot-friendly, white-glove onboarding and a real reference account they can talk to
+- *Who:* Founders and finance leads at lean B2B service agencies; bill foreign or enterprise clients on Net 60–90 while paying local staff bi-weekly
+- *Size:* 10–50 people (employees + contractors)
+- *Revenue model:* Retainers, milestone billing, outbound services priced in USD/foreign currency, costs in PHP
+- *Client profile:* Overseas buyers or large PH enterprises with long AP cycles
+- *Where they are:* Agency founder networks, PH tech/BPO communities, LinkedIn (qualified segments)
+- *What they already believe:* Liquidity and compliance are cost centers; they will pay for reliability and time returned
+- *What they need to convert:* Proof — capital in, payroll funded, BIR/EIS status visible — with white-glove pilot onboarding
+- *Web3 posture:* Prefer a calm PHP UI. Stellar/USDC stays under the hood unless they ask
 
 **Why they are the wedge:**
-- Digitally native — they immediately grasp the value of API bridges and automated logic; blockchain education is minimal
-- Acutely feel the pain — payroll pressure is personal, not delegated
-- Highly networked — one satisfied account generates multiple warm referrals through founder circles
-- Short sales cycle — no procurement committee, no IT security review for pilot entry
+- Pain is cash-flow timing, not “learn blockchain”
+- Digitally fluent enough to adopt modern UX without DeFi education
+- Highly networked — one reference account seeds warm intros
+- Short sales cycle vs. enterprise procurement
 
-### Secondary Audience — Institutional F&B Suppliers and B2B Distributors
+### Secondary ICP — Foreign founders with PH teams
 
-- *Who:* Medium enterprises scaling production; bulk volume sales to supermarket chains, hotel groups, restaurant franchises holding payments 90–120 days
-- *Why secondary:* Longer operational validation path; physical supply chain complexity requires the core infrastructure to be proven in service environments first
-- *Why they matter:* Invoice volumes are higher and predictable (better yields for liquidity providers); winning them proves the system at scale and integrates Axial into the lifeblood of local commerce
+- *Who:* Non-PH founders operating PH entities or EORs; treasury often in USDC/crypto
+- *Pain:* Remittance fees and friction converting stablecoins to PHP for salaries and statutory remittances
+- *Axial value:* Fund operations in USDC; Track B fiat-bridged payroll (when live) + Co-Pilot EIS; contractors may be paid USDC on-chain (Track A, Labor Code Art. 102 aware)
+
+### Secondary ICP — Web3-native startups
+
+- *Who:* Teams already on Stellar/crypto rails that still must satisfy BIR and statutory agencies
+- *Axial value:* Regulatory bridge — stay on-chain where legal, stay compliant where the Labor Code and BIR demand fiat/process
+
+### Tertiary — Institutional F&B suppliers and B2B distributors
+
+- *Who:* Medium enterprises selling into supermarket/hotel/franchise AP cycles (90–120 days)
+- *Why later:* Physical supply-chain complexity; prove agency wedge first
+- *Why they matter:* Higher invoice volume for liquidity partners once core is stable
 
 ---
 
@@ -69,7 +82,8 @@
 |---|---|
 | "Crypto is too risky for my business." | Axial settles on Stellar using USDC — a dollar-backed stablecoin issued by Circle, regulated under US law, and integrated with Visa and PayPal. PHP conversion happens at the edges via PDAX, a BSP-licensed exchange. You are not holding speculative crypto; you are using programmable payment infrastructure with a PHP front door. |
 | "We already outsource accounting." | Axial absorbs execution friction — payroll runs, EIS submissions, statutory routing — so your accountant reviews outcomes rather than performs manual steps. Complements, does not replace, advisor relationships. |
-| "Government APIs scare us." | Transparent submission states, idempotent retries, calm failure UX. Axial tells you what happened and what it is doing about it — it does not silently fail or blame you for a broken portal. |
+| "Government APIs scare us." | Transparent submission states, idempotent retries, calm failure UX. T+3 approach and expiry notify in-app; live BIR never auto-submits without human approve. |
+| "Can we pay staff in USDC?" | Independent contractors may be paid USDC on Stellar (Track A, Testnet-first). Regular employees must receive PHP legal tender (Labor Code Art. 102) via a licensed fiat edge (Track B, mock until partner). |
 | "Why not just use invoice factoring?" | Traditional factoring requires physical collateral and takes days. Axial tokenizes the receivable on-chain and delivers settlement proceeds in minutes (USDC on Stellar, shown in PHP), with no collateral requirement — underwriting is based on on-chain receivable quality and smart contract execution. |
 
 ---
@@ -146,7 +160,7 @@ Aligned with [Axial.md §8.3](../Axial.md):
 
 ## Self-Check
 
-- [x] ICP is specific (agencies wedge first, F&B second, ad tax Phase 4)
+- [x] ICP is specific (export agencies wedge; foreign founders + Web3 startups secondary; F&B tertiary; ad tax Phase 4)
 - [x] Phases have product entry criteria; dates TBD pending build timeline
 - [x] Objection handling is specific and substantive
 - [x] Competitive frame is clear (vs. status quo, not vs. Xero)

@@ -19,6 +19,7 @@ import {
   rpc,
   Transaction,
   TransactionBuilder,
+  xdr,
 } from "@stellar/stellar-sdk";
 import type { SorobanConfig } from "./config";
 
@@ -136,4 +137,42 @@ export async function buildMintXdr(
     nativeToScVal(invoiceId, { type: "string" }),
     nativeToScVal(BigInt(Math.trunc(faceAmount)), { type: "i128" }),
   ]);
+}
+
+/**
+ * Build unsigned `route_batch` for Track A contractor USDC pay (Testnet).
+ * Parallel wallet/amount vectors must match the contract API.
+ */
+export async function buildContractorBatchXdr(
+  cfg: SorobanConfig,
+  batchId: string,
+  wallets: string[],
+  amounts: number[],
+  signerPublic: string,
+): Promise<string> {
+  if (!cfg.contractorPayrollContractId) {
+    throw new Error(
+      "Contractor payroll not configured (TESTNET_CONTRACTOR_PAYROLL_CONTRACT_ID missing).",
+    );
+  }
+  if (wallets.length !== amounts.length) {
+    throw new Error("wallets and amounts length mismatch");
+  }
+  const walletVec = xdr.ScVal.scvVec(wallets.map((w) => new Address(w).toScVal()));
+  const amountVec = xdr.ScVal.scvVec(
+    amounts.map((a) => nativeToScVal(BigInt(Math.trunc(a)), { type: "i128" })),
+  );
+
+  return simulateAndPrepareXdr(
+    cfg,
+    signerPublic,
+    cfg.contractorPayrollContractId,
+    "route_batch",
+    [
+      new Address(signerPublic).toScVal(),
+      nativeToScVal(batchId, { type: "string" }),
+      walletVec,
+      amountVec,
+    ],
+  );
 }

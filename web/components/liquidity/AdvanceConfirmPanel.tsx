@@ -1,7 +1,9 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { Icon } from "@/components/ui/Icon";
+import { phpToUsdcWhole } from "@/lib/fx/convert";
 import { DEFAULT_ADVANCE_BPS, quoteAdvance } from "@/lib/soroban/quote";
 
 function formatPhp(n: number) {
@@ -25,13 +27,62 @@ type Props = {
   onConfirm: () => void;
 };
 
+const HOLD_MS = 3000;
+
 /**
  * Clear-signing panel — plain-language preview before mint + swap.
- * Amounts in PHP, named recipients, compliance side-effects listed.
+ * Advance/reserve derived from FX→USDC face (same path as execute), shown in PHP.
+ * Primary CTA requires a 3-second hold to reduce fat-finger executes.
  */
 export function AdvanceConfirmPanel({ draft, busy, onCancel, onConfirm }: Props) {
-  const { advance, reserve, advanceBps } = quoteAdvance(draft.face);
+  const [phpPerUsdc, setPhpPerUsdc] = useState<number | null>(null);
+  const [holdProgress, setHoldProgress] = useState(0);
+  const [holding, setHolding] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    void fetch("/api/fx/rate")
+      .then((r) => r.json())
+      .then((data: { phpPerUsdc?: number }) => {
+        if (!cancelled && Number.isFinite(data.phpPerUsdc) && (data.phpPerUsdc ?? 0) > 0) {
+          setPhpPerUsdc(data.phpPerUsdc!);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setPhpPerUsdc(56.5);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const rate = phpPerUsdc ?? 56.5;
+  const faceUsdc = phpToUsdcWhole(draft.face, rate);
+  const { advance: advanceUsdc, reserve: reserveUsdc, advanceBps } = quoteAdvance(faceUsdc);
+  const advancePhp = Math.round(advanceUsdc * rate);
+  const reservePhp = Math.round(reserveUsdc * rate);
   const pct = (advanceBps / 100).toFixed(0);
+
+  useEffect(() => {
+    if (!holding || busy) return;
+    const started = Date.now();
+    const id = window.setInterval(() => {
+      const p = Math.min(1, (Date.now() - started) / HOLD_MS);
+      setHoldProgress(p);
+      if (p >= 1) {
+        window.clearInterval(id);
+        setHolding(false);
+        setHoldProgress(0);
+        onConfirm();
+      }
+    }, 50);
+    return () => window.clearInterval(id);
+  }, [holding, busy, onConfirm]);
+
+  function releaseHold() {
+    setHolding(false);
+    setHoldProgress(0);
+  }
 
   return (
     <div
@@ -79,14 +130,22 @@ export function AdvanceConfirmPanel({ draft, busy, onCancel, onConfirm }: Props)
               Advance to your wallet ({pct}%)
             </dt>
             <dd className="font-headline-sm text-[15px] font-semibold text-[#2DD4BF]">
-              {formatPhp(advance)}
+              {formatPhp(advancePhp)}
             </dd>
           </div>
           <div className="flex justify-between gap-4">
             <dt className="font-label-sm text-[11px] uppercase tracking-wider text-on-surface-variant">
               Holdback reserve
             </dt>
-            <dd className="font-body-md text-[13px] text-on-surface">{formatPhp(reserve)}</dd>
+            <dd className="font-body-md text-[13px] text-on-surface">{formatPhp(reservePhp)}</dd>
+          </div>
+          <div className="flex justify-between gap-4">
+            <dt className="font-label-sm text-[11px] uppercase tracking-wider text-on-surface-variant">
+              On-chain face (USDC)
+            </dt>
+            <dd className="font-body-md text-[13px] text-on-surface-variant">
+              {faceUsdc.toLocaleString()} USDC @ {rate.toFixed(2)}
+            </dd>
           </div>
         </dl>
 
@@ -114,16 +173,28 @@ export function AdvanceConfirmPanel({ draft, busy, onCancel, onConfirm }: Props)
           <Button variant="ghost" size="sm" disabled={busy} onClick={onCancel}>
             Cancel
           </Button>
-          <Button
-            variant="teal"
-            size="sm"
-            glow
+          <button
+            type="button"
             disabled={busy}
-            icon={busy ? "progress_activity" : "bolt"}
-            onClick={onConfirm}
+            className="relative overflow-hidden rounded-lg bg-[#2DD4BF] px-4 py-2 font-label-md text-[13px] font-medium text-on-primary disabled:opacity-50"
+            onPointerDown={() => !busy && setHolding(true)}
+            onPointerUp={releaseHold}
+            onPointerLeave={releaseHold}
+            onPointerCancel={releaseHold}
           >
-            {busy ? "Executing…" : "Confirm & execute"}
-          </Button>
+            <span
+              className="absolute inset-y-0 left-0 bg-white/25 transition-[width]"
+              style={{ width: `${holdProgress * 100}%` }}
+              aria-hidden
+            />
+            <span className="relative">
+              {busy
+                ? "Executing…"
+                : holding
+                  ? "Keep holding…"
+                  : "Hold 3s to execute"}
+            </span>
+          </button>
         </div>
       </div>
     </div>

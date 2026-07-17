@@ -11,6 +11,7 @@ import { TreasuryBalancesCard } from "@/components/overview/TreasuryBalancesCard
 import { ConnectionJourneyMap } from "@/components/pipeline/ConnectionJourneyMap";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { deriveOrgJourney } from "@/lib/pipeline/journey";
+import { rankOverviewExceptions } from "@/lib/pipeline/overview-exceptions";
 
 type BarSpec = { h: number; active?: boolean };
 
@@ -64,6 +65,7 @@ type DashboardSummary = {
 type EisStats = {
   pending: number;
   synchronized: number;
+  failed?: number;
   total: number;
 };
 
@@ -282,8 +284,35 @@ export function OverviewView() {
     orgFrozen,
   });
 
+  const exceptions = rankOverviewExceptions({
+    orgFrozen,
+    eisFailed: eisStats.failed ?? 0,
+    eisPending: eisStats.pending,
+    funderAtRisk: funderSummary?.atRisk ?? summary?.funder?.atRisk ?? 0,
+  });
+  const primaryException = exceptions[0] ?? null;
+
   return (
     <main className="mx-auto max-w-container-max px-4 py-5 sm:px-6 sm:py-6 md:px-margin-desktop md:py-7">
+      {primaryException ? (
+        <div className="mb-5 rounded-lg border border-outline-variant/20 bg-surface-container/40 px-4 py-3">
+          <p className="font-label-sm text-[11px] uppercase tracking-wider text-on-surface-variant">
+            {exceptions.length === 1
+              ? "1 item needs your attention"
+              : `${exceptions.length} items need your attention`}
+          </p>
+          <div className="mt-2 flex flex-wrap items-center justify-between gap-3">
+            <p className="font-body-md text-[14px] text-on-surface">{primaryException.title}</p>
+            <Link
+              href={primaryException.href}
+              className="font-label-md text-[13px] text-[#2DD4BF] hover:underline"
+            >
+              Continue
+            </Link>
+          </div>
+        </div>
+      ) : null}
+
       {summary ? (
         <div className="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-4">
           {[

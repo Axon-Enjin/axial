@@ -16,7 +16,7 @@
 
 Axial is a **liquidity and compliance engine** for Philippine MSMEs. It lets businesses unlock cash from tokenized receivables through Stellar/Soroban atomic swaps into USDC on Stellar (proceeds displayed in PHP), automatically split and route statutory payroll obligations (SSS, PhilHealth, Pag-IBIG), and generate BIR EIS payloads after ledger-final events and surface them for one-click review and submission — so founders get **instant capital** and **effortless compliance** without legacy ERP anxiety. *(Compliance model: human-in-the-loop "Compliance Co-Pilot" — prepare → review → submit; auto-submission gated on BIR Permit to Transmit. Updated 2026-06-18 — see [Axial.md](Axial.md) PBW review.)*
 
-Built for digitally fluent B2B operators — starting with software and creative agencies — who suffer Net 60–90 terms against bi-weekly payroll and strict government reporting windows.
+Built for export-facing B2B operators — starting with software, creative, and BPO/manpower agencies — who suffer Net 60–90 terms against bi-weekly payroll and strict government reporting windows. Secondary ICPs (foreign founders with PH teams; Web3-native startups) are documented in [gtm-axial.md](gtm-axial.md).
 
 The design posture is The Architect: calm, structured, autonomous. The experience should feel like a system that runs correctly in the background, not a dashboard that demands attention.
 
@@ -54,6 +54,10 @@ MoSCoW: Must-Have (launch blocker) · Should-Have (next sprint) · Could-Have (n
 | Trust & Boundary screen | Per-party T&Cs: in-system settlement mandatory; off-system payment = breach + liability shift + blacklist | Should-Have |
 | Dispute + partial-payment workflow | Structured path for disputed or partial payer settlement instead of assuming one clean payment | Should-Have |
 | Statutory payroll split (contract-backed) | Calculate and route SSS, PhilHealth, Pag-IBIG (employee + employer shares) per current statutory tables; preview before execution | Must-Have |
+| Contractor USDC pay (Track A) | Pay independent contractors in USDC on Stellar (new Testnet contract first); employees excluded (Labor Code Art. 102) | Should-Have |
+| Employee fiat-bridged payroll (Track B) | Employer funds in USDC; licensed VASP/anchor pays employees PHP legal tender + statutory slice; mock `FiatOfframp` until partner | Should-Have |
+| Off-system payment reversal | MSME re-routes rogue fiat settlement into lockbox USDC to clear leakage liability | Should-Have |
+| EIS fallback delegator | Notify founder when Ops leaves `prepared` filings inside T+3 unattended ≥24h | Should-Have |
 | BIR EIS bridge (off-chain oracle) | Map ledger/consensus events to 20-field BIR JSON schema; JWS sign; submit within T+3; surface success reference ID and Stellar memo link; idempotent retry on failure | Must-Have |
 | Overview / health dashboard | Ambient status: liquidity lines, compliance sync state, filing deadlines — passive indicators (glow, checkmark) not alarmist alerts; surfaces exceptions only when action is required | Must-Have |
 | Calm notification system | Ambient, brand-voice nudges (funding, mid-tenor, pre-due, leakage) to MSME and funder; reinforces in-system settlement without alarm | Should-Have |

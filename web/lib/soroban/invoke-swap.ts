@@ -7,6 +7,7 @@ import {
   TransactionBuilder,
 } from "@stellar/stellar-sdk";
 import type { SorobanConfig } from "./config";
+import { formatChainError } from "./format-chain-error";
 
 export type ExecuteAdvanceResult = {
   txHash: string;
@@ -14,39 +15,7 @@ export type ExecuteAdvanceResult = {
 };
 
 function formatSimulationError(error: string): string {
-  if (error.includes("Error(Contract, #4)")) {
-    return "This invoice is already funded on chain. Each invoice ID can only be swapped once.";
-  }
-  if (error.includes("Error(Contract, #5)")) {
-    return "Invalid face amount for swap.";
-  }
-  if (error.includes("Error(Contract, #1)")) {
-    return "Swap contract is not initialized on this deployment.";
-  }
-  // Stellar Asset Contract (USDC) errors surfaced through axial_swap
-  if (error.includes("Error(Contract, #13)")) {
-    return (
-      "Recipient has no USDC trustline (SAC error #13). " +
-      "In Freighter → Assets → add USDC on mainnet, then retry the swap."
-    );
-  }
-  if (error.includes("Error(Contract, #10)")) {
-    return (
-      "Treasury USDC balance too low for this advance (SAC error #10). " +
-      "Fund the funder wallet with USDC on mainnet."
-    );
-  }
-  if (error.includes("HostError") || error.includes("Event log")) {
-    if (error.includes("#13")) {
-      return (
-        "Recipient has no USDC trustline. Add USDC in Freighter (mainnet), then retry."
-      );
-    }
-    if (error.includes("#10")) {
-      return "Treasury USDC balance too low. Fund the funder wallet with USDC.";
-    }
-  }
-  return error.length > 200 ? `${error.slice(0, 200)}…` : error;
+  return formatChainError(error);
 }
 
 export async function executeAdvanceOnChain(

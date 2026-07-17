@@ -115,6 +115,21 @@ export async function PATCH(request: Request, context: RouteContext) {
           return NextResponse.json({ invoice: toClientInvoice(existing) });
         }
 
+        const settleCfg = await resolveSorobanConfig();
+        if (
+          isSettlementChainEnabled(settleCfg) &&
+          (existing.attributedInflowUsdc == null || existing.attributedInflowUsdc <= 0)
+        ) {
+          return NextResponse.json(
+            {
+              error:
+                "No confirmed lockbox inflow for this invoice yet. Complete Freighter payment first.",
+              code: "NEED_LOCKBOX_INFLOW",
+            },
+            { status: 409 },
+          );
+        }
+
         const maxCollectable = await resolveMaxCollectableUsdc(existing);
         const collectedUsdc = await resolveCollectedUsdc(existing, body.collectedAmount);
         if (collectedUsdc > maxCollectable + COLLECT_EPSILON) {
@@ -131,7 +146,6 @@ export async function PATCH(request: Request, context: RouteContext) {
         const effectiveCollected = Math.min(collectedUsdc, maxCollectable);
 
         await beginCollectingInvoice(decoded);
-        const cfg = await resolveSorobanConfig();
         const settleId = existing.onChainInvoiceId ?? decoded;
 
         let settlement:
@@ -144,9 +158,9 @@ export async function PATCH(request: Request, context: RouteContext) {
             }
           | undefined;
 
-        if (isSettlementChainEnabled(cfg)) {
+        if (isSettlementChainEnabled(settleCfg)) {
           try {
-            const result = await settleOnChain(cfg, settleId, effectiveCollected);
+            const result = await settleOnChain(settleCfg, settleId, effectiveCollected);
             inv = await markCollectedInvoice(decoded);
             try {
               await markEntrySettled(decoded, {

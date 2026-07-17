@@ -15,6 +15,7 @@ import { isPayrollBuildEnabled } from "@/lib/soroban/config";
 import { resolveSorobanConfig } from "@/lib/soroban/server-config";
 import { buildPayrollXdr } from "@/lib/soroban/build-tx";
 import { quotePayrollSplit } from "@/lib/soroban/payroll-quote";
+import { assertPayrollPreflight } from "@/lib/soroban/usdc-preflight";
 
 type Body = {
   payrollId?: string;
@@ -63,6 +64,14 @@ export async function POST(request: Request) {
   }
 
   try {
+    const preflight = await assertPayrollPreflight(cfg, signerPublic, grossAmount!);
+    if (!preflight.ok) {
+      return NextResponse.json(
+        { error: preflight.message, code: preflight.code },
+        { status: 409 },
+      );
+    }
+
     const xdr = await buildPayrollXdr(cfg, payrollId, grossAmount!, signerPublic);
     const quote = quotePayrollSplit(grossAmount!);
     return NextResponse.json({

@@ -281,7 +281,10 @@ stateDiagram-v2
 | Payroll statutory split | Must | ✅ | Mainnet |
 | BIR EIS oracle 20 fields | Must | ✅ | Mock BIR + real pipeline |
 | JWS + memo write-back | Must | ✅ | Mock JWS |
-| T+3 worker / due_by | SDD | ✅ | `eis/worker` cron — retry within window, expire after |
+| T+3 worker / due_by | SDD | ✅ | `eis/worker` — expire+notify, 24h due-soon, stuck `submitted` requeue; retry `failed` only when not `BIR_EIS_LIVE` |
+| Overview exception punch-list | Must | ✅ | US-04 calm strip via `rankOverviewExceptions` |
+| Resilience / Track A–B plan | P1 | ✅ | Web + Track A Testnet; Track B mock — [`plans/resilience-stablecoin-payroll/overview.md`](plans/resilience-stablecoin-payroll/overview.md) |
+| Contractor USDC pay (Track A) | Should | 🟡 | Crate + Compliance UI; gate on `TESTNET_CONTRACTOR_PAYROLL_CONTRACT_ID` |
 | Horizon event poll | SDD | ✅ | `eis/horizon-poll` cron every 10 min |
 | Reconciliation / leakage scan | SDD | ✅ | `reconciliation/scan` cron, daily |
 | FX rate (Reflector) | L2 | ✅ | `lib/fx/reflector.ts` + `/api/fx/rate`, hardcoded fallback |
