@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { Icon } from "@/components/ui/Icon";
-import { phpToUsdcWhole } from "@/lib/fx/convert";
+import { phpToUsdcWhole } from "@/lib/fx/units";
 import { DEFAULT_ADVANCE_BPS, quoteAdvance } from "@/lib/soroban/quote";
 
 function formatPhp(n: number) {

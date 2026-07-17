@@ -1,3 +1,5 @@
+import "server-only";
+
 import { loadDeployment } from "./deployments";
 import { cleanEnvString } from "./env-sanitize";
 import {

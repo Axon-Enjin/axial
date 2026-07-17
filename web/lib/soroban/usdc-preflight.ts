@@ -1,4 +1,4 @@
-import { usdcWholeToStroops } from "@/lib/fx/convert";
+import { usdcWholeToStroops } from "@/lib/fx/units";
 import type { SorobanConfig } from "./config";
 import { quoteAdvance } from "./quote";
 

@@ -1,3 +1,5 @@
+import "server-only";
+
 import { getPublicChainStatus, getSorobanConfig, type SorobanConfig } from "./config";
 import { getSelectedNetwork } from "./selected-network";
 

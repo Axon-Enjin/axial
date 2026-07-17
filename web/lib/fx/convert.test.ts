@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { phpToUsdcWhole, usdcWholeToStroops, USDC_STROOPS_PER_UNIT } from "./convert";
+import { phpToUsdcWhole, usdcWholeToStroops, USDC_STROOPS_PER_UNIT } from "./units";
 
 describe("phpToUsdcWhole", () => {
   it("converts PHP face to whole USDC units", () => {

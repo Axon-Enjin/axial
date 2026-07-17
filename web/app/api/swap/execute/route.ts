@@ -58,7 +58,7 @@ export async function POST(request: Request) {
       );
     }
     try {
-      const eligibility = await checkFundingEligibility(sourceInvoiceId);
+      const eligibility = await checkFundingEligibility(explicitSourceId);
       if (!eligibility.fundable) {
         return NextResponse.json(
           {
