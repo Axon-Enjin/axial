@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What Axial Is
 
-Axial is a liquidity and compliance engine for Philippine MSMEs. It solves two structural problems simultaneously: a $221B cash-flow gap caused by Net 60–90 B2B payment terms, and manual, error-prone BIR/statutory compliance. The value proposition is **"Instant Capital, Effortless Compliance"** — founders unlock cash from tokenized receivables via Stellar/Soroban atomic swaps while BIR EIS filings and SSS/PhilHealth/Pag-IBIG payroll splits are **prepared for human review and one-click approval** (Compliance Co-Pilot). Auto-submit is a roadmap item gated on Permit to Transmit. *"Invisible Compliance"* is the north-star vision only.
+Axial is a liquidity and compliance engine for Philippine MSMEs. The buyer job is **working capital financing** (cash from confirmed Net 60–90 receivables); the product claim is **"Instant Capital, Effortless Compliance"** — not factoring-on-blockchain alone, but the rail where liquidity and compliance are the same event. Founders unlock cash from tokenized receivables via Stellar/Soroban atomic swaps while BIR EIS filings and SSS/PhilHealth/Pag-IBIG payroll splits are **prepared for human review and one-click approval** (Compliance Co-Pilot). Auto-submit is a roadmap item gated on Permit to Transmit. *"Invisible Compliance"* is the north-star vision only.
 
 All regulatory and legal questions are **Philippines-jurisdiction-first**.
 

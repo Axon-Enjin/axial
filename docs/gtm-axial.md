@@ -1,8 +1,8 @@
 # Go-To-Market Strategy (GTM)
 
 **Project:** Axial  
-**Date:** 2026-07-17  
-**Version:** 0.3  
+**Date:** 2026-07-18  
+**Version:** 0.4  
 **Owner:** Axial Product Lead  
 **Status:** Draft  
 **Foundation:** [Axial.md](../Axial.md)  
@@ -21,9 +21,11 @@
 
 **Core value proposition:** "Instant capital, effortless compliance." Liquidity when you need it. Statutory and BIR filings prepared for you and submitted on your approval — verified outcomes, not spreadsheet panic.
 
-**Category:** Philippine fintech infrastructure — liquidity and regulatory automation. Not generic SMB accounting. Not DeFi for its own sake.
+**Buyer job (JTBD):** Working capital financing — unlock cash trapped in confirmed B2B receivables so payroll and statutory clocks can run without waiting Net 60–90.
 
-**Competitive frame:** Axial is not competing with Xero or QuickBooks (it can complement them). It is competing with the status quo: expensive invoice factoring lines, manual government portal submissions, and fragile spreadsheets held together by an ops manager's working memory.
+**Category:** Philippine fintech infrastructure — liquidity and regulatory automation. Not generic SMB accounting. Not DeFi for its own sake. Not “invoice factoring on blockchain” as the sole story.
+
+**Competitive frame:** Axial is not competing with Xero or QuickBooks (it can complement them). Versus pure WCF / factoring incumbents (e.g. First Circle), win on all-in cost **plus** the compliance bundle. Versus status quo: expensive factoring lines, manual government portals, and fragile spreadsheets.
 
 ---
 
@@ -69,7 +71,15 @@
 
 **Primary tagline:** "Instant capital, effortless compliance." *(Updated 2026-06-18; "invisible compliance" retired as headline — north-star vision only.)*
 
-**Hero message:** Axial is the central axis where receivable liquidity and Philippine regulatory execution meet — without legacy ERP anxiety.
+**Positioning stack** *(locked in [Axial.md](Axial.md) 2026-07-18):*
+
+| Layer | Frame |
+|---|---|
+| **Job-to-be-done** | Working capital financing |
+| **Product claim** | Instant Capital, Effortless Compliance |
+| **Category / wedge** | One rail where liquidity and compliance are the same event |
+
+**Hero message:** Axial is the central axis where receivable liquidity and Philippine regulatory execution meet — without legacy ERP anxiety. Lead with working capital when the founder cares about payroll cash; keep the dual claim as the product promise.
 
 **Proof points:**
 - End-to-end architecture: SAC tokenization → atomic swap → payroll split → EIS submission — one pipeline, one UI
@@ -84,7 +94,7 @@
 | "We already outsource accounting." | Axial absorbs execution friction — payroll runs, EIS submissions, statutory routing — so your accountant reviews outcomes rather than performs manual steps. Complements, does not replace, advisor relationships. |
 | "Government APIs scare us." | Transparent submission states, idempotent retries, calm failure UX. T+3 approach and expiry notify in-app; live BIR never auto-submits without human approve. |
 | "Can we pay staff in USDC?" | Independent contractors may be paid USDC on Stellar (Track A, Testnet-first). Regular employees must receive PHP legal tender (Labor Code Art. 102) via a licensed fiat edge (Track B, mock until partner). |
-| "Why not just use invoice factoring?" | Traditional factoring requires physical collateral and takes days. Axial tokenizes the receivable on-chain and delivers settlement proceeds in minutes (USDC on Stellar, shown in PHP), with no collateral requirement — underwriting is based on on-chain receivable quality and smart contract execution. |
+| "Why not just use invoice factoring?" | Axial *is* working capital financing — closed-loop, payer-confirmed AR — but faster and structured (minutes to USDC shown in PHP, no physical collateral). The reason to pick Axial over a pure factoring line is the same pipeline prepares BIR EIS + statutory splits for one-click review. Speed alone is not the wedge; liquidity + compliance as one event is. |
 
 ---
 

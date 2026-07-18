@@ -1,7 +1,7 @@
 # Axial — Foundation Document
 
 **Version:** 1.2  
-**Date:** 2026-06-18 (locks); docs sync 2026-07-18  
+**Date:** 2026-06-18 (locks); docs sync 2026-07-18 (WCF buyer-frame lock)  
 **Status:** Living Document — update as product thinking evolves
 
 > This document is the canonical source of truth for Axial's origin, thinking, and identity. It is the primary input for all other product documents (BRD, PRD, SDD, DSD, GTM). When those documents conflict with this one, resolve the conflict here first, then propagate.
@@ -14,7 +14,7 @@
 
 ### What we're building (one paragraph)
 
-Axial is a liquidity and compliance engine for Philippine MSMEs, built for the **Build on Stellar Philippines Hackathon 2026 (May 18–24)**. The flow: a B2B payer is onboarded and confirms an invoice (acknowledging a Notice of Assignment) → the MSME tokenizes that confirmed receivable on Soroban → an atomic swap funds the MSME instantly in USDC on Stellar (advance with reserve + recourse) → a Soroban payroll contract splits the next bi-weekly payroll across SSS, PhilHealth, and Pag-IBIG → an off-chain oracle maps the ledger-final event into a BIR-EIS-ready JSON payload and JWS-signs it, then surfaces it for **human review and one-click submission** within T+3 (mock endpoint today; live transmission gated on BIR software certification + Permit to Transmit), writing the reference back to the Stellar transaction memo. UI is four tabs (Liquidity, Compliance, Overview, Settings), dark-mode-first, glassmorphic, calm. Brand archetype is **The Architect** — never alarmist, never data-soup.
+Axial is a liquidity and compliance engine for Philippine MSMEs, built for the **Build on Stellar Philippines Hackathon 2026 (May 18–24)**. The buyer job is **working capital financing** — unlock cash trapped in Net 60–90 B2B receivables so payroll can run on time — delivered as closed-loop confirmed-invoice financing with a Compliance Co-Pilot on the same pipeline. The flow: a B2B payer is onboarded and confirms an invoice (acknowledging a Notice of Assignment) → the MSME tokenizes that confirmed receivable on Soroban → an atomic swap funds the MSME instantly in USDC on Stellar (advance with reserve + recourse) → a Soroban payroll contract splits the next bi-weekly payroll across SSS, PhilHealth, and Pag-IBIG → an off-chain oracle maps the ledger-final event into a BIR-EIS-ready JSON payload and JWS-signs it, then surfaces it for **human review and one-click submission** within T+3 (mock endpoint today; live transmission gated on BIR software certification + Permit to Transmit), writing the reference back to the Stellar transaction memo. UI is four tabs (Liquidity, Compliance, Overview, Settings), dark-mode-first, glassmorphic, calm. Brand archetype is **The Architect** — never alarmist, never data-soup.
 
 ### What changed in this latest review (locked decisions)
 
@@ -60,6 +60,7 @@ Ahead of the **Philippine Blockchain Week** presentation (Day 1, SMX), we ran a 
 |---|---|---|
 | **Compliance model — human in the loop** | ✅ Locked (2026-06-18) | Reposition from *auto-submission* to a **"Compliance Co-Pilot": prepare → review → submit.** Axial maps each ledger-final event into a BIR-EIS-ready, JWS-signable payload and SSS/PhilHealth/Pag-IBIG schedules, then surfaces them for **human review and explicit approval** before submission. Auto-submission is a roadmap item, **gated on EIS software certification + Permit to Transmit (PTT)**. Rationale: filing wrong/fraudulent returns automatically is an uninsured liability, and it is the human checkpoint that answers "what if it's wrong or a scam." |
 | **Primary tagline** | ✅ Locked (2026-06-18) | **"Instant Capital, Effortless Compliance."** *"Invisible Compliance"* is retired as the headline claim and kept only as the **north-star vision** (full automation, post-certification). |
+| **Buyer frame vs product category** | ✅ Locked (2026-07-18) | **Job-to-be-done = working capital financing** (cash from confirmed AR before Net 60–90 clears). **Product claim** stays the dual tagline. **Category / wedge** is not “factoring on blockchain” alone — it is the rail where **liquidity and compliance are the same event**. Compete with First Circle–style WCF on all-in cost *plus* the compliance bundle; do not collapse messaging to pure invoice factoring. |
 | **Funder framing** | ✅ Locked (2026-06-18) | Funders are **regulated / qualified liquidity partners**, not an open on-chain pool. Factoring/discounting AR is a financing-company activity under **RA 8556** (SEC Certificate of Authority), and assigned receivables may transfer only to defined regulated buyers. Axial presents as **tech + origination rails on top of a licensed financing entity**. Entity/CA posture → **counsel** ([`clr-axial.md`](clr-axial.md)). |
 | **Honesty about dependencies** | ✅ Locked (2026-06-18) | Stop calling USDC "no external dependency." Name **Circle counterparty + freeze/blacklist risk** and **PHP/USDC FX risk** openly as managed risks (mitigated by denomination-agnostic contracts). |
 | **PBW framing** | ✅ Locked (2026-06-18) | This is an **industry talk**, not a hackathon pitch. The 2nd-Runner-Up win is **evidence**, not the headline. Lead with the change in the world (BIR e-invoicing + real-time CTC), not the competition. |
@@ -473,7 +474,15 @@ To engineer autonomous financial and regulatory systems that absorb the friction
 
 ### 6.5 Core Messaging Pillars
 
-1. **"Instant Capital, Effortless Compliance."** — The primary tagline (updated 2026-06-18). "Instant" means now, not 60 days from now. "Effortless" means Axial does the heavy lifting — mapping, JWS signing, statutory scheduling — so compliance collapses to a one-click *review and approve*, not a manual chore and not a silent robot filing on your behalf. *(The earlier "Invisible Compliance" is retired as the headline claim and kept only as the north-star vision of full automation once BIR-certified — see the PBW review block near the top of this doc.)*
+**Positioning stack (locked 2026-07-18):**
+
+| Layer | Frame |
+|---|---|
+| **Job-to-be-done** | Working capital financing — payroll cash before Net 60–90 clears |
+| **Product claim** | Instant Capital, Effortless Compliance |
+| **Category / wedge** | Confirmed-invoice financing + Compliance Co-Pilot on one rail — not “factoring on blockchain” alone |
+
+1. **"Instant Capital, Effortless Compliance."** — The primary tagline (updated 2026-06-18). "Instant" means now, not 60 days from now. "Effortless" means Axial does the heavy lifting — mapping, JWS signing, statutory scheduling — so compliance collapses to a one-click *review and approve*, not a manual chore and not a silent robot filing on your behalf. *(The earlier "Invisible Compliance" is retired as the headline claim and kept only as the north-star vision of full automation once BIR-certified — see the PBW review block near the top of this doc.)* Lead founder conversations with the working-capital job; keep this dual claim as the product promise.
 2. **"Engineered for Autonomy."** — The system runs without being managed. The founder should not need to remember deadlines or check portals.
 3. **"Your Ledger, Synchronized."** — The Stellar ledger and the BIR/government systems and the MSME's accounting view are always in agreement. No reconciliation anxiety.
 

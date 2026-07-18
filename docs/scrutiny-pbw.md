@@ -93,7 +93,7 @@ Circle's USDC has **blacklist/freeze powers coded into the contract**; in March 
 
 ([Acudeen/CoinGeek](https://coingeek.com/acudeen-extends-direly-needed-financial-services-msmes-philippines/), [First Circle](https://www.firstcircle.ph/blog/invoice-financing), [SeekCap/Investree](https://www.crowdfundinsider.com/2021/11/182581-seekcap-investree-philippines-partnership-to-provide-needed-sme-financing/))
 
-**Positioning takeaway:** Axial's wedge is **not** "factoring on blockchain" (Acudeen-style). It is **"the one rail where liquidity and compliance are the same event"** — that's the defensible, non-obvious claim, and it's true to the architecture.
+**Positioning takeaway:** The buyer job is **working capital financing** (compete with First Circle on all-in cost + compliance). Axial's wedge is **not** "factoring on blockchain" alone (Acudeen-style). It is **"the one rail where liquidity and compliance are the same event"** — that's the defensible, non-obvious claim, and it's true to the architecture. *(Stack locked in Axial.md 2026-07-18: JTBD = WCF → claim = Instant Capital, Effortless Compliance → category = dual rail.)*
 
 ---
 
