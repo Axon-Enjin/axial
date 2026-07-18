@@ -46,14 +46,14 @@ function rowToInvoice(row: InvoiceRow): FactoringInvoice {
   };
 }
 
-function invoiceToRow(inv: FactoringInvoice): InvoiceRow {
-  return {
+function invoiceToRow(inv: FactoringInvoice): Record<string, unknown> {
+  // Only send columns that exist on hosted DB. Settlement USDC columns come from
+  // migration 009 — include them when set so apply-009 unlocks attribution writes.
+  const row: Record<string, unknown> = {
     id: inv.id,
     party: inv.party,
     terms: inv.terms,
     face: inv.face,
-    face_usdc: inv.faceUsdc,
-    attributed_inflow_usdc: inv.attributedInflowUsdc,
     immediate: inv.immediate,
     status: inv.status,
     payer_confirmed: inv.payerConfirmed,
@@ -67,6 +67,11 @@ function invoiceToRow(inv: FactoringInvoice): InvoiceRow {
     created_at: inv.createdAt,
     updated_at: inv.updatedAt,
   };
+  if (inv.faceUsdc != null) row.face_usdc = inv.faceUsdc;
+  if (inv.attributedInflowUsdc != null) {
+    row.attributed_inflow_usdc = inv.attributedInflowUsdc;
+  }
+  return row;
 }
 
 export async function supabaseGetInvoice(id: string): Promise<FactoringInvoice | null> {
