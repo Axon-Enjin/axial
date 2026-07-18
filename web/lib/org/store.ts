@@ -95,7 +95,7 @@ export async function ensureUserOrg(input: {
 
   const orgName =
     input.email?.split("@")[0]?.trim() || `org-${input.userId.slice(0, 8)}`;
-  let slug = slugifyOrg(orgName);
+  const slug = slugifyOrg(orgName);
   for (let i = 0; i < 20; i++) {
     const candidate = i === 0 ? slug : `${slug}-${i}`;
     const { data: created, error } = await admin
