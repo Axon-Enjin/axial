@@ -1,11 +1,16 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useApp } from "@/components/providers/AppProvider";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { Icon } from "@/components/ui/Icon";
 import { getFreighterNetworkDetails } from "@/lib/soroban/freighter";
+import {
+  freighterMatchesNetwork,
+  networkLabel,
+  type StellarNetworkId,
+} from "@/lib/soroban/network";
 
 const MAINNET_FREIGHTER_PUBLIC =
   "GDSCTQZRRGF23F5GWNE3FYLLPEGO23BB3RQ6AYO5756C7A4HJLEXZVTQ";
@@ -15,30 +20,24 @@ function truncateKey(key: string): string {
   return `${key.slice(0, 6)}…${key.slice(-6)}`;
 }
 
-function NetworkPill({ network }: { network: string }) {
-  const isMainnet =
-    network.toLowerCase().includes("public") ||
-    network.toLowerCase().includes("mainnet");
+function NetworkPill({
+  matched,
+  selected,
+}: {
+  matched: boolean;
+  selected: StellarNetworkId;
+}) {
   return (
     <span
       className={[
         "inline-flex items-center rounded-full px-2 py-0.5 font-label-sm text-label-sm uppercase tracking-wider",
-        isMainnet
+        matched
           ? "bg-violet-500/15 text-violet-400"
           : "bg-amber-500/15 text-amber-300",
       ].join(" ")}
     >
-      {isMainnet ? "mainnet" : "wrong network"}
+      {matched ? selected : "wrong network"}
     </span>
-  );
-}
-
-function freighterOnMainnet(network: { network: string; networkPassphrase: string } | null): boolean {
-  if (!network) return false;
-  return (
-    network.networkPassphrase.includes("Public Global") ||
-    network.network.toLowerCase().includes("mainnet") ||
-    network.network === "PUBLIC"
   );
 }
 
@@ -54,8 +53,21 @@ export function WalletCard() {
 
   const [copyDone, setCopyDone] = useState(false);
   const [connectError, setConnectError] = useState<string | null>(null);
+  const [axialNetwork, setAxialNetwork] = useState<StellarNetworkId>("mainnet");
 
-  const onMainnet = freighterOnMainnet(freighterNetwork);
+  useEffect(() => {
+    void fetch("/api/network", { cache: "no-store" })
+      .then((r) => r.json())
+      .then((d: { network?: StellarNetworkId }) => {
+        if (d.network === "testnet" || d.network === "mainnet") {
+          setAxialNetwork(d.network);
+        }
+      })
+      .catch(() => null);
+  }, []);
+
+  const onSelectedNetwork = freighterMatchesNetwork(freighterNetwork, axialNetwork);
+  const label = networkLabel(axialNetwork);
 
   const isDeployWallet =
     freighterPublicKey != null && freighterPublicKey === MAINNET_FREIGHTER_PUBLIC;
@@ -65,9 +77,9 @@ export function WalletCard() {
     try {
       await connectFreighter();
       const details = await getFreighterNetworkDetails();
-      if (!freighterOnMainnet(details)) {
+      if (!freighterMatchesNetwork(details, axialNetwork)) {
         setConnectError(
-          "Freighter is not on Mainnet. In Freighter → Settings → switch to Mainnet, then connect again.",
+          `Freighter is not on ${label}. In Freighter → Settings → switch to ${label}, then connect again.`,
         );
       }
     } catch (err) {
@@ -109,7 +121,6 @@ export function WalletCard() {
       </div>
 
       {freighterPublicKey ? (
-        // ── Connected state ──────────────────────────────────────────────────
         <div className="flex flex-col gap-4">
           <div className="rounded-xl border border-[#2DD4BF]/25 bg-[#2DD4BF]/5 p-4">
             <div className="mb-2 flex items-center justify-between">
@@ -117,7 +128,7 @@ export function WalletCard() {
                 Freighter Wallet
               </span>
               {freighterNetwork ? (
-                <NetworkPill network={freighterNetwork.network} />
+                <NetworkPill matched={onSelectedNetwork} selected={axialNetwork} />
               ) : null}
             </div>
             <div className="flex items-center justify-between gap-2">
@@ -137,12 +148,15 @@ export function WalletCard() {
             <div className="mt-2 font-mono text-xs break-all text-on-surface-variant/60">
               {freighterPublicKey}
             </div>
-            {isDeployWallet && onMainnet ? (
+            {isDeployWallet && onSelectedNetwork && axialNetwork === "mainnet" ? (
               <p className="mt-2 font-body-sm text-body-sm text-violet-300/90">
                 Mainnet deploy wallet — matches Axial issuer / funder / MSME config.
               </p>
             ) : null}
-            {onMainnet && freighterPublicKey && !isDeployWallet ? (
+            {onSelectedNetwork &&
+            axialNetwork === "mainnet" &&
+            freighterPublicKey &&
+            !isDeployWallet ? (
               <p className="mt-2 font-body-sm text-body-sm text-amber-300/90">
                 Connected key differs from configured mainnet deploy wallet (
                 {truncateKey(MAINNET_FREIGHTER_PUBLIC)}).
@@ -155,7 +169,7 @@ export function WalletCard() {
             Payroll splits are signed by you — not held by Axial.
           </p>
 
-          {onMainnet && freighterPublicKey && !isDeployWallet ? (
+          {onSelectedNetwork && axialNetwork === "mainnet" && freighterPublicKey ? (
             <div className="rounded-lg border border-amber-500/25 bg-amber-500/5 p-3.5">
               <div className="mb-2 font-label-sm text-label-sm uppercase tracking-wider text-amber-200/90">
                 Mainnet USDC
@@ -169,14 +183,14 @@ export function WalletCard() {
             </div>
           ) : null}
 
-          {!onMainnet ? (
+          {!onSelectedNetwork ? (
             <div className="rounded-lg border border-amber-500/25 bg-amber-500/5 p-3.5">
               <div className="mb-2 font-label-sm text-label-sm uppercase tracking-wider text-amber-200/90">
-                Switch to Mainnet
+                Switch to {label}
               </div>
               <p className="font-body-md text-body-md text-on-surface-variant">
-                Axial runs on Stellar Mainnet only. In Freighter → Settings → switch to
-                Mainnet, disconnect, and connect again.
+                Axial is set to Stellar {label} in Settings. In Freighter → Settings → switch
+                to {label}, disconnect, and connect again.
               </p>
             </div>
           ) : null}
@@ -188,7 +202,6 @@ export function WalletCard() {
           </div>
         </div>
       ) : (
-        // ── Disconnected state ───────────────────────────────────────────────
         <div className="flex flex-col gap-4">
           <div className="rounded-xl border border-outline-variant/30 bg-surface-container-low p-4">
             <div className="mb-1.5 font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant">
@@ -199,9 +212,8 @@ export function WalletCard() {
               switch to self-custody mode — your wallet, your keys.
             </p>
             <p className="mt-2 font-body-sm text-body-sm text-on-surface-variant/80">
-              Mainnet: Freighter → Mainnet, then connect {truncateKey(MAINNET_FREIGHTER_PUBLIC)}.
-              Fund this wallet with XLM (payroll gas) and a USDC trustline (swap advance).
-              Contracts were deployed by a teammate; server mint uses their funder key.
+              Match Freighter to the network selected under Stellar network ({label}).
+              On Mainnet, fund with XLM and a USDC trustline before swap.
             </p>
           </div>
 

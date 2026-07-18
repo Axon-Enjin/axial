@@ -121,7 +121,7 @@ Finalized 2026-05-14 — do not reopen without updating `docs/Axial.md` first.
 |---|---|
 | Primary tagline | **Instant Capital, Effortless Compliance** (locked 2026-06-18) — *"Invisible Compliance"* is north-star only |
 | Compliance model | **Compliance Co-Pilot** — prepare → review → submit; auto-submit gated on Permit to Transmit (PTT) |
-| Operating network | **Stellar Mainnet only** (locked 2026-05-22) — testnet is retired as an operating target; it remains a developer sandbox only |
+| Operating network | **Stellar Mainnet** default (locked 2026-05-22) — Settings cookie may switch a session to Testnet sandbox when `TESTNET_*` is configured |
 | Settlement asset | **USDC on Stellar** — Circle-issued |
 | USDC Mainnet issuer | `GA5ZSEJYB37JRC5AVCIA5MOP4RHTM335X2KGX3IHOJAPP5RE34K4KZVN` |
 | User-facing denomination | **PHP** — all invoices, payroll, dashboards show pesos |

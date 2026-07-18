@@ -2,17 +2,18 @@ export const AXIAL_NETWORK_COOKIE = "axial_network";
 
 export type StellarNetworkId = "testnet" | "mainnet";
 
-// Axial runs on Mainnet only. Testnet is retired as an operating target;
-// the `testnet` branch of the type/config is kept for tooling but the app
-// always resolves to Mainnet.
+/** Default when cookie is missing or invalid. Production operating target. */
 export const DEFAULT_STELLAR_NETWORK: StellarNetworkId = "mainnet";
 
 const MAINNET_USDC_SAC =
   "CCW67TSZV3SSS2HXMBQ5JFGCKJNXKZM7UQUWUZPUTHXSTZLEO7SJMI75";
 
-/** Mainnet-only: the app always operates on Mainnet regardless of input. */
-export function parseNetwork(_raw?: string | null): StellarNetworkId {
-  return "mainnet";
+/** Parse cookie/query value. Invalid → Mainnet. */
+export function parseNetwork(raw?: string | null): StellarNetworkId {
+  const n = (raw ?? "").trim().toLowerCase();
+  if (n === "testnet" || n === "test") return "testnet";
+  if (n === "mainnet" || n === "public" || n === "main") return "mainnet";
+  return DEFAULT_STELLAR_NETWORK;
 }
 
 export function networkLabel(network: StellarNetworkId): string {
@@ -33,4 +34,27 @@ export function defaultPassphrase(network: StellarNetworkId): string {
 
 export function defaultUsdcTokenId(network: StellarNetworkId): string | null {
   return network === "mainnet" ? MAINNET_USDC_SAC : null;
+}
+
+/** True if Freighter network details match the selected Axial network. */
+export function freighterMatchesNetwork(
+  details: { network: string; networkPassphrase: string } | null | undefined,
+  selected: StellarNetworkId,
+): boolean {
+  if (!details) return false;
+  const pass = details.networkPassphrase ?? "";
+  const name = details.network.toLowerCase();
+  if (selected === "mainnet") {
+    return (
+      pass.includes("Public Global") ||
+      name.includes("mainnet") ||
+      name === "public"
+    );
+  }
+  return (
+    pass.includes("Test SDF") ||
+    name.includes("testnet") ||
+    name === "testnet" ||
+    name === "test"
+  );
 }
