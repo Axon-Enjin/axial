@@ -48,6 +48,79 @@ export function resolveOrgId(orgId?: string | null): string {
   return orgId?.trim() || process.env.AXIAL_ORG_ID?.trim() || "demo-org";
 }
 
+function slugifyOrg(name: string): string {
+  let slug = name
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "")
+    .slice(0, 40);
+  if (!slug) slug = "org";
+  return slug;
+}
+
+/**
+ * Ensure auth user has an org + owner membership + user_metadata.org_id.
+ * Backfills accounts created before handle_new_user trigger was installed.
+ */
+export async function ensureUserOrg(input: {
+  userId: string;
+  email?: string | null;
+  existingOrgId?: string | null;
+}): Promise<{ orgId: string; role: string }> {
+  if (input.existingOrgId?.trim()) {
+    return { orgId: input.existingOrgId.trim(), role: "owner" };
+  }
+
+  if (!isSupabaseConfigured()) {
+    return { orgId: resolveOrgId(null), role: "owner" };
+  }
+
+  const admin = getSupabaseAdmin();
+
+  const { data: membership } = await admin
+    .from("org_memberships")
+    .select("org_id, role")
+    .eq("user_id", input.userId)
+    .limit(1)
+    .maybeSingle();
+
+  if (membership?.org_id) {
+    const orgId = String(membership.org_id);
+    await admin.auth.admin.updateUserById(input.userId, {
+      user_metadata: { org_id: orgId },
+    });
+    return { orgId, role: String(membership.role ?? "owner") };
+  }
+
+  const orgName =
+    input.email?.split("@")[0]?.trim() || `org-${input.userId.slice(0, 8)}`;
+  let slug = slugifyOrg(orgName);
+  for (let i = 0; i < 20; i++) {
+    const candidate = i === 0 ? slug : `${slug}-${i}`;
+    const { data: created, error } = await admin
+      .from("orgs")
+      .insert({ name: orgName, slug: candidate })
+      .select("id")
+      .single();
+    if (!error && created?.id) {
+      const orgId = String(created.id);
+      await admin.from("org_memberships").insert({
+        org_id: orgId,
+        user_id: input.userId,
+        role: "owner",
+        accepted_at: new Date().toISOString(),
+      });
+      await admin.auth.admin.updateUserById(input.userId, {
+        user_metadata: { org_id: orgId },
+      });
+      return { orgId, role: "owner" };
+    }
+  }
+
+  throw new Error("Could not provision organization");
+}
+
 export async function getOrgProfile(orgId?: string | null): Promise<OrgProfile | null> {
   const id = resolveOrgId(orgId);
 

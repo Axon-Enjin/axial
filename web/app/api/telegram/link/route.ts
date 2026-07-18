@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { assertSessionAccess } from "@/lib/auth/session-gate";
-import { resolveOrgId } from "@/lib/org/store";
+import { ensureUserOrg, resolveOrgId } from "@/lib/org/store";
 import {
   createLinkCode,
   deleteLinksForOrg,
@@ -30,19 +30,33 @@ export async function POST() {
   const gate = await assertSessionAccess("operator");
   if (gate.denied) return gate.denied;
 
-  if (!gate.user?.orgId && process.env.NODE_ENV !== "development") {
-    return NextResponse.json({ error: "Org required" }, { status: 400 });
+  if (!gate.user) {
+    return NextResponse.json({ error: "Sign in required" }, { status: 401 });
   }
 
-  const orgId = resolveOrgId(gate.user?.orgId);
-  const role = gate.user?.role ?? "owner";
-  if (role !== "owner" && role !== "admin" && gate.user) {
+  let orgId = gate.user.orgId;
+  let role = gate.user.role ?? "owner";
+  if (!orgId) {
+    try {
+      const ensured = await ensureUserOrg({
+        userId: gate.user.id,
+        email: gate.user.email,
+      });
+      orgId = ensured.orgId;
+      role = ensured.role;
+    } catch {
+      return NextResponse.json({ error: "Org required" }, { status: 400 });
+    }
+  }
+
+  orgId = resolveOrgId(orgId);
+  if (role !== "owner" && role !== "admin") {
     return NextResponse.json({ error: "Owner or admin required" }, { status: 403 });
   }
 
   const code = await createLinkCode({
     orgId,
-    userId: gate.user?.id ?? null,
+    userId: gate.user.id,
     role: role === "admin" || role === "owner" ? role : "member",
   });
 

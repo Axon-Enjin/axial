@@ -65,10 +65,24 @@ export async function getAuthUser(): Promise<AuthUser | null> {
 
   if (error || !user) return null;
 
-  // Org ID is stored in user metadata by the DB trigger (handle_new_user)
-  const orgId = (user.user_metadata?.org_id as string) ?? null;
+  // Org ID is stored in user metadata by the DB trigger (handle_new_user).
+  // Backfill if missing (accounts created before trigger was installed).
+  let orgId = (user.user_metadata?.org_id as string) ?? null;
   let orgName: string | null = null;
   let role: string | null = null;
+
+  try {
+    const { ensureUserOrg } = await import("@/lib/org/store");
+    const ensured = await ensureUserOrg({
+      userId: user.id,
+      email: user.email,
+      existingOrgId: orgId,
+    });
+    orgId = ensured.orgId;
+    role = ensured.role;
+  } catch {
+    // Non-fatal — caller may still hit "Org required"
+  }
 
   if (orgId) {
     // Use admin client to avoid RLS chicken-and-egg (no session cookie yet)
@@ -82,13 +96,15 @@ export async function getAuthUser(): Promise<AuthUser | null> {
         .single();
       orgName = org?.name ?? null;
 
-      const { data: membership } = await admin
-        .from("org_memberships")
-        .select("role")
-        .eq("org_id", orgId)
-        .eq("user_id", user.id)
-        .single();
-      role = membership?.role ?? null;
+      if (!role) {
+        const { data: membership } = await admin
+          .from("org_memberships")
+          .select("role")
+          .eq("org_id", orgId)
+          .eq("user_id", user.id)
+          .single();
+        role = membership?.role ?? null;
+      }
     } catch {
       // Non-fatal — org data is a nice-to-have in the layout
     }
