@@ -44,8 +44,10 @@ export async function POST() {
       });
       orgId = ensured.orgId;
       role = ensured.role;
-    } catch {
-      return NextResponse.json({ error: "Org required" }, { status: 400 });
+    } catch (err) {
+      const message =
+        err instanceof Error ? err.message : "Could not provision organization";
+      return NextResponse.json({ error: message }, { status: 400 });
     }
   }
 
