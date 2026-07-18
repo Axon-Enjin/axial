@@ -371,7 +371,7 @@ export function LiquidityView() {
     setParseError(null);
     setPipelineStage("reading");
     try {
-      const res = await fetch("/api/invoices/parse-sample?id=8901", {
+      const res = await fetch("/api/invoices/parse-sample?id=8901&forceNew=1", {
         method: "POST",
       });
       const data = (await res.json()) as {

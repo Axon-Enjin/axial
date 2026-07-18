@@ -30,17 +30,23 @@ export async function POST(request: Request) {
   }
 
   const parsed = SAMPLE_INVOICES[sampleId];
+  const forceNew =
+    searchParams.get("forceNew") === "1" ||
+    searchParams.get("forceNew") === "true";
 
   try {
+    const invoiceId = forceNew
+      ? `INV-UPLOAD-${Date.now().toString(36).toUpperCase()}`
+      : parsed.invoiceId;
     const saved = await upsertFromParse({
-      invoiceId: parsed.invoiceId,
+      invoiceId,
       party: parsed.party,
       terms: parsed.terms,
       face: parsed.face,
     });
 
     return NextResponse.json({
-      parsed,
+      parsed: { ...parsed, invoiceId },
       invoice: toClientInvoice(saved),
       source: "sample",
     });

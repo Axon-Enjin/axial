@@ -70,6 +70,7 @@ jobs:
             --cpu-boost \
             --min-instances=0 \
             --set-env-vars="AXIAL_OCR_ENABLED=true" \
+            --set-env-vars="AXIAL_ALLOW_SEED=true" \
             --set-env-vars="SUPABASE_URL=${{ vars.NEXT_PUBLIC_SUPABASE_URL }}" \
             --set-env-vars="SUPABASE_ANON_KEY=${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}" \
             --set-env-vars="MAINNET_SOROBAN_RPC_URL=${{ vars.MAINNET_SOROBAN_RPC_URL }}" \
