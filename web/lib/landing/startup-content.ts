@@ -1,4 +1,4 @@
-/** Investor / partner landing copy — product-to-startup posture (no competition framing). */
+/** Investor / partner landing copy. Product-to-startup posture (no competition framing). */
 
 export const NAV_LINKS = [
   { href: "#problem", label: "Problem" },
@@ -11,7 +11,7 @@ export const NAV_LINKS = [
 
 export const STEPS = [
   {
-    n: "01",
+    n: "1",
     title: "Payer confirms invoice",
     body: "B2B payer verifies the receivable and acknowledges the Notice of Assignment.",
     trigger: "Invoice issued",
@@ -19,7 +19,7 @@ export const STEPS = [
     action: "NoA acknowledged",
   },
   {
-    n: "02",
+    n: "2",
     title: "Tokenize the receivable",
     body: "Axial mints a Stellar Asset Contract representing the verified receivable.",
     trigger: "Fundable status",
@@ -27,15 +27,15 @@ export const STEPS = [
     action: "SAC on Mainnet",
   },
   {
-    n: "03",
+    n: "3",
     title: "Receive USDC advance",
-    body: "An atomic swap delivers ~85% of face value in USDC — shown in pesos in the app.",
+    body: "An atomic swap delivers ~85% of face value in USDC, shown in pesos in the app.",
     trigger: "Mint complete",
     logic: "85% advance bps",
     action: "USDC to wallet",
   },
   {
-    n: "04",
+    n: "4",
     title: "Route statutory payroll",
     body: "One Soroban transaction splits SSS, PhilHealth, and Pag-IBIG on-chain.",
     trigger: "Payroll run",
@@ -43,12 +43,49 @@ export const STEPS = [
     action: "Agency wallets funded",
   },
   {
-    n: "05",
+    n: "5",
     title: "BIR EIS, ready to submit",
-    body: "Oracle maps 20 BIR fields and JWS-signs — you review and approve within T+3.",
+    body: "Oracle maps 20 BIR fields and JWS-signs. You review and approve within T+3.",
     trigger: "Ledger final",
     logic: "Map + JWS",
     action: "Human approve",
+  },
+] as const;
+
+export const PILLARS = [
+  {
+    icon: "bolt",
+    title: "Instant capital",
+    body: "Tokenize a payer-confirmed receivable. Advance ~85% in USDC via atomic swap. No collateral.",
+  },
+  {
+    icon: "call_split",
+    title: "Statutory payroll",
+    body: "Route SSS, PhilHealth, and Pag-IBIG in one Soroban transaction.",
+  },
+  {
+    icon: "fact_check",
+    title: "Effortless BIR EIS",
+    body: "Oracle maps 20 fields and JWS-signs. You review and submit within T+3.",
+  },
+] as const;
+
+export const RAILS = [
+  {
+    t: "Stellar Mainnet",
+    d: "Production USDC, 3-5s finality, audit trail for compliance memos.",
+  },
+  {
+    t: "Closed loop",
+    d: "Payer confirm + NoA + lockbox. Anti-fraud is legal assignment, not “the chain prevents it.”",
+  },
+  {
+    t: "Co-Pilot compliance",
+    d: "Prepare, review, submit. Auto-file only after BIR certification + PTT.",
+  },
+  {
+    t: "Licensed capital",
+    d: "Funders are qualified financing partners under RA 8556 posture, not open DeFi pools.",
   },
 ] as const;
 
@@ -76,7 +113,7 @@ export const FEASIBILITY_ROWS = [
   {
     dim: "Capital",
     rating: "Medium",
-    note: "Regulated / qualified liquidity partners — not an open underwriting-free pool.",
+    note: "Regulated / qualified liquidity partners, not an open underwriting-free pool.",
   },
 ] as const;
 
@@ -96,15 +133,15 @@ export const ECONOMICS_ENGINE_B = [
 export const CANVAS = [
   {
     title: "Problem",
-    body: "Net 60–90 traps cash while payroll is bi-weekly. BIR EIS (T+3, Dec 2026) and statutory payroll still run on spreadsheets. Traditional factoring is slow and collateral-heavy.",
+    body: "Net 60-90 traps cash while payroll is bi-weekly. BIR EIS (T+3, Dec 2026) and statutory payroll still run on spreadsheets. Traditional factoring is slow and collateral-heavy.",
   },
   {
     title: "Segments",
-    body: "Primary: 10–50 person PH B2B agencies. Secondary: F&B distributors. Capital: licensed financing partners. Payers: enterprise buyers who confirm + ack NoA.",
+    body: "Primary: 10-50 person PH B2B agencies. Secondary: F&B distributors. Capital: licensed financing partners. Payers: enterprise buyers who confirm + ack NoA.",
   },
   {
     title: "UVP",
-    body: "Instant Capital, Effortless Compliance — ~85% of a confirmed receivable in minutes, with EIS and statutory splits prepared for one-click human approval.",
+    body: "Instant Capital, Effortless Compliance. ~85% of a confirmed receivable in minutes, with EIS and statutory splits prepared for one-click human approval.",
   },
   {
     title: "Solution",
@@ -116,7 +153,7 @@ export const CANVAS = [
   },
   {
     title: "Revenue",
-    body: "0.5–1.5% platform spread per funded face + tiered compliance SaaS. Optional FX edge and micro origination fees.",
+    body: "0.5-1.5% platform spread per funded face + tiered compliance SaaS. Optional FX edge and micro origination fees.",
   },
   {
     title: "Costs",
@@ -128,7 +165,7 @@ export const CANVAS = [
   },
   {
     title: "Advantage",
-    body: "Domain Soroban contracts already on Mainnet plus PH-native EIS + statutory oracle on one pipeline — closed-loop discipline, not open DeFi credit.",
+    body: "Domain Soroban contracts already on Mainnet plus PH-native EIS + statutory oracle on one pipeline. Closed-loop discipline, not open DeFi credit.",
   },
 ] as const;
 
