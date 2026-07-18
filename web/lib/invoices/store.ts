@@ -44,13 +44,13 @@ async function withFileFallback<T>(
   try {
     return await supabaseOp();
   } catch (err) {
+    // On Cloud Run, never fall back to the local JSON file store — it masks
+    // real DB errors and /app/data is not writable.
+    if (process.env.K_SERVICE) {
+      throw err;
+    }
     if (isMissingTableError(err)) {
-      try {
-        return await fileOp();
-      } catch {
-        // Prefer the original Supabase error (Cloud Run cannot mkdir /app/data).
-        throw err;
-      }
+      return fileOp();
     }
     throw err;
   }
