@@ -24,6 +24,7 @@ import {
  */
 export async function checkFundingEligibility(
   invoiceId: string,
+  orgIdHint?: string | null,
 ): Promise<EligibilityResult> {
   const notFundable = (
     blockers: EligibilityBlocker[],
@@ -43,7 +44,20 @@ export async function checkFundingEligibility(
     return notFundable(["payer_not_found"]);
   }
 
-  const orgId = resolveOrgId();
+  // Prefer caller/session org — resolveOrgId() alone falls back to "demo-org"
+  // and misses Trust & Boundary acks on the user's real org.
+  let sessionOrgId = orgIdHint?.trim() || null;
+  if (!sessionOrgId) {
+    try {
+      const { getAuthUser } = await import("@/lib/supabase/server");
+      const user = await getAuthUser();
+      sessionOrgId = user?.orgId ?? null;
+    } catch {
+      sessionOrgId = null;
+    }
+  }
+
+  const orgId = resolveOrgId(sessionOrgId);
   const [trustAcked, orgProfile] = await Promise.all([
     isTrustBoundaryAcked(orgId),
     getOrgProfile(orgId),

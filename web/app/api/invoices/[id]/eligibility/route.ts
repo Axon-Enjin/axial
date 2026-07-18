@@ -17,7 +17,7 @@ export async function GET(_req: Request, context: RouteContext) {
   const decoded = decodeURIComponent(id);
 
   try {
-    const result = await checkFundingEligibility(decoded);
+    const result = await checkFundingEligibility(decoded, gate.user?.orgId);
     const status = result.fundable ? 200 : 422;
     return NextResponse.json(result, { status });
   } catch (err) {
