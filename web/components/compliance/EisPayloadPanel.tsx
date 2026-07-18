@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
+import { explainEisPayload } from "@/lib/eis/explain";
 import { EIS_PAYLOAD_FIELDS, formatPayloadValue } from "@/lib/eis/payload-fields";
 import type { BirEisPayload } from "@/lib/eis/types";
 
@@ -15,6 +16,7 @@ type Props = {
   memoTxHash?: string | null;
   memoText?: string | null;
   jwsPreview?: string;
+  dueBy?: string | null;
   explorerTxBase: string;
   onClose: () => void;
   onApproved?: () => void;
@@ -30,6 +32,7 @@ export function EisPayloadPanel({
   memoTxHash,
   memoText,
   jwsPreview,
+  dueBy,
   explorerTxBase,
   onClose,
   onApproved,
@@ -42,6 +45,11 @@ export function EisPayloadPanel({
       pipelineStatus === "submitted");
   const [approving, setApproving] = useState(false);
   const [approveError, setApproveError] = useState<string | null>(null);
+
+  const explain = useMemo(
+    () => explainEisPayload({ payload, dueBy }),
+    [payload, dueBy],
+  );
 
   async function handleApprove() {
     if (!submissionId || approving) return;
@@ -103,6 +111,32 @@ export function EisPayloadPanel({
       {approveError ? (
         <p className="mb-3 font-body-md text-body-md text-red-400/90">{approveError}</p>
       ) : null}
+
+      <div className="mb-4 rounded-lg border border-outline-variant/15 bg-surface/50 px-3 py-2.5">
+        <div className="font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant">
+          Co-Pilot review
+        </div>
+        <p className="mt-1 font-body-md text-body-md text-on-surface">{explain.summary}</p>
+        {explain.findings.length > 0 ? (
+          <ul className="mt-2 space-y-1">
+            {explain.findings.map((f) => (
+              <li
+                key={f.code}
+                className={[
+                  "font-body-md text-body-md",
+                  f.severity === "block"
+                    ? "text-red-400/90"
+                    : f.severity === "warn"
+                      ? "text-amber-300/90"
+                      : "text-on-surface-variant",
+                ].join(" ")}
+              >
+                {f.message}
+              </li>
+            ))}
+          </ul>
+        ) : null}
+      </div>
 
       <div className="space-y-4">
         {groups.map((group) => (

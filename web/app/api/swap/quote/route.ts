@@ -1,8 +1,12 @@
 import { NextResponse } from "next/server";
+import { assertSessionAccess } from "@/lib/auth/session-gate";
 import { resolveSorobanConfig } from "@/lib/soroban/server-config";
 import { quoteAdvance } from "@/lib/soroban/quote";
 
 export async function GET(request: Request) {
+  const gate = await assertSessionAccess("read");
+  if (gate.denied) return gate.denied;
+
   const { searchParams } = new URL(request.url);
   const faceRaw = searchParams.get("face");
   const face = faceRaw ? Number(faceRaw) : NaN;

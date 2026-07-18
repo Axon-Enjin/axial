@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { assertSessionAccess } from "@/lib/auth/session-gate";
 import { seedDemoInvoices } from "@/lib/invoices/seed-demo";
 import {
   countInvoices,
@@ -13,6 +14,9 @@ function seedAllowed(): boolean {
 }
 
 export async function GET(request: Request) {
+  const gate = await assertSessionAccess("read");
+  if (gate.denied) return gate.denied;
+
   const { searchParams } = new URL(request.url);
   const page = Math.max(1, Number(searchParams.get("page")) || 1);
   const pageSize = Math.min(50, Math.max(1, Number(searchParams.get("pageSize")) || 5));

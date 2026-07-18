@@ -1,5 +1,6 @@
 import { createNotification } from "./store";
 import type { NotificationKind } from "./types";
+import { fanoutTelegramNotification } from "@/lib/telegram/fanout";
 
 /** Fire-and-forget calm notification emitters. */
 export function emitNotification(input: {
@@ -10,6 +11,12 @@ export function emitNotification(input: {
   href?: string | null;
 }): void {
   void createNotification(input).catch(() => null);
+  fanoutTelegramNotification({
+    orgId: input.orgId,
+    title: input.title,
+    body: input.body,
+    href: input.href,
+  });
 }
 
 export function emitFunded(orgId: string | null | undefined, receivableId: string, advancePhp: number) {

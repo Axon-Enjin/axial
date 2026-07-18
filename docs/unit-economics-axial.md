@@ -1,7 +1,7 @@
 # Axial — Unit Economics
 
-**Version:** 1.0  
-**Date:** 2026-07-15  
+**Version:** 1.1  
+**Date:** 2026-07-17  
 **Status:** Planning model (not audited financials)  
 **Foundation:** [`Axial.md`](Axial.md) §7.4 · [`gtm-axial.md`](gtm-axial.md) · [`research-pinkraft-axial.md`](research-pinkraft-axial.md)
 
@@ -17,6 +17,8 @@
 | **B. Compliance SaaS** | Recurring | MSME org | Moat + retention when not factoring |
 
 Tagline economics: **Instant Capital** monetizes float unlocked; **Effortless Compliance** monetizes regulatory urgency (BIR EIS Dec 2026).
+
+Telegram ops alerts and advisory EIS explain are **not** a third engine. They are conversion/retention multipliers on A and B.
 
 ---
 
@@ -64,7 +66,7 @@ On-chain gas on Stellar is negligible vs PHP economics.
 
 ## 3. Compliance SaaS unit (per org / month)
 
-Illustrative tiers (finalize in pilot pricing):
+Illustrative tiers (finalize in pilot pricing; GTM Pilot/Standard/Enterprise labels remain TBD until pilot closes):
 
 | Tier | Monthly | Includes | Target |
 |------|---------|----------|--------|
@@ -78,7 +80,37 @@ Illustrative tiers (finalize in pilot pricing):
 
 ---
 
-## 4. Blended ARR scenarios (illustrative)
+## 4. Feature unit P&L (attribution)
+
+| Feature | Primary engine | Revenue attribution | COGS / risk | Notes |
+|---------|----------------|---------------------|-------------|-------|
+| Atomic swap / advance | A | 0.5–1.5% of funded face | FX convert, RPC, support, leakage share | Code advances at 85%; **platform take not deducted yet** |
+| Payroll split | B (Growth+) | Bundled in SaaS | Contract invoke + support | Statutory bps are SSS/PhilHealth/Pag-IBIG, not Axial fees |
+| EIS Co-Pilot | B | Core of Starter+ | Oracle, JWS, worker, support | Billing absent; sticky with zero advances |
+| Rule-based / optional LLM explain | B | Retention / Scale upsell candidate | LLM token cost if enabled | Advisory only; see [`rfc-axial-eis-explain.md`](rfc-axial-eis-explain.md) |
+| NoA + settlement lockbox | Enables A | Indirect (unlocks volume) | Leakage ops | Without NoA ack, financed volume stays near zero |
+| Payer portal | Enables A | Indirect | Support | Chicken-and-egg GTM gate |
+| Telegram MSME ops | A+B multiplier | Retention + faster Approve / quote | Bot API free; support if chatty | Not an acquisition channel in [`gtm-axial.md`](gtm-axial.md) |
+
+---
+
+## 5. Sensitivity (platform only, ₱100k face)
+
+Hold other inputs at the §2 midpoint. Change one lever:
+
+| Lever | Low | Mid | High | Platform revenue / invoice |
+|-------|-----|-----|------|----------------------------|
+| Take rate | 0.5% | 1.0% | 1.5% | ₱500 / ₱1,000 / ₱1,500 |
+| Tenor discount (all-in) | 3% Net-30-ish | 6% Net-60 | 9% Net-90 | Pie grows; Axial still takes band of face, funder takes residual |
+| Leakage on book | 0% | 1% | 2% | Eats funder yield first; damages renewals more than take |
+| FX markup | 0% (today) | 0.25% | 0.5% | Docs name “thin FX spread”; **code has 0% markup** |
+| Telegram → Approve conversion | — | +10% of prepared filings approved in-window | +25% | Lifts SaaS trust + unlocks more Engine A volume |
+
+Contribution after ~₱200 variable cost: **₱300 / ₱800 / ₱1,300** across the take-rate row.
+
+---
+
+## 6. Blended ARR scenarios (illustrative)
 
 | Cohort | Orgs | Avg SaaS / mo | Funded face / mo / org | Platform 1% | Monthly revenue | Annual run-rate |
 |--------|------|---------------|------------------------|-------------|-----------------|-----------------|
@@ -90,7 +122,7 @@ These are **planning ceilings**, not forecasts. Capital availability and payer o
 
 ---
 
-## 5. Cost stack (startup)
+## 7. Cost stack (startup)
 
 | Cost | Nature | Notes |
 |------|--------|-------|
@@ -99,12 +131,29 @@ These are **planning ceilings**, not forecasts. Capital availability and payer o
 | Liquidity partner yield | Pass-through | Not Axial COGS if balance-sheet sits with partner |
 | KYB / counsel / audit | Semi-fixed | Required before scale |
 | Team | Fixed | 4 builders → expand GTM + compliance ops |
+| Optional EIS LLM explain | Variable | Only if `EIS_EXPLAIN_LLM=true` |
 
 **Capital model preference:** Axial as **tech + origination rails** on a licensed financing entity — not as an unlicensed open pool (see feasibility + CLR).
 
 ---
 
-## 6. Huma / duration caution
+## 8. Doc ↔ code gap (fee capture)
+
+| Mechanism | Documented | Implemented in product code |
+|-----------|------------|-----------------------------|
+| `advance_bps` 85% | Yes | Yes (`web/lib/soroban/quote.ts`, `axial_swap`) |
+| Platform take 0.5–1.5% | Yes | **No** — not deducted in swap/settlement |
+| Micro origination ₱150 | Yes | **No** |
+| FX markup | Named | **No** — Reflector + 56.5 fallback, pass-through |
+| SaaS billing / entitlements | Tier table | **No** subscription metering |
+| Payroll platform fee | Bundled in SaaS | On-chain split only |
+| ToS / fee schedule | CLR flags needed | Legal gap before live fee capture |
+
+Ship fee capture only after ToS + partner term sheets. Until then, treat §2–§6 as fundraising math, not ledger truth.
+
+---
+
+## 9. Huma / duration caution
 
 Huma-style PayFi often earns on **short-duration, high-recycle** capital (days, not Net 60–90). Axial’s receivables are longer:
 
@@ -118,7 +167,7 @@ Do not pitch Huma’s velocity APY without adjusting for tenor.
 
 ---
 
-## 7. Unit economics health checks
+## 10. Unit economics health checks
 
 | Metric | Healthy target |
 |--------|----------------|
@@ -135,3 +184,4 @@ Do not pitch Huma’s velocity APY without adjusting for tenor.
 | Date | Change |
 |------|--------|
 | 2026-07-15 | Initial unit economics model for investor landing |
+| 2026-07-17 | Feature P&L, sensitivity table, doc↔code fee gap; Telegram/explain as multipliers |

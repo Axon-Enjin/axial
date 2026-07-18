@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { assertSessionAccess } from "@/lib/auth/session-gate";
 import { checkFundingEligibility } from "@/lib/payers/eligibility";
 
 type RouteContext = { params: Promise<{ id: string }> };
@@ -9,6 +10,9 @@ type RouteContext = { params: Promise<{ id: string }> };
  * Returns { fundable, blockers, ... } — never throws.
  */
 export async function GET(_req: Request, context: RouteContext) {
+  const gate = await assertSessionAccess("read");
+  if (gate.denied) return gate.denied;
+
   const { id } = await context.params;
   const decoded = decodeURIComponent(id);
 

@@ -5,6 +5,7 @@ import { NetworkModeCard } from "@/components/settings/NetworkModeCard";
 import { OrgCard } from "@/components/settings/OrgCard";
 import { OrgTaxProfileCard } from "@/components/settings/OrgTaxProfileCard";
 import { TrustBoundaryCard } from "@/components/settings/TrustBoundaryCard";
+import { TelegramLinkCard } from "@/components/settings/TelegramLinkCard";
 import { PdaxRampCard } from "@/components/settings/PdaxRampCard";
 import { WalletCard } from "@/components/settings/WalletCard";
 import { Button } from "@/components/ui/Button";
@@ -169,6 +170,8 @@ export function SettingsView() {
       <OrgTaxProfileCard />
 
       <NetworkModeCard />
+
+      <TelegramLinkCard />
 
       <div className="grid grid-cols-1 gap-gutter md:grid-cols-12">
         <div className="md:col-span-8">

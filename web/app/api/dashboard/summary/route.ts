@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { assertSessionAccess } from "@/lib/auth/session-gate";
 import { fetchDemoWalletBalances } from "@/lib/soroban/balances";
 import { getInvoiceStoreBackend, listInvoices } from "@/lib/invoices/store";
 import { getEisStoreBackend, listSubmissions } from "@/lib/eis/store";
@@ -11,6 +12,9 @@ import {
 export const dynamic = "force-dynamic";
 
 export async function GET() {
+  const gate = await assertSessionAccess("read");
+  if (gate.denied) return gate.denied;
+
   try {
     const chain = await resolvePublicChainStatus();
     const { items, total } = await listInvoices(1, 500);

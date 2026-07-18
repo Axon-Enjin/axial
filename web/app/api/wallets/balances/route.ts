@@ -1,10 +1,14 @@
 import { NextResponse } from "next/server";
+import { assertSessionAccess } from "@/lib/auth/session-gate";
 import { fetchDemoWalletBalances } from "@/lib/soroban/balances";
 import { resolveSorobanConfig } from "@/lib/soroban/server-config";
 
 export const dynamic = "force-dynamic";
 
 export async function GET() {
+  const gate = await assertSessionAccess("read");
+  if (gate.denied) return gate.denied;
+
   try {
     const data = await fetchDemoWalletBalances(await resolveSorobanConfig());
     return NextResponse.json({

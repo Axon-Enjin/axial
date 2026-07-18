@@ -135,6 +135,7 @@ type EisRow = {
   payload?: BirEisPayload;
   jwsPreview?: string;
   error?: string;
+  dueBy?: string | null;
 };
 
 type EisStats = {
@@ -548,6 +549,7 @@ export function ComplianceView() {
                                   memoTxHash={r.memoTxHash}
                                   memoText={r.memoText}
                                   jwsPreview={r.jwsPreview}
+                                  dueBy={r.dueBy}
                                   explorerTxBase={explorerTx}
                                   onClose={() => setExpandedPayloadId(null)}
                                   onApproved={loadEis}

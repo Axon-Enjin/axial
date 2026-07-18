@@ -1,12 +1,19 @@
 import { NextResponse } from "next/server";
-import { assertEisOperatorAccess } from "@/lib/eis/route-auth";
+import { assertSessionAccess } from "@/lib/auth/session-gate";
 import { getEisStoreBackend, listSubmissions } from "@/lib/eis/store";
 
 export async function GET() {
-  const denied = await assertEisOperatorAccess("read");
-  if (denied) return denied;
+  const gate = await assertSessionAccess("read");
+  if (gate.denied) return gate.denied;
 
-  const submissions = await listSubmissions(50);
+  const orgId = gate.user?.orgId ?? null;
+  let submissions = await listSubmissions(50);
+  if (orgId) {
+    const prefix = `${orgId}:`;
+    submissions = submissions.filter(
+      (s) => s.idempotencyKey.startsWith(prefix) || !s.idempotencyKey.includes(":"),
+    );
+  }
 
   const rows = submissions.map((s) => ({
     id: s.id,
@@ -28,6 +35,7 @@ export async function GET() {
     payload: s.payload,
     jwsPreview: truncateJws(s.jwsCompact),
     error: s.error,
+    dueBy: s.dueBy ?? null,
   }));
 
   const pending = submissions.filter(

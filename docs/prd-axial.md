@@ -184,7 +184,7 @@ The four-tab IA is locked. The closed-loop additions fit it as follows — they 
 
 ## 7. AI / Agent Feature Specifications
 
-No AI/LLM-driven user-facing features are in scope for v1. If anomaly explanation, document OCR, or chat assistants are added in future, they require a dedicated PRD revision and RFC.
+No auto-submitting AI agent is in scope. Rule-based Co-Pilot explain ships in-product (`web/lib/eis/explain.ts`). Optional advisory LLM narrative is gated behind `EIS_EXPLAIN_LLM` and [`rfc-axial-eis-explain.md`](rfc-axial-eis-explain.md). Document OCR LLM assist and chat assistants still require a dedicated PRD revision before production tenant enablement.
 
 ---
 

@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { assertSessionAccess } from "@/lib/auth/session-gate";
 import {
   beginCollectingInvoice,
   confirmPayerInvoice,
@@ -65,6 +66,9 @@ async function resolveCollectedUsdc(
 }
 
 export async function GET(_request: Request, context: RouteContext) {
+  const gate = await assertSessionAccess("read");
+  if (gate.denied) return gate.denied;
+
   const { id } = await context.params;
   const decoded = decodeURIComponent(id);
 
@@ -81,6 +85,9 @@ export async function GET(_request: Request, context: RouteContext) {
 }
 
 export async function PATCH(request: Request, context: RouteContext) {
+  const gate = await assertSessionAccess("operator");
+  if (gate.denied) return gate.denied;
+
   const { id } = await context.params;
   const decoded = decodeURIComponent(id);
 

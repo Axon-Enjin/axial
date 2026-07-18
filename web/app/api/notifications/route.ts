@@ -1,29 +1,26 @@
 import { NextResponse } from "next/server";
+import { assertSessionAccess } from "@/lib/auth/session-gate";
 import {
   countUnread,
   listNotifications,
   markAllNotificationsRead,
   markNotificationRead,
 } from "@/lib/notifications/store";
-import { getSupabaseServer } from "@/lib/supabase/server";
 
 export async function GET() {
-  const supabase = await getSupabaseServer();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  const orgId = (user?.user_metadata?.org_id as string | undefined) ?? undefined;
+  const gate = await assertSessionAccess("read");
+  if (gate.denied) return gate.denied;
 
+  const orgId = gate.user?.orgId ?? undefined;
   const items = await listNotifications(orgId, 40);
   return NextResponse.json({ items, unread: countUnread(items) });
 }
 
 export async function PATCH(request: Request) {
-  const supabase = await getSupabaseServer();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  const orgId = (user?.user_metadata?.org_id as string | undefined) ?? undefined;
+  const gate = await assertSessionAccess("read");
+  if (gate.denied) return gate.denied;
+
+  const orgId = gate.user?.orgId ?? undefined;
 
   let body: { id?: string; all?: boolean };
   try {

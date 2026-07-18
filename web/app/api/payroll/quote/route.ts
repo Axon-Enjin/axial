@@ -1,7 +1,11 @@
 import { NextResponse } from "next/server";
+import { assertSessionAccess } from "@/lib/auth/session-gate";
 import { quotePayrollSplit } from "@/lib/soroban/payroll-quote";
 
 export async function GET(request: Request) {
+  const gate = await assertSessionAccess("read");
+  if (gate.denied) return gate.denied;
+
   const { searchParams } = new URL(request.url);
   const gross = Number(searchParams.get("gross"));
 
