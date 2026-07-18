@@ -45,7 +45,8 @@ soroban/
 │   ├── receivable_token/     # SAC mint (payer-confirmed receivable)
 │   ├── axial_swap/           # USDC atomic swap + reserve
 │   ├── payroll_split/        # SSS / PhilHealth / Pag-IBIG routing
-│   └── settlement/           # lockbox payout (P2 — optional for L1 demo)
+│   ├── settlement/           # Mainnet L1 lockbox (register_invoice + settle)
+│   └── contractor_payroll/   # Track A — Testnet only (do not edit Mainnet payroll_split)
 ├── deployments/
 │   ├── testnet.json          # gitignored — team shares contract IDs
 │   └── mainnet.json          # gitignored — after mainnet deploy

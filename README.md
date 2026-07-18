@@ -71,8 +71,9 @@ We merged tokenized invoice factoring with EIS Co-Pilot reporting and statutory 
 - **Instant Liquidity via Atomic Swap** — Soroban contract advances ~80–90% of face value in USDC instantly, with holdback reserve and MSME recourse. Denomination-agnostic.
 - **Programmable Statutory Payroll Splitting** — Soroban contract calculates and routes exact SSS, PhilHealth, and Pag-IBIG deductions to government wallets in real-time.
 - **On-chain Lockbox Settlement** — Per-invoice lockbox: `register_invoice`, payer Freighter funding, and on-chain `settle` (balance pre-check) on `mark_collected`; reconciliation cron scans for leakage.
+- **Funder Protection Center** — Funder book, diligence views, and token/session `/app/funder-portal` for liquidity partners.
 - **BIR EIS Compliance Co-Pilot** — Off-chain oracle maps transaction metadata to the 20-field BIR EIS schema, JWS-signs the payload, and surfaces it for **human review and approval** before submit (mock BIR today; live path gated on Permit to Transmit). Immutable proof written to Stellar memo.
-- **Freighter Wallet Integration** — Full support for self-custody non-custodial signing via Freighter, alongside embedded custodial paths.
+- **Wallet Signing** — Custodial server signing by default, with optional Freighter self-custody for MSME/payer paths and lockbox funding.
 - **Auth & Multi-tenancy** — Organization-scoped authentication, Magic Links, and role-based access control powered by Supabase.
 - **Event-driven Cron Workers** — Automated T+3 compliance scheduling and Horizon event polling for autonomous system state reconciliation.
 - **PHP-Denominated UX** — All amounts displayed in Philippine Pesos. Settlement in USDC on Stellar. Real-time FX conversion via Reflector oracle integration.
@@ -89,7 +90,7 @@ We merged tokenized invoice factoring with EIS Co-Pilot reporting and statutory 
 | **Database & Auth** | Supabase (PostgreSQL, Row Level Security, Auth / Multi-tenancy) |
 | **Blockchain** | Stellar (Soroban smart contracts, Horizon API, Stellar SDK) |
 | **Settlement** | USDC on Stellar (Circle-issued) |
-| **Wallets** | Freighter Integration (Self-custody) |
+| **Wallets** | Custodial server signing (default) + Freighter (optional) |
 | **Design** | Dark glassmorphic, Geist typography, Material Symbols |
 | **Hosting** | Google Cloud Run (`asia-southeast1`), GitHub Actions CI |
 
@@ -213,7 +214,8 @@ axial/
 │   │   ├── receivable_token/ SAC mint (payer-confirmed receivable)
 │   │   ├── axial_swap/       USDC atomic swap + reserve
 │   │   ├── payroll_split/    SSS / PhilHealth / Pag-IBIG routing
-│   │   └── settlement/       Payer lockbox & reconciliation
+│   │   ├── settlement/       Payer lockbox & reconciliation (Mainnet L1)
+│   │   └── contractor_payroll/ Track A Testnet-only contractor batch payroll
 │   ├── scripts/              Deploy & demo scripts
 │   ├── deployments/          Testnet/Mainnet contract IDs
 │   ├── Makefile              build, test, deploy targets
@@ -221,9 +223,9 @@ axial/
 │
 ├── web/                      Next.js frontend
 │   ├── app/
-│   │   ├── app/              Authenticated app — Overview, Liquidity, Compliance, Settings, Payer Portal
+│   │   ├── app/              Authenticated app — Overview, Liquidity, Compliance, Settings, Payer Portal, Funder Portal
 │   │   ├── (auth)/           Login & invite routes
-│   │   └── api/              API routes (invoices, payroll, wallets, EIS, swap, noa, payers, etc.)
+│   │   └── api/              API routes (invoices, payroll, wallets, EIS, swap, noa, payers, funder, etc.)
 │   ├── components/           UI components (sidebar, overview, liquidity, compliance, settings)
 │   └── lib/                  Shared utilities & Stellar SDK integration
 │
@@ -259,7 +261,7 @@ cd soroban
 make setup          # configure network + fund test identity
 make build          # compile all contracts → WASM
 make test           # run unit tests
-make deploy-all     # deploy to testnet
+make deploy-all     # deploy to configured network (Testnet sandbox by default; Mainnet via mainnet scripts)
 ```
 
 Or manually:
@@ -348,7 +350,7 @@ The demo follows this order to showcase the full pipeline:
 
 | Phase | Focus | Status |
 | --- | --- | --- |
-| **Phase 1 — Wedge** | Production build on Stellar Testnet/Mainnet. Onboard software/creative agencies. | 🔄 Current |
+| **Phase 1 — Wedge** | Production build on Stellar Mainnet (Testnet sandbox for contract work). Onboard software/creative agencies. | 🔄 Current |
 | **Phase 2 — Validation** | Real operational deployment. Onboarding initial users with Atomic swaps, EIS oracle, and statutory flows in production. | ⬜ Next |
 | **Phase 3 — Expansion** | F&B suppliers and distributors. Larger invoice throughput. | ⬜ Planned |
 | **Phase 4 — Ad Tax Module** | Programmable treasury for BIR RMC 5-2024 (digital ad tax compliance). | ⬜ Future |
@@ -372,7 +374,7 @@ The demo follows this order to showcase the full pipeline:
 | **Stellar Asset Contracts (SAC)** | Each verified receivable is minted as a SAC — the on-chain representation of the legal right to payment. |
 | **Soroban Smart Contracts** | Denomination-agnostic atomic swap, statutory payroll router, and settlement — all in Rust/WASM. |
 | **Transaction Memos** | BIR EIS success reference IDs anchored to on-chain finality as immutable compliance proof. |
-| **USDC on Stellar** | Circle-issued production settlement asset. No external stablecoin dependencies. |
+| **USDC on Stellar** | Circle-issued production settlement asset on Stellar Mainnet. |
 | **AUTH_REQUIRED / AUTH_REVOCABLE** | Statutory routing contracts enforce that funds flow only to whitelisted government agency addresses. |
 | **SEP-24** | Standard anchor interface for PHP fiat on/off-ramp. PDAX as primary driver; architecture supports any anchor. |
 | **3–5 Second Finality** | Settlement speed triggers the compliance Co-Pilot within the T+3 window — filings are prepared for review, not left to spreadsheet panic. |

@@ -56,7 +56,7 @@ export const FEASIBILITY_ROWS = [
   {
     dim: "Product / tech",
     rating: "High",
-    note: "Four Soroban contracts on Mainnet; mint, swap, payroll, lockbox funding live.",
+    note: "Four Soroban contracts on Mainnet; mint, swap, payroll, lockbox settle live.",
   },
   {
     dim: "Regulatory path",
@@ -138,11 +138,12 @@ export const LIVE_NOW = [
   "Payer portal, NoA, eligibility gate before funding",
   "EIS oracle → review-ready filing (mock BIR today)",
   "Lockbox funding via Freighter",
+  "On-chain settle with lockbox balance pre-check",
+  "Funder Protection Center (book + diligence)",
+  "Calm Telegram alerts when you link a chat in Settings",
 ] as const;
 
 export const NEXT_UP = [
-  "On-chain settle with lockbox balance pre-check",
-  "Funder Protection Center (book + diligence)",
   "Real payer KYB + BIR Permit to Transmit",
   "Licensed financing partner for production capital",
 ] as const;

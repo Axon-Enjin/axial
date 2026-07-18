@@ -1,7 +1,7 @@
 # Axial — Foundation Document
 
-**Version:** 1.1  
-**Date:** 2026-05-14  
+**Version:** 1.2  
+**Date:** 2026-06-18 (locks); docs sync 2026-07-18  
 **Status:** Living Document — update as product thinking evolves
 
 > This document is the canonical source of truth for Axial's origin, thinking, and identity. It is the primary input for all other product documents (BRD, PRD, SDD, DSD, GTM). When those documents conflict with this one, resolve the conflict here first, then propagate.
@@ -10,7 +10,7 @@
 
 ## FOR DEVS + TL;DR
 
-> If you read nothing else in this doc, read this section. The rest is the *why*; this section is the *what*. Updated **2026-05-14** alongside doc version 1.1.
+> If you read nothing else in this doc, read this section. The rest is the *why*; this section is the *what*. Latest product locks **2026-06-18** (Co-Pilot tagline); doc sync **2026-07-18**.
 
 ### What we're building (one paragraph)
 
@@ -23,7 +23,7 @@ After fact-checking against current sources and aligning to PDAX (hackathon main
 | Old assumption | Status | Locked decision |
 |---|---|---|
 | Atomic swap into **PHPC** on Stellar | ❌ Retired | PHPC is on Polygon and Ronin Network, **not Stellar**. Exited the BSP sandbox July 5, 2025. |
-| Settlement asset = PHPC | ❌ Retired | **Settlement asset = USDC on Stellar.** Circle-issued, on Mainnet, no external dependencies. |
+| Settlement asset = PHPC | ❌ Retired | **Settlement asset = USDC on Stellar.** Circle-issued on Mainnet (Circle counterparty risk acknowledged — see PBW honesty lock). |
 | Direct QRPh integration via Stellar SDK | ❌ Retired | QRPh requires BSP-licensed PSP/EMI status. Not buildable as a third-party SDK. Handled at the PDAX/anchor edge. |
 | BIR EIS "non-negotiable for 100% of formalized MSMEs" | ⚠️ Softened | Applies to **Phase 1** taxpayers only (Large Taxpayers Service, e-commerce, exporters, ₱1B+ gross sales, CAS/CBA users). Micro-taxpayers are exempt. Future phases TBD by BIR. |
 | PHP fiat rail unclear | ✅ Resolved | **PDAX as production PHP rail** via PDAX Connect API. PDAX inherits BSP/VASP license; Axial never custodies fiat. |
@@ -47,7 +47,7 @@ A CTO/auditor review on Day 5 of the hackathon checked the `web/` and `soroban/`
 | Item | Status | Locked decision |
 |---|---|---|
 | PDAX Connect (L3) | ❌ Dropped | PDAX sandbox access was **not granted**. Final hackathon scope is **L1 + L2** (L2 = our own mocked PDAX UI). No real PDAX API calls. The SEP-24 abstraction stands so PDAX can be wired post-hackathon without contract changes. |
-| Wallet management (Q7) | ✅ Locked | **Custodial backend signing** for the hackathon demo — the Next.js server holds the funder/MSME/issuer secrets and signs all Soroban transactions. No Freighter/Albedo in v1. Freighter (MSME + payer self-custody) is post-hackathon roadmap. |
+| Wallet management (Q7) | ✅ Locked | **Custodial backend signing** is the default — the Next.js server holds the funder/MSME/issuer secrets and signs Soroban transactions. **Freighter is optional** for MSME/payer self-custody and payer lockbox funding (shipped). |
 | Operating network — Mainnet only | ✅ Locked (2026-05-22) | Axial runs on **Stellar Mainnet only**. All 4 contracts are deployed + initialized on Mainnet (`deployments/mainnet.json`). This **reverses** the earlier "testnet is the live demo path" decision — testnet is retired as an operating target and kept only as a developer sandbox. |
 | Closed-loop settlement | ✅ Wired (verify on Mainnet) | Closed loop is built and called from the app — payer portal, NoA issue/ack, reconciliation cron, `register_invoice`, Freighter lockbox funding, and on-chain `settle` on `mark_collected` (B-2 S3–S5). **Remaining:** exercise/verify on Mainnet ([`settle-dry-run-checklist.md`](settle-dry-run-checklist.md)); do not overclaim production collection ops until that dry-run is green. |
 | Hardcoded demo data | ⚠️ Acknowledged | FX rate (`56.5`), Settings credentials/audit log, and seller/buyer TINs are hardcoded demo values. Acceptable for the hackathon; tracked for replacement in [`docs/sprint.md`](sprint.md). |
@@ -74,7 +74,7 @@ Build **L1 first**. L1 alone is a complete, judge-able submission. L2 enriches t
 
 | Layer | What's real (live on Mainnet / working) | What's mocked | External dependency |
 |---|---|---|---|
-| **L1 — must ship** | Soroban contracts deployed to Mainnet · real USDC atomic swap · payroll split contract · BIR EIS oracle service · JWS-signed payload to mock BIR endpoint · Stellar memo write-back of success reference | Fiat in/out (rendered as labeled placeholder screens) | None |
+| **L1 — must ship** | Soroban contracts deployed to Mainnet · real USDC atomic swap · payroll split contract · BIR EIS oracle service · JWS-signed payload to mock BIR endpoint · Stellar memo write-back of success reference | Fiat in/out (rendered as labeled placeholder screens) | Circle USDC issuer (named dependency) |
 | **L2 — nice to have** | Everything in L1 | PDAX UI screens for PHP↔USDC ramp drawn by us | None — we draw the screens |
 | **L3 — not pursued** | ~~Real PDAX Connect API calls behind the L2 mocked UI~~ | — | ❌ PDAX sandbox access **not granted (2026-05-22)** — dropped from scope |
 
@@ -637,16 +637,16 @@ These are things we have decided at a high level but where the implementation de
 | PHP stablecoin = PHPC on Stellar | ❌ Retired | Not pursued | PHPC is on Polygon and Ronin, not Stellar. Exited BSP sandbox July 2025. Bridging is out of scope for v1. |
 | PHP fiat rail (production) | ✅ Resolved | **PDAX as primary anchor** via PDAX Connect API; SEP-24 abstraction allows Coins.ph or future PHP-Stellar issuers to plug in without changing contract logic | PDAX sandbox access **not granted (2026-05-22)** — L3 dropped; hackathon ships L2 mocked PDAX UI. SEP-24 abstraction lets PDAX wire in post-hackathon with no contract changes. |
 | Direct QRPh integration | ❌ Retired | Not buildable as third-party | QRPh requires BSP-licensed PSP/EMI status. Handled at the anchor edge. |
-| FX rate source (PHP/USDC) | 🟡 Open | Reflector preferred, hardcoded acceptable for hackathon | See [Q4 in FOR DEVS § Open questions](#open-questions-for-the-dev-team) |
+| FX rate source (PHP/USDC) | ✅ Resolved | Reflector oracle + hardcoded `56.5` PHP/USDC fallback | `lib/fx/reflector.ts` + `/api/fx/rate` |
 | Liquidity provider sourcing | 🟡 Open | Institutional lenders or pools, accessible via PDAX's 20+ LP network | Partner agreements TBD; affects discount rate structure |
 | Settlement model | ✅ Locked | **Closed-loop, confirmed-invoice financing** — payer onboarded + invoice confirmed + NoA acknowledged before funding; lockbox collection; recourse + reserve; reconciliation auto-escalation | Locked 2026-05-19. Detailed in [`rfc-axial-closed-loop-settlement.md`](docs/rfc-axial-closed-loop-settlement.md). NoA text requires PH counsel — tracked in [`clr-axial.md`](docs/clr-axial.md) |
 | API gateway style | 🟡 Open | REST + OpenAPI leans recommended for BIR API parity; tRPC if TS-monorepo cohesion wins | See [Q2 in FOR DEVS § Open questions](#open-questions-for-the-dev-team) |
-| Auth mechanism | 🟡 Open | OIDC + org invites (preferred) | Vendor and session management TBD |
-| Job queue tech | 🟡 Open | BullMQ vs Temporal | See [Q1 in FOR DEVS § Open questions](#open-questions-for-the-dev-team) |
-| BIR EIS API access (production) | 🟡 Open | Awaiting PTT certification path | BIR staging environment availability TBD. Hackathon uses mock endpoint. |
-| Statutory tables | 🟡 Open | Encoded as versioned rule packs (not hard-coded in Soroban) | Legal/accounting sign-off on bracket accuracy required before production |
-| Wallet management (demo) | ✅ Locked | **Custodial backend signing** — the Next.js server holds funder/MSME/issuer secrets and signs all Soroban transactions | Locked 2026-05-22 (Build audit). Freighter self-custody is post-hackathon — tracked in [`sprint.md`](sprint.md) |
-| Hosting region | 🟡 Open | Cloud, Asia-Pacific (Singapore/Manila latency) | See [Q8 in FOR DEVS § Open questions](#open-questions-for-the-dev-team) |
+| Auth mechanism | ✅ Resolved | Supabase Auth + org-scoped multi-tenancy + invites | `api/auth/*`, migration `006` |
+| Job queue tech | ✅ Resolved | In-process EIS oracle + GCP Cloud Scheduler HTTP crons (no BullMQ/Temporal) | See [`ops-cloud-scheduler.md`](ops-cloud-scheduler.md); jobs not yet provisioned in GCP |
+| BIR EIS API access (production) | 🟡 Open | Awaiting PTT certification path | BIR staging environment availability TBD. Demo uses mock endpoint. |
+| Statutory tables | ✅ Resolved (pending legal sign-off) | Versioned rule packs in `lib/payroll/statutory-tables.ts` | Legal/accounting sign-off on bracket accuracy still required before production |
+| Wallet management (demo) | ✅ Locked | **Custodial default** + **optional Freighter** (client-sign + payer lockbox funding) | Locked 2026-05-22; Freighter path shipped |
+| Hosting region | ✅ Resolved | **Google Cloud Run** (`asia-southeast1`) via GitHub Actions | See Q8 / `deploy-cloudrun.yml` |
 | Pricing model | ✅ Locked | **Two engines:** liquidity spread (~0.5–1.5% of face value platform cut, ≈1% of every funded peso) + tiered compliance subscription. All-in factoring cost capped below traditional PH factoring | Locked 2026-05-19. Detailed in §7.4 and `brd-axial.md`. Funder-yield split depends on liquidity partner agreements |
 
 ---

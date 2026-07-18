@@ -8,7 +8,7 @@ Axial is a liquidity and compliance engine for Philippine MSMEs. It solves two s
 
 All regulatory and legal questions are **Philippines-jurisdiction-first**.
 
-**Built for:** Build on Stellar Philippines Hackathon 2026 (May 18–24). Three devs, seven days.
+**Built for:** Build on Stellar Philippines Hackathon 2026 (May 18–24). Four-person team, seven days.
 
 ## Development Commands
 
@@ -57,7 +57,7 @@ axial/
 
 The "backend" is **Next.js Route Handlers under `web/app/api/`** — there is no separate server. The SDD's modular-monolith / BullMQ-Temporal plan was not adopted; ignore it as a build target.
 
-`docs/flow.md` (built/mock/planned matrix) and the **"Implementation status" table in `docs/Axial.md`** are useful maps but **lag the code** — when they conflict with what's in `web/`, trust the code. As of this writing the following are built and wired: the 4 Soroban contracts (all deployed + initialized on **Stellar Mainnet** — the network the system runs on; see the table below), USDC atomic swap, payroll split, BIR EIS oracle (Co-Pilot positioning — prepare → review → submit), the T+3 retry worker + Horizon poll + reconciliation cron jobs, Supabase auth with org-scoped multi-tenancy, the payer portal, NoA issue/ack, Reflector FX with a hardcoded fallback, and on-chain settlement (`register_invoice`, payer Freighter lockbox funding, `settle` on `mark_collected` with contract-balance pre-check — B-2 S5). **Still not built:** live BIR submission (mock by default — `BIR_EIS_LIVE` gates it; demo mock may still auto-ack until the UI review gate + PTT) and real PDAX Connect calls.
+`docs/flow.md` (built/mock/planned matrix) and the **"Implementation status" table in `docs/Axial.md`** are useful maps but **can lag the code** — when they conflict with what's in `web/`, trust the code. As of this writing the following are built and wired: the 4 Soroban contracts (all deployed + initialized on **Stellar Mainnet** — the network the system runs on; see the table below), USDC atomic swap, payroll split, BIR EIS Co-Pilot (`prepared` → Compliance **Approve** → mock/live BIR), the T+3 retry worker + Horizon poll + reconciliation cron jobs, Supabase auth with org-scoped multi-tenancy, the payer portal, Funder Protection Center + `/app/funder-portal`, NoA issue/ack, Reflector FX with a hardcoded fallback, and on-chain settlement (`register_invoice`, payer Freighter lockbox funding, `settle` on `mark_collected` with contract-balance pre-check — B-2 S5). **Still not built:** live BIR submission (mock by default — `BIR_EIS_LIVE` gates it; demo may auto-ack only when `AXIAL_ALLOW_SEED` or `EIS_DEMO_AUTO_ACK` and not live) and real PDAX Connect calls.
 
 **Stack:** Next.js 15.5 · React 19 · TypeScript 5 (strict) · Tailwind CSS 4 · `@stellar/stellar-sdk` · `@supabase/supabase-js` + `@supabase/ssr` (auth) · `tesseract.js` + `pdf-parse` + `sharp` (invoice OCR) · `stellar-hd-wallet` (key derivation). Path alias `@/*` → `web/*`.
 
@@ -65,33 +65,34 @@ The "backend" is **Next.js Route Handlers under `web/app/api/`** — there is no
 - Root `layout.tsx` — just `<html>`, Geist fonts, Material Symbols. No shell.
 - `page.tsx` — public marketing landing at `/`.
 - `(auth)/` route group — `login` and `invite` pages with their own minimal layout; `auth/callback/route.ts` handles the Supabase OAuth code exchange.
-- `app/app/layout.tsx` — the authenticated **AppShell** layout (renders `AppShell`, resolves chain status + auth user server-side). Tabs under `/app/*`: `app/page.tsx` (Overview), `liquidity/`, `compliance/`, `settings/`, plus `payer-portal/` (token-authenticated, outside the org session).
+- `app/app/layout.tsx` — the authenticated **AppShell** layout (renders `AppShell`, resolves chain status + auth user server-side). Tabs under `/app/*`: `app/page.tsx` (Overview), `liquidity/`, `compliance/`, `settings/`, plus `payer-portal/` and `funder-portal/` (token-authenticated where applicable).
 
 Each page is a thin wrapper that renders a view from `components/views/` (`OverviewView`, `LiquidityView`, `PayerPortalView`, etc.). Shared shell in `components/layout/`, primitives in `components/ui/`, client state via `components/providers/AppProvider.tsx`.
 
-**Auth (`web/middleware.ts`):** Supabase SSR session refresh + route protection. `/app/*` redirects to `/login` when no session; `/app/payer-portal` is exempt (token-based). **If Supabase env vars are unset the middleware is a no-op** and `/app/*` is open — this is the local file-fallback dev mode. Org-scoped multi-tenancy and invites: `api/auth/*`, migration `006`.
+**Auth (`web/middleware.ts`):** Supabase SSR session refresh + route protection. `/app/*` redirects to `/login` when no session; `/app/payer-portal` and `/app/funder-portal` are exempt (token-based). **If Supabase env vars are unset the middleware is a no-op** and `/app/*` is open — this is the local file-fallback dev mode. Org-scoped multi-tenancy and invites: `api/auth/*`, migration `006`.
 
-**API routes (`web/app/api/`):** `invoices/*` (upload/parse/parse-sample/seed/CRUD + `[id]/confirm`, `[id]/eligibility`), `eis/*` (submissions, process, seed, `worker`, `horizon-poll`), `bir/eis` (mock BIR endpoint), `swap/*` + `receivable/mint` + `payroll/*` (quote/build/route) + `tx/submit` (Soroban invocation + quotes + client-signed submit), `lockbox/fund` (payer lockbox funding), `noa/[receivableId]/*` (Notice of Assignment issue/ack), `payers/*`, `reconciliation/scan`, `fx/rate` (Reflector), `soroban/status`, `wallets/balances`, `dashboard/summary`, `auth/*` (invite, members).
+**API routes (`web/app/api/`):** `invoices/*` (upload/parse/parse-sample/seed/CRUD + `[id]/confirm`, `[id]/eligibility`), `eis/*` (submissions, process, seed, `[id]/approve`, `worker`, `horizon-poll`, `monitor`), `bir/eis` (mock BIR endpoint), `swap/*` + `receivable/mint` + `payroll/*` (quote/build/route) + `tx/submit` (Soroban invocation + quotes + client-signed submit), `lockbox/fund` (payer lockbox funding), `noa/[receivableId]/*` (Notice of Assignment issue/ack), `payers/*`, `funder/*`, `reconciliation/scan`, `fx/rate` (Reflector), `soroban/status`, `wallets/balances`, `dashboard/summary`, `auth/*` (invite, members).
 
-**Background jobs (Cloud Scheduler):** three endpoints run on a schedule — `eis/worker` (every 6h — T+3 retry/expiry), `eis/horizon-poll` (every 10 min — chain event ingest), `reconciliation/scan` (daily — leakage scan). Each is an HTTP call to the Cloud Run service, protected by `CRON_SECRET`. Cloud Run has no built-in cron — these must be wired as **GCP Cloud Scheduler** jobs (not yet set up).
+**Background jobs (Cloud Scheduler):** HTTP endpoints on Cloud Run — `eis/worker` (every 6h — T+3 retry/expiry), `eis/horizon-poll` (every 10 min — chain event ingest), `reconciliation/scan` (daily — leakage scan), plus `eis/monitor` and settlement register-retry as documented. Each call is protected by `CRON_SECRET`. Cloud Run has no built-in cron — wire them as **GCP Cloud Scheduler** jobs (endpoints ready; jobs not yet set up). See [`docs/ops-cloud-scheduler.md`](docs/ops-cloud-scheduler.md).
 
 ### Persistence — dual backend
 
-`lib/eis/store.ts`, `lib/invoices/store.ts`, `lib/payers/store.ts`, and `lib/settlement/store.ts` each pick a backend at runtime: **Supabase** when `SUPABASE_URL` + a service-role/anon key are set, otherwise a **local JSON file fallback** under `web/data/`. Always write store access through these modules — never assume one backend. Supabase schema lives in `supabase/migrations/` (`001`–`006`: eis_submissions, factoring_invoices, closed_loop, reserve_ledger, eis_t3_fields, auth_multitenancy).
+`lib/eis/store.ts`, `lib/invoices/store.ts`, `lib/payers/store.ts`, and `lib/settlement/store.ts` each pick a backend at runtime: **Supabase** when `SUPABASE_URL` + a service-role/anon key are set, otherwise a **local JSON file fallback** under `web/data/`. Always write store access through these modules — never assume one backend. Supabase schema lives in `supabase/migrations/` (`001`–`011`, including dual `007_*` files: eis_submissions, factoring_invoices, closed_loop, reserve_ledger, eis_t3_fields, auth_multitenancy, eis prepared status / on-chain invoice id, org features, invoice settlement guards, telegram links, org backfill).
 
 The hosted Supabase project ref is `ifzyntqwymmgimnxtguz` — `SUPABASE_URL` must point at it (`https://ifzyntqwymmgimnxtguz.supabase.co`). Per `.cursor/README.md`, do not register this project's Supabase MCP server globally.
 
 ### Compliance pipeline (the EIS Co-Pilot)
 
-The BIR EIS oracle runs **in-process**, not in an external queue. **Locked product model (2026-06-18):** prepare → human review → submit. Auto-submission is gated on EIS certification + Permit to Transmit (PTT). **Demo reality:** the mock path may still map → JWS-sign → mock-BIR-ack without a UI approval gate until that gate ships.
+The BIR EIS oracle runs **in-process**, not in an external queue. **Locked product model (2026-06-18):** prepare → human review → submit. Auto-submission is gated on EIS certification + Permit to Transmit (PTT). **Demo reality:** auto-ack past the UI gate only when `AXIAL_ALLOW_SEED` or `EIS_DEMO_AUTO_ACK` is set and `BIR_EIS_LIVE` is not true.
 
 Flow (`lib/eis/`):
 
 1. An on-chain API route (mint/swap/payroll) calls `triggerEisFromChain()` (`trigger.ts`).
 2. That calls `enqueueEisProcessing()` (`oracle.ts`) — a **fire-and-forget** `void processLedgerEvent().catch()`. It does not block the user response.
-3. `processLedgerEvent()`: maps the ledger event to the BIR EIS payload (`schema.ts` / `payload-fields.ts`), JWS-signs it (`jws.ts` — mock signature unless `BIR_EIS_LIVE`), then (today) submits to the BIR endpoint (`bir-mock.ts` mock, or `bir-client.ts` when live) and writes a reference memo back to Stellar (`memo.ts`). Production Co-Pilot inserts an explicit human approval step before live BIR submit.
-4. State transitions `queued → submitted → acknowledged → memo_written` (or `failed`), persisted via `store.ts`. Idempotency key = `orgId:stellarTxHash:referenceId`.
-5. The `worker.ts` cron retries stale `queued`/`failed` submissions still inside their T+3 window and marks expired ones permanently failed; `horizon-poll.ts` ingests chain events the live API path may have missed.
+3. `processLedgerEvent()`: maps the ledger event to the BIR EIS payload (`schema.ts` / `payload-fields.ts`), JWS-signs it (`jws.ts` — mock signature unless `BIR_EIS_LIVE`), and persists status **`prepared`** for human review. It does **not** auto-submit `prepared` rows to live BIR.
+4. Compliance **Approve** (`POST /api/eis/[id]/approve`) calls `submitPreparedSubmission()` → BIR endpoint (`bir-mock.ts` mock, or `bir-client.ts` when live) → Stellar memo write-back (`memo.ts`).
+5. State transitions include `prepared → submitted → acknowledged → memo_written` (or `failed` / expired), persisted via `store.ts`. Idempotency key = `orgId:stellarTxHash:referenceId`.
+6. The `worker.ts` cron retries stale `queued`/`failed` submissions still inside their T+3 window, nudges aged `prepared` rows, and marks expired ones permanently failed; it never auto-submits `prepared`. `horizon-poll.ts` ingests chain events the live API path may have missed.
 
 ### Soroban contracts (`soroban/contracts/`)
 
@@ -125,7 +126,7 @@ Finalized 2026-05-14 — do not reopen without updating `docs/Axial.md` first.
 | USDC Mainnet issuer | `GA5ZSEJYB37JRC5AVCIA5MOP4RHTM335X2KGX3IHOJAPP5RE34K4KZVN` |
 | User-facing denomination | **PHP** — all invoices, payroll, dashboards show pesos |
 | FX conversion | Reflector oracle (`lib/fx/reflector.ts`) with a hardcoded `56.5` PHP/USDC fallback when the oracle is unreachable |
-| Wallet signing | **Custodial backend signing** — the Next.js server holds funder/MSME/issuer secrets and signs all Soroban transactions |
+| Wallet signing | **Custodial backend signing** (default) + optional Freighter client-sign / lockbox funding |
 | PHP fiat rail | **PDAX** via PDAX Connect API (SEP-24); Axial never custodies fiat |
 | PHPC | ❌ Retired — on Polygon/Ronin not Stellar; exited BSP sandbox July 2025 |
 | BIR EIS mandate scope | Phase 1 taxpayers only (Large Taxpayers, e-commerce, exporters, ≥₱1B gross sales, CAS/CBA users) |
@@ -136,7 +137,7 @@ Finalized 2026-05-14 — do not reopen without updating `docs/Axial.md` first.
 
 Build L1 completely before L2/L3:
 
-- **L1 (must ship):** Soroban contracts deployed · real USDC atomic swap · payroll split · BIR EIS oracle · JWS-signed payload · mock BIR endpoint · Stellar memo write-back. No external deps.
+- **L1 (must ship):** Soroban contracts deployed · real USDC atomic swap · payroll split · BIR EIS oracle · JWS-signed payload · mock BIR endpoint · Stellar memo write-back. Named external dependency: Circle USDC issuer.
 - **L2 (nice to have):** L1 + mocked PDAX UI screens.
 - **L3 (dropped 2026-05-22):** real PDAX Connect API calls — PDAX sandbox access was not granted; final scope is L1 + L2. See `docs/sprint.md` and the "Build audit" section in `docs/Axial.md`.
 

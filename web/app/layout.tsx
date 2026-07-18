@@ -16,14 +16,14 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   metadataBase: new URL(
-    process.env.NEXT_PUBLIC_BASE_URL ?? "https://axial-phi.vercel.app"
+    process.env.NEXT_PUBLIC_BASE_URL ?? "https://axial.axonenjin.com"
   ),
   title: {
     default: "Axial — Instant Capital, Effortless Compliance",
     template: "%s · Axial",
   },
   description:
-    "Liquidity and compliance engine for Philippine MSMEs. Unlock cash from tokenized receivables on Stellar while BIR EIS filings are prepared for one-click review and submission.",
+    "Liquidity and compliance engine for Philippine MSMEs. Unlock cash from tokenized receivables on Stellar while BIR EIS filings are prepared for one-click review.",
   applicationName: "Axial",
   openGraph: {
     type: "website",

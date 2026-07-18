@@ -76,7 +76,7 @@ This is the working task board for Axial, derived from the **CTO/auditor review 
 | # | Decision | Detail |
 |---|---|---|
 | D1 | **L3 dropped** | PDAX sandbox access not granted. Final scope = **L1 + L2** (L2 = our mocked PDAX UI). |
-| D2 | **Custodial signing (Q7)** | Server holds funder/MSME/issuer secrets and signs all Soroban txns. No Freighter in v1. |
+| D2 | **Custodial signing (Q7)** | Server holds funder/MSME/issuer secrets and signs Soroban txns by default. Freighter optional for client-sign + payer lockbox funding (shipped). |
 | D3 | **Mainnet-only** (revised 2026-05-22) | Axial runs on **Stellar Mainnet only**. Reverses the earlier "conditional Mainnet / testnet is the demo path" stance — testnet is retired as an operating target and kept only as a developer sandbox. |
 | D4 | **Closed loop wired (verify on Mainnet)** | Payer portal, NoA issue/ack, `register_invoice`, Freighter lockbox funding, and on-chain `settle` (S5) are wired. Exercise via [`settle-dry-run-checklist.md`](settle-dry-run-checklist.md) before claiming production collection ops. |
 | D5 | **Post-submission re-scope (2026-05-22; S5 updated 2026-07)** | Settlement B-2 S3–S6 delivered in code (`register_invoice`, Freighter lockbox funding, `settle` + reconcile, trust doc). Remaining: Mainnet verify + residual hardening. BIR EIS stays mock-only (live path PTT-gated; Co-Pilot prepare → review → submit). Real-KYB via manual/vendor modes. PDAX (B-9) stays dropped. |

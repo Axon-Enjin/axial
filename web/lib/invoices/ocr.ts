@@ -19,7 +19,7 @@ function isServerlessHost(): boolean {
   return process.env.VERCEL === "1" || isCloudRun();
 }
 
-/** Cold Tesseract init on Cloud Run can exceed 8s; Vercel Hobby stays tight. */
+/** Cold Tesseract init on Cloud Run can exceed 8s; short-budget hosts stay tight. */
 function workerStartupBudgetMs(): number {
   if (isCloudRun()) return 60_000;
   if (process.env.VERCEL === "1") return 8_000;
@@ -78,7 +78,7 @@ export async function extractTextFromBuffer(
   if (mimeType.startsWith("image/")) {
     if (!isImageOcrEnabled()) {
       throw new Error(
-        "Image OCR is disabled on Vercel Hobby. Use a text-based PDF, click “sample invoice”, or deploy on Cloud Run.",
+        "Image OCR is disabled on this host. Use a text-based PDF, click “sample invoice”, or run on Cloud Run with OCR enabled.",
       );
     }
     const normalized = await normalizeImageForOcr(buffer);

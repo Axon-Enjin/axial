@@ -8,7 +8,7 @@
 
 ## Winning Statement
 
-We're honored to be named 2nd Runner-Up at the Build on Stellar Philippines Hackathon 2026 with **Axial**, a liquidity and compliance engine built for Filipino MSMEs. In seven days, our four-person team shipped a working system that lets founders unlock cash from tokenized receivables through Stellar/Soroban atomic swaps — while BIR EIS submissions and SSS/PhilHealth/Pag-IBIG payroll splits happen automatically in the background. Axial attacks two structural problems at once: the $221B cash-flow gap created by Net 60–90 payment terms, and the manual, error-prone compliance work that drains small businesses every month. Winning here tells us the thesis lands — **Instant Capital, Effortless Compliance** is the future Philippine MSMEs deserve, and we're just getting started.
+We're honored to be named 2nd Runner-Up at the Build on Stellar Philippines Hackathon 2026 with **Axial**, a liquidity and compliance engine built for Filipino MSMEs. In seven days, our four-person team shipped a working system that lets founders unlock cash from tokenized receivables through Stellar/Soroban atomic swaps — while BIR EIS filings and SSS/PhilHealth/Pag-IBIG payroll schedules are prepared for human review and one-click approval (Compliance Co-Pilot; mock BIR in the demo, live transmit gated on Permit to Transmit). Axial attacks two structural problems at once: the $221B cash-flow gap created by Net 60–90 payment terms, and the manual, error-prone compliance work that drains small businesses every month. Winning here tells us the thesis lands — **Instant Capital, Effortless Compliance** is the future Philippine MSMEs deserve, and we're just getting started.
 
 ---
 
@@ -43,4 +43,4 @@ Axial was built by four students from the **Polytechnic University of the Philip
 
 ## Short Version (for tight character limits)
 
-> Team Axial — four PUP students operating as Axon Enjin — placed 2nd Runner-Up at the Build on Stellar Philippines Hackathon 2026 with *Axial*, a liquidity and compliance engine that gives Filipino MSMEs instant capital from tokenized receivables while BIR filings and statutory payroll splits run silently in the background. Built in seven days. *Instant Capital, Effortless Compliance.*
+> Team Axial — four PUP students operating as Axon Enjin — placed 2nd Runner-Up at the Build on Stellar Philippines Hackathon 2026 with *Axial*, a liquidity and compliance engine that gives Filipino MSMEs instant capital from tokenized receivables while BIR filings and statutory payroll schedules are prepared for human review (Compliance Co-Pilot). Built in seven days. *Instant Capital, Effortless Compliance.*

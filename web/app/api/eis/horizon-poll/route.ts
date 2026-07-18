@@ -7,10 +7,10 @@
  * Axial contracts in the last LOOKBACK_LEDGERS. For each new event not
  * already in the EIS store, enqueues oracle processing. Fully idempotent.
  *
- * Intended to be invoked by Vercel Cron every 10 minutes so that EIS
- * submissions happen even if the API hook was missed (e.g., request timeout,
- * server restart, or Freighter-signed transactions submitted without hitting
- * the Axial API routes).
+ * Intended to be invoked by GCP Cloud Scheduler every 10 minutes
+ * (see docs/ops-cloud-scheduler.md) so that EIS submissions happen even if
+ * the API hook was missed (e.g., request timeout, server restart, or
+ * Freighter-signed transactions submitted without hitting the Axial API routes).
  *
  * Security: requires Authorization: Bearer {CRON_SECRET} header.
  */

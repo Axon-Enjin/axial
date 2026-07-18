@@ -76,11 +76,12 @@ See [`Axial.md`](Axial.md) § "Implementation status" for the full table.
 
 ### 3. Docs sync — final verification pass
 
-**Status:** `✅` (2026-07-15)
+**Status:** `✅` (2026-07-18)
 
 - Reconcile [`Axial.md`](Axial.md) implementation status with current `web/` behavior
 - Ensure [`flow.md`](flow.md) matrix matches Liquidity OCR, Freighter, and mainnet-only network cookie
 - Mark S0-6 done when demo recording exists
+- **2026-07-18 pass:** landing `LIVE_NOW`/`NEXT_UP` (settle S5 + Funder Protection as live); Freighter lock text in Axial; EIS `prepared` → Approve diagrams in CLAUDE/flow; winning-statement Co-Pilot language; Vercel cron/hosting string crumbs → Cloud Run / Cloud Scheduler. Cloud Scheduler **jobs** still not claimed live in GCP (endpoints + [`ops-cloud-scheduler.md`](ops-cloud-scheduler.md) ready).
 
 ---
 
@@ -235,6 +236,7 @@ flowchart TD
 
 | Date | Change |
 |------|--------|
+| 2026-07-18 | Full docs/landing sync: LIVE_NOW settle+funder; Freighter locks; EIS prepared→Approve; Co-Pilot winning statement; Cloud Scheduler crumbs |
 | 2026-07-15 | Doc reconcile: Effortless Compliance + Co-Pilot; S5 settle status aligned with code |
 | 2026-07-15 | S5 balance pre-check + onChainInvoiceId; Pink Raft UX (TLA + clear-sign); feasibility / unit economics / canvas docs; investor landing (no competition framing) |
 | 2026-06-14 | Initial backlog from implementation audit vs `Axial.md`, `flow.md`, `sprint.md` |

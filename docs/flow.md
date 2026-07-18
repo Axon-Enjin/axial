@@ -79,7 +79,7 @@ flowchart LR
   subgraph phaseD [D — Effortless compliance: review and submit]
     D1["✅ Oracle → 20 BIR fields"]
     D2["✅ JWS mock sign"]
-    D3["🟡 Human review → approve — Co-Pilot; mock may auto-ack"]
+    D3["✅ Human review → approve — Co-Pilot; demo may auto-ack under seed flags"]
     D4["✅ Mock BIR accept"]
     D5["✅ Memo write-back Stellar"]
     D6["✅ Supabase audit log"]
@@ -251,17 +251,21 @@ flowchart TB
 ```mermaid
 stateDiagram-v2
   [*] --> queued: ledger event received
-  queued --> submitted: upsert + JWS built
-  submitted --> acknowledged: mock BIR OK
+  queued --> prepared: map + JWS built
+  prepared --> submitted: human Approve
+  prepared --> submitted: demo auto-ack seed flags
+  submitted --> acknowledged: BIR OK mock or live
   acknowledged --> memo_written: Stellar memo tx
   acknowledged --> acknowledged: memo failed error stored
-  submitted --> failed: BIR/sign error
+  prepared --> failed: sign or validate error
+  submitted --> failed: BIR error
   memo_written --> [*]: idempotent replay returns same
   failed --> [*]
 
-  note right of queued
+  note right of prepared
     Triggers: mint, swap, payroll API success
     Idempotency: org:txHash:referenceId
+    Worker never auto-submits prepared
   end note
 ```
 
@@ -394,6 +398,6 @@ Cron endpoints are protected by `CRON_SECRET`; run them as GCP Cloud Scheduler j
 
 ---
 
-*Update this doc when the settlement wiring (B-2 S3–S6) or live BIR submission lands.*
+*Update this doc when live BIR PTT submission lands (settle S3–S5 already wired; verify on Mainnet via settle-dry-run-checklist).*
 
 *Audit-derived task board: [`sprint.md`](sprint.md) · scope decisions: "Build audit & final scope lock (2026-05-22)" in [`Axial.md`](Axial.md).*

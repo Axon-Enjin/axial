@@ -432,7 +432,7 @@ export function LiquidityView() {
         try {
           data = (await res.json()) as typeof data;
         } catch {
-          setParseError(`Server error (${res.status}) — check Vercel logs`);
+          setParseError(`Server error (${res.status}) — check Cloud Run logs`);
           setPipelineStage("idle");
           dismissToast();
           return;

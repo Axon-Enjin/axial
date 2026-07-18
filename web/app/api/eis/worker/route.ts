@@ -6,12 +6,12 @@
  * Processes stale (queued/failed) EIS submissions within their T+3 window
  * and marks expired submissions as permanently failed.
  *
- * Intended to be invoked by Vercel Cron (see vercel.json) on a regular
- * schedule. Also callable manually for debugging.
+ * Intended to be invoked by GCP Cloud Scheduler (see docs/ops-cloud-scheduler.md)
+ * on a regular schedule. Also callable manually for debugging.
  *
  * Security: requires Authorization: Bearer {CRON_SECRET} header.
- * On Vercel, the cron runtime sets this automatically from the project's
- * CRON_SECRET environment variable. For manual calls, set the same header.
+ * Cloud Scheduler jobs should send the same header from the CRON_SECRET
+ * secret. For manual calls, set the same header.
  */
 import { NextResponse } from "next/server";
 import { assertCronAuthorized } from "@/lib/cron/auth";
@@ -36,7 +36,7 @@ export async function POST(request: Request) {
   }
 }
 
-// Allow GET for Vercel Cron compatibility (cron pings are GET requests in some configs)
+// Allow GET for scheduler health checks that ping with GET
 export async function GET(request: Request) {
   return POST(request);
 }
