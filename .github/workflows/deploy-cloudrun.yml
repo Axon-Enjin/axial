@@ -82,6 +82,9 @@ jobs:
             --set-env-vars="MAINNET_STELLAR_ISSUER_PUBLIC=${{ vars.MAINNET_STELLAR_ISSUER_PUBLIC }}" \
             --set-env-vars="MAINNET_STELLAR_FUNDER_PUBLIC=${{ vars.MAINNET_STELLAR_FUNDER_PUBLIC }}" \
             --set-env-vars="MAINNET_STELLAR_MSME_PUBLIC=${{ vars.MAINNET_STELLAR_MSME_PUBLIC }}" \
+            --set-env-vars="TELEGRAM_BOT_USERNAME=${{ vars.TELEGRAM_BOT_USERNAME }}" \
+            --set-env-vars="TELEGRAM_BOT_TOKEN=${{ secrets.TELEGRAM_BOT_TOKEN }}" \
+            --set-env-vars="TELEGRAM_WEBHOOK_SECRET=${{ secrets.TELEGRAM_WEBHOOK_SECRET }}" \
             --update-secrets="SUPABASE_SERVICE_ROLE_KEY=SUPABASE_SERVICE_ROLE_KEY:latest" \
             --update-secrets="MAINNET_STELLAR_ISSUER_SECRET=MAINNET_STELLAR_ISSUER_SECRET:latest" \
             --update-secrets="MAINNET_STELLAR_FUNDER_SECRET=MAINNET_STELLAR_FUNDER_SECRET:latest" \
