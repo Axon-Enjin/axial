@@ -21,10 +21,14 @@ export function getInvoiceStoreBackend(): InvoiceStoreBackend {
 }
 
 function isMissingTableError(err: unknown): boolean {
+  if (!(err instanceof Error)) return false;
+  const msg = err.message.toLowerCase();
+  // Only fall back when the table is actually absent — not every error that
+  // happens to mention the table name (those must surface, not hit /app/data).
   return (
-    err instanceof Error &&
-    (err.message.includes("Could not find the table") ||
-      err.message.includes("factoring_invoices"))
+    msg.includes("could not find the table") ||
+    msg.includes("schema cache") ||
+    (msg.includes("relation") && msg.includes("does not exist"))
   );
 }
 
