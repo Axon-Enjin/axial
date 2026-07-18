@@ -11,7 +11,9 @@ import {
 } from "@/lib/supabase/invoices-store";
 import type { CollectionStatus, FactoringInvoice, InvoiceStatus } from "./types";
 
-const DATA_DIR = join(process.cwd(), "data");
+const DATA_DIR = process.env.K_SERVICE
+  ? join("/tmp", "axial-data")
+  : join(process.cwd(), "data");
 const STORE_PATH = join(DATA_DIR, "factoring-invoices.json");
 
 export type InvoiceStoreBackend = "supabase" | "file";
@@ -43,7 +45,12 @@ async function withFileFallback<T>(
     return await supabaseOp();
   } catch (err) {
     if (isMissingTableError(err)) {
-      return fileOp();
+      try {
+        return await fileOp();
+      } catch {
+        // Prefer the original Supabase error (Cloud Run cannot mkdir /app/data).
+        throw err;
+      }
     }
     throw err;
   }
