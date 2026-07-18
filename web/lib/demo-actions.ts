@@ -23,18 +23,7 @@ const MESSAGES: Record<DemoActionKind, string | ((payload?: string) => string)> 
     if (!payload) {
       return "Atomic swap executed. USDC settling on Stellar.";
     }
-    if (
-      payload.includes("not initialized") ||
-      payload.includes("failed") ||
-      payload.includes("Tokenize") ||
-      payload.includes("trustline") ||
-      payload.includes("Trustline") ||
-      payload.includes("HostError") ||
-      payload.includes("USDC balance") ||
-      payload.includes("Error(Contract")
-    ) {
-      return payload;
-    }
+    // Success path always uses tx:invoice|mint|swap — anything else is an error/status.
     if (payload.startsWith("tx:")) {
       const parts = payload.slice(3).split("|");
       const invoiceId = parts[0] ?? "invoice";
@@ -47,7 +36,13 @@ const MESSAGES: Record<DemoActionKind, string | ((payload?: string) => string)> 
       }
       return `${invoiceId} settled on Stellar.`;
     }
-    return `Atomic swap executed on ${payload}. USDC settling on Stellar.`;
+    if (payload.startsWith("failed:")) {
+      return payload.slice("failed:".length);
+    }
+    // XDR / HostError blobs, "already tokenized", NOT_FUNDABLE, etc.
+    return payload.startsWith("INV-")
+      ? `Tokenize & Swap did not finish for ${payload}. Check Freighter network and try again.`
+      : payload;
   },
   "payroll-routed": (payload) => {
     if (!payload) {
