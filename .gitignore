@@ -3,6 +3,7 @@
 .cursor/*
 !.cursor/mcp.json
 !.cursor/README.md
+!.mcp.json
 .gemini/
 skills-lock.json
 
